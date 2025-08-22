@@ -230,13 +230,17 @@ class Approach(ABC):
         # Azure Cognitive Search should return full field values when explicitly selected
         select_fields = ["id", "content", "category", "sourcepage", "sourcefile", "storageUrl", "oids", "groups", "updated"]
         
+        # Set search mode based on query rewriting requirement
+        # Query rewriting requires "any" mode, otherwise use "all" for comprehensive matching
+        search_mode = "any" if use_query_rewriting else "all"
+        
         # Add search_mode to ensure we get comprehensive results
         search_kwargs = {
             "search_text": search_text,
             "filter": filter,
             "top": top * 3,  # Request more results initially to account for filtering
             "select": select_fields,
-            "search_mode": "all",  # Use "all" mode for more comprehensive matching
+            "search_mode": search_mode,
             "include_total_count": True,  # Include total count for debugging
         }
         

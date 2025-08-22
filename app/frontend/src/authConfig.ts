@@ -176,9 +176,14 @@ export const appServicesLogout = () => {
  */
 export const checkLoggedIn = async (client: IPublicClientApplication | undefined): Promise<boolean> => {
     if (client) {
-        const activeAccount = client.getActiveAccount();
-        if (activeAccount) {
-            return true;
+        try {
+            const activeAccount = client.getActiveAccount();
+            if (activeAccount) {
+                return true;
+            }
+        } catch (error) {
+            console.error("Error checking active account:", error);
+            // Continue to check app services token
         }
     }
 
@@ -199,16 +204,21 @@ export const getToken = async (client: IPublicClientApplication): Promise<string
         return Promise.resolve(appServicesToken.access_token);
     }
 
-    return client
-        .acquireTokenSilent({
-            ...tokenRequest,
-            redirectUri: getRedirectUri()
-        })
-        .then(r => r.accessToken)
-        .catch(error => {
-            console.log(error);
-            return undefined;
-        });
+    try {
+        return client
+            .acquireTokenSilent({
+                ...tokenRequest,
+                redirectUri: getRedirectUri()
+            })
+            .then(r => r.accessToken)
+            .catch(error => {
+                console.log(error);
+                return undefined;
+            });
+    } catch (error) {
+        console.error("Error acquiring token:", error);
+        return undefined;
+    }
 };
 
 /**
@@ -218,9 +228,13 @@ export const getToken = async (client: IPublicClientApplication): Promise<string
  * @returns {Promise<string | null>} The username of the active account, or null if no username is found.
  */
 export const getUsername = async (client: IPublicClientApplication): Promise<string | null> => {
-    const activeAccount = client.getActiveAccount();
-    if (activeAccount) {
-        return activeAccount.username;
+    try {
+        const activeAccount = client.getActiveAccount();
+        if (activeAccount) {
+            return activeAccount.username;
+        }
+    } catch (error) {
+        console.error("Error getting active account:", error);
     }
 
     const appServicesToken = await getAppServicesToken();
@@ -238,9 +252,13 @@ export const getUsername = async (client: IPublicClientApplication): Promise<str
  * @returns {Promise<Record<string, unknown> | undefined>} A promise that resolves to the token claims of the active account, the user claims from the app services login token, or undefined if no claims are found.
  */
 export const getTokenClaims = async (client: IPublicClientApplication): Promise<Record<string, unknown> | undefined> => {
-    const activeAccount = client.getActiveAccount();
-    if (activeAccount) {
-        return activeAccount.idTokenClaims;
+    try {
+        const activeAccount = client.getActiveAccount();
+        if (activeAccount) {
+            return activeAccount.idTokenClaims;
+        }
+    } catch (error) {
+        console.error("Error getting active account claims:", error);
     }
 
     const appServicesToken = await getAppServicesToken();

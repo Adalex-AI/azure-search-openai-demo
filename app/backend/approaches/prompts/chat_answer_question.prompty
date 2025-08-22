@@ -112,13 +112,3 @@ Sources:
 {% for doc in text_sources %}
 {{ doc }}
 {% endfor %}
-user:
-{{ user_query }}
-
-Sources:
-{% for doc in text_sources %}
-{{ doc }}
-{% endfor %}
-{% for doc in text_sources %}
-{{ doc }}
-{% endfor %}

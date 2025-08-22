@@ -1,0 +1,33 @@
++ . ./scripts/load_python_env.sh
+++ echo 'Creating Python virtual environment "app/backend/.venv"...'
+Creating Python virtual environment "app/backend/.venv"...
+++ python3 -m venv .venv
+++ echo 'Installing dependencies from "requirements.txt" into virtual environment (in quiet mode)...'
+Installing dependencies from "requirements.txt" into virtual environment (in quiet mode)...
+++ .venv/bin/python -m pip --quiet --disable-pip-version-check install -r app/backend/requirements.txt
++ echo 'Running "prepdocs.py"'
+Running "prepdocs.py"
++ additionalArgs=
++ '[' 0 -gt 0 ']'
++ ./.venv/bin/python ./app/backend/prepdocs.py './data/*' --verbose
+[11:07:23] INFO     Loading azd env from /Users/HasithB/Downloads/PROJECTS/azure-search-openai-demo-2/.azure/cpr-rag/.env, which   load_azd_env.py:28
+                    may override existing environment variables                                                                                      
+           INFO     Connecting to Azure services using the azd credential for tenant 3bfe16b2-5fcc-4565-b1f1-15271d20fecf             prepdocs.py:356
+[11:07:24] INFO     Using local files: ./data/*                                                                                       prepdocs.py:135
+           INFO     Checking whether search index legal-court-rag-index exists...                                                 searchmanager.py:80
+[11:07:26] INFO     Search index legal-court-rag-index already exists                                                            searchmanager.py:283
+           INFO     Creating search agent named legal-court-rag-index-agent                                                      searchmanager.py:385
+[11:07:28] INFO     Agent legal-court-rag-index-agent created successfully                                                       searchmanager.py:411
+           INFO     Skipping ./data/GPT4V_Examples/Financial Market Analysis Report 2023.pdf, no changes detected.            listfilestrategy.py:105
+           INFO     Skipping ./data/Northwind_Standard_Benefits_Details.pdf, no changes detected.                             listfilestrategy.py:105
+           INFO     Skipping ./data/PerksPlus.pdf, no changes detected.                                                       listfilestrategy.py:105
+           INFO     Skipping ./data/Northwind_Health_Plus_Benefits_Details.pdf, no changes detected.                          listfilestrategy.py:105
+           INFO     Skipping ./data/role_library.pdf, no changes detected.                                                    listfilestrategy.py:105
+           INFO     Skipping ./data/Benefit_Options.pdf, no changes detected.                                                 listfilestrategy.py:105
+           INFO     Skipping ./data/employee_handbook.pdf, no changes detected.                                               listfilestrategy.py:105
+           INFO     Skipping ./data/Json_Examples/2192.json, no changes detected.                                             listfilestrategy.py:105
+           INFO     Skipping ./data/Json_Examples/2189.json, no changes detected.                                             listfilestrategy.py:105
+           INFO     Skipping ./data/Json_Examples/query.json, no changes detected.                                            listfilestrategy.py:105
+           INFO     Skipping ./data/Json_Examples/2190.json, no changes detected.                                             listfilestrategy.py:105
+           INFO     Skipping ./data/Json_Examples/2191.json, no changes detected.                                             listfilestrategy.py:105
+           INFO     Skipping ./data/Contoso_Electronics_Company_Overview.md, no changes detected.                             listfilestrategy.py:105

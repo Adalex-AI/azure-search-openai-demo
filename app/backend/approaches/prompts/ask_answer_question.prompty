@@ -89,12 +89,3 @@ Sources:
 {% for text_source in text_sources %}
 {{ text_source }}
 {% endfor %}
-{{ user_query }}
-
-Sources:
-{% for text_source in text_sources %}
-{{ text_source }}
-{% endfor %}
-{% for text_source in text_sources %}
-{{ text_source }}
-{% endfor %}

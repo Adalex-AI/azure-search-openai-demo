@@ -412,6 +412,8 @@ By default, the [query rewriting feature](https://learn.microsoft.com/azure/sear
 1. Ensure semantic ranker is enabled. Query rewriting may only be used with semantic ranker. Run `azd env set AZURE_SEARCH_SEMANTIC_RANKER free` or `azd env set AZURE_SEARCH_SEMANTIC_RANKER standard` depending on your desired [semantic ranker tier](https://learn.microsoft.com/azure/search/semantic-how-to-configure).
 1. Enable query rewriting. Run `azd env set AZURE_SEARCH_QUERY_REWRITING true`. An option in developer settings will appear allowing you to toggle query rewriting on and off. It will be on by default.
 
+Note: When query rewriting is enabled, the search mode automatically switches to "any" mode as required by Azure AI Search. This ensures optimal compatibility with the query rewriting feature while maintaining search effectiveness.
+
 ## Adding an OpenAI load balancer
 
 As discussed in more details in our [productionizing guide](./productionizing.md), you may want to consider implementing a load balancer between OpenAI instances if you are consistently going over the TPM limit.
