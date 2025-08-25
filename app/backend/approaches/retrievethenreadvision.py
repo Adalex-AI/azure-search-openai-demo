@@ -59,7 +59,7 @@ class RetrieveThenReadVisionApproach(Approach):
         self.vision_endpoint = vision_endpoint
         self.vision_token_provider = vision_token_provider
         self.prompt_manager = prompt_manager
-        self.answer_prompt = self.prompt_manager.load_prompt("ask_answer_question_vision.prompty")
+        self.answer_prompt = self.try_load_prompt("ask_answer_question_vision.prompty")
         # Currently disabled due to issues with rendering token usage in the UI
         self.include_token_usage = False
 
@@ -123,7 +123,7 @@ class RetrieveThenReadVisionApproach(Approach):
                 if url:
                     image_sources.append(url)
 
-        messages = self.prompt_manager.render_prompt(
+        messages = self.render_prompt(
             self.answer_prompt,
             self.get_system_prompt_variables(overrides.get("prompt_template"))
             | {"user_query": q, "text_sources": text_sources, "image_sources": image_sources},

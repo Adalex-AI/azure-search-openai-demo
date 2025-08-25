@@ -151,31 +151,44 @@ class ChatApproach(Approach, ABC):
         return self.run_with_streaming(messages, overrides, auth_claims, session_state)
 
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
-        """Build search filter based on overrides and auth claims"""
-        filters = []
-        
-        # Handle exclude_category
-        exclude_category = overrides.get("exclude_category", None)
+        """Build search filter based on overrides and auth claims (supports multi-category include)"""
+        filters: list[str] = []
+
+        # Exclude category
+        exclude_category = overrides.get("exclude_category")
         if exclude_category:
-            filters.append(f"category ne '{exclude_category}'")
-        
-        # Handle include_category
-        include_category = overrides.get("include_category", None) 
-        if include_category and include_category != "All":
-            filters.append(f"category eq '{include_category}'")
-        
-        # Add security filters
+            escaped = exclude_category.replace("'", "''")
+            filters.append(f"category ne '{escaped}'")
+
+        # Include category (supports comma-separated)
+        include_category = overrides.get("include_category")
+        if include_category and include_category not in ("All", ""):
+            parts = [c.strip() for c in include_category.split(",")]
+            cat_filters = []
+            for c in parts:
+                if c:
+                    escaped = c.replace("'", "''")
+                    cat_filters.append(f"category eq '{escaped}'")
+            if cat_filters:
+                filters.append(f"({' or '.join(cat_filters)})")
+
+        # Security filters
         if overrides.get("use_oid_security_filter"):
             oid = auth_claims.get("oid")
             if oid:
-                filters.append(f"oids/any(g:search.in(g, '{oid}'))")
-        
+                escaped = str(oid).replace("'", "''")
+                filters.append(f"oids/any(g:g eq '{escaped}')")
+
         if overrides.get("use_groups_security_filter"):
-            groups = auth_claims.get("groups", [])
+            groups = auth_claims.get("groups", []) or []
             if groups:
-                group_str = ", ".join([f"'{g}'" for g in groups])
-                filters.append(f"groups/any(g:search.in(g, '{group_str}'))")
-        
+                group_conditions = []
+                for g in groups:
+                    g_escaped = str(g).replace("'", "''")
+                    group_conditions.append(f"g eq '{g_escaped}'")
+                if group_conditions:
+                    filters.append(f"groups/any(g:{' or '.join(group_conditions)})")
+
         return " and ".join(filters) if filters else None
 
     # NEW: Provide prompt variables for PromptManager

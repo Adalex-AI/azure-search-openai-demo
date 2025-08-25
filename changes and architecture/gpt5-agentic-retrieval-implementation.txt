@@ -1,0 +1,245 @@
+GitHub Copilot
+
+Below is a focused, minimal-change edit plan to make agentic retrieval work end‑to‑end with your new legal features (three‑part citations, subsection splitting, court/category awareness, hover previews, storage URLs), and to correctly handle sources like “Para 1.1, Costs Capping, Practice Direction 3E”, “Rule 1.1, Overriding Objective, Part 1”, and “A4.1, A.4 Support For Litigants in Person (p. 7), Circuit Commercial Court Guide”.
+
+Critical gaps found
+- Agentic path bypasses your subsection splitting and 3‑part citation pipeline.
+- Agentic filter doesn’t guarantee “selected court OR CPR & Practice Directions” fallback.
+- Agent doc→Document mapping may miss storageUrl/category, breaking direct links and UI context.
+
+Minimal edit plan (aimed for Claude Sonnet 4 “edit” tool)
+Make only localized edits in chatreadretrieveread.py and retrievethenread.py to:
+1) Build a correct category filter for the agent (selected/detected court OR CPR&PD fallback).
+2) Convert agent references to your Document dataclass (include content, category, sourcepage, sourcefile, storageUrl).
+3) Reuse your existing legal post-processing: subsection splitting + get_sources_content() for three‑part citations.
+4) Preserve which subquery found a doc (optional, harmless).
+
+Edits
+
+1) Add an agent category filter that honors your CPR & PD fallback
+- Why: Ensure “Commercial Court OR Civil Procedure Rules and Practice Directions” behavior without touching non-agent code.
+
+````python
+# ...existing code...
+
+def _agent_category_filter(self, overrides: dict[str, Any]) -> Optional[str]:
+    """
+    Build filter_add_on for Knowledge Agent:
+    - Selected court/category OR CPR & Practice Directions
+    - Detected court/category OR CPR & Practice Directions
+    - Default to CPR & Practice Directions (or null)
+    """
+    include_category = overrides.get("include_category")
+    if include_category and include_category != "All":
+        return f"(category eq '{include_category}' or category eq 'Civil Procedure Rules and Practice Directions')"
+
+    detected = overrides.get("detected_court_category")
+    if detected:
+        return f"(category eq '{detected}' or category eq 'Civil Procedure Rules and Practice Directions')"
+
+    return "(category eq 'Civil Procedure Rules and Practice Directions' or category eq null)"
+# ...existing code...
+````
+
+Repeat in retrievethenread.py if it has its own agentic path:
+````python
+# ...existing code...
+
+def _agent_category_filter(self, overrides: dict[str, Any]) -> Optional[str]:
+    include_category = overrides.get("include_category")
+    if include_category and include_category != "All":
+        return f"(category eq '{include_category}' or category eq 'Civil Procedure Rules and Practice Directions')"
+
+    detected = overrides.get("detected_court_category")
+    if detected:
+        return f"(category eq '{detected}' or category eq 'Civil Procedure Rules and Practice Directions')"
+
+    return "(category eq 'Civil Procedure Rules and Practice Directions' or category eq null)"
+# ...existing code...
+````
+
+2) Normalize agent references to your Document dataclass
+- Why: Keep downstream code unchanged (storageUrl for direct open, category for tags, content for previews, sourcepage/sourcefile for 3‑part citations).
+
+````python
+# ...existing code...
+from approaches.approach import Document
+# ...existing code...
+
+def _agent_refs_to_documents(self, activities, references) -> list[Document]:
+    # Map activity id → subquery text (traceability)
+    by_activity = {}
+    for a in activities or []:
+        q = getattr(a, "query", None)
+        if q and hasattr(q, "search"):
+            by_activity[getattr(a, "id", None)] = q.search
+
+    docs: list[Document] = []
+    for ref in references or []:
+        source_data = getattr(ref, "source_data", None) or {}
+        docs.append(
+            Document(
+                id=str(getattr(ref, "doc_key", source_data.get("id", ""))),
+                content=str(source_data.get("content", "")),
+                category=str(source_data.get("category", "")),
+                sourcepage=str(source_data.get("sourcepage", "")),
+                sourcefile=str(source_data.get("sourcefile", "")),
+                storage_url=str(source_data.get("storageUrl", "")),
+                search_agent_query=by_activity.get(getattr(ref, "activity_source", None), "")
+            )
+        )
+    return docs
+# ...existing code...
+````
+
+Repeat in retrievethenread.py if needed:
+````python
+# ...existing code...
+from approaches.approach import Document
+# ...existing code...
+
+def _agent_refs_to_documents(self, activities, references) -> list[Document]:
+    by_activity = {}
+    for a in activities or []:
+        q = getattr(a, "query", None)
+        if q and hasattr(q, "search"):
+            by_activity[getattr(a, "id", None)] = q.search
+
+    return [
+        Document(
+            id=str(getattr(ref, "doc_key", (getattr(ref, "source_data", {}) or {}).get("id", ""))),
+            content=str((getattr(ref, "source_data", {}) or {}).get("content", "")),
+            category=str((getattr(ref, "source_data", {}) or {}).get("category", "")),
+            sourcepage=str((getattr(ref, "source_data", {}) or {}).get("sourcepage", "")),
+            sourcefile=str((getattr(ref, "source_data", {}) or {}).get("sourcefile", "")),
+            storage_url=str((getattr(ref, "source_data", {}) or {}).get("storageUrl", "")),
+            search_agent_query=by_activity.get(getattr(ref, "activity_source", None), "")
+        )
+        for ref in (references or [])
+    ]
+# ...existing code...
+````
+
+3) Explode agent docs into subsections before building sources
+- Why: Reuse your 3‑part citation path (Approach.get_sources_content already handles three‑part and appends semantic captions if present).
+
+````python
+# ...existing code...
+
+def _explode_subsections(self, docs: list[Document]) -> list[Document]:
+    out: list[Document] = []
+    for d in docs:
+        splits = self._extract_multiple_subsections_from_document(d)
+        if splits and len(splits) > 1:
+            for i, s in enumerate(splits):
+                out.append(
+                    Document(
+                        id=f"{d.id}#sub{i}",
+                        content=s["content"],
+                        category=d.category,
+                        sourcepage=d.sourcepage,
+                        sourcefile=d.sourcefile,
+                        storage_url=d.storage_url,
+                        search_agent_query=d.search_agent_query
+                    )
+                )
+        else:
+            out.append(d)
+    return out
+# ...existing code...
+````
+
+Repeat in retrievethenread.py if needed:
+````python
+# ...existing code...
+
+def _explode_subsections(self, docs: list[Document]) -> list[Document]:
+    out: list[Document] = []
+    for d in docs:
+        splits = self._extract_multiple_subsections_from_document(d)
+        if splits and len(splits) > 1:
+            for i, s in enumerate(splits):
+                out.append(
+                    Document(
+                        id=f"{d.id}#sub{i}",
+                        content=s["content"],
+                        category=d.category,
+                        sourcepage=d.sourcepage,
+                        sourcefile=d.sourcefile,
+                        storage_url=d.storage_url,
+                        search_agent_query=d.search_agent_query
+                    )
+                )
+        else:
+            out.append(d)
+    return out
+# ...existing code...
+````
+
+4) Wire into the existing agentic method with minimal touch
+- Why: Keep your current prompt/rendering, just ensure the agent path produces the same “Sources:” strings as the non‑agent path.
+
+Insert the three calls immediately after the agent returns activities/references and before you build text_sources. Adjust variable names to your method if they differ.
+
+````python
+# ...existing code...
+
+async def run_agentic_retrieval_approach(self, messages, overrides, auth_claims, session_state=None):
+    # ...existing code that prepares the request...
+
+    filter_add_on = self._agent_category_filter(overrides)
+
+    # ...existing agent call...
+    # Expected locals: response, activities, references
+    # If you have a different tuple, adapt names below.
+
+    agent_docs = self._agent_refs_to_documents(activities, references)
+    agent_docs = self._explode_subsections(agent_docs)
+
+    # Reuse your enhanced three-part citation builder
+    text_sources = self.get_sources_content(
+        agent_docs,
+        use_semantic_captions=False,
+        use_image_citation=False
+    )
+
+    # ...continue existing flow using text_sources unchanged...
+# ...existing code...
+````
+
+Do the same in retrievethenread.py if it exposes an agentic route:
+````python
+# ...existing code...
+
+async def run_agentic_retrieval_approach(self, messages, overrides, auth_claims, session_state=None):
+    # ...existing prep...
+
+    filter_add_on = self._agent_category_filter(overrides)
+
+    # ...existing agent call...
+    # locals: response, activities, references
+
+    agent_docs = self._agent_refs_to_documents(activities, references)
+    agent_docs = self._explode_subsections(agent_docs)
+
+    text_sources = self.get_sources_content(
+        agent_docs,
+        use_semantic_captions=False,
+        use_image_citation=False
+    )
+
+    # ...continue as before with text_sources...
+# ...existing code...
+````
+
+Why this covers your examples
+- Practice Direction 3E (Costs Capping): content has “1.1 …” and sourcepage “Costs Capping”, sourcefile “Practice Direction 3E” → citation built as “1.1, Costs Capping, Practice Direction 3E”.
+- Part 1 – Overriding Objective: content includes “1.1 …”, sourcepage “Overriding Objective”, sourcefile “Part 1” → “1.1, Overriding Objective, Part 1”.
+- Circuit Commercial Court Guide A4.1: content starts with “A4.1 …”, sourcepage “A.4 Support For Litigants in Person (p. 7)”, sourcefile “Circuit Commercial Court Guide” → “A4.1, A.4 Support For Litigants in Person (p. 7), Circuit Commercial Court Guide”.
+- Existing _extract_subsection_from_document already covers “Para 1.1”, “Rule 1.1”, encoded PD forms (e.g., PD3E-1.1), and A‑section forms (A4.1).
+
+Notes
+- No changes to prompts or frontend required; Sources stay as the same “[n]: …” strings built by Approach.get_sources_content, so hover/click flows and storageUrl redirects remain intact.
+- If your agent call signature differs, keep the three insertions conceptually identical: build filter_add_on → convert agent refs → explode subsections → get_sources_content → proceed.
+
+This is the smallest viable set of edits to make agentic retrieval behave identically to your standard pipeline while honoring court/category filters and producing your enhanced legal citations.

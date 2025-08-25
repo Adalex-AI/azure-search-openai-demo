@@ -441,6 +441,7 @@ def config():
             "showChatHistoryCosmos": current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED],
             "showAgenticRetrievalOption": current_app.config[CONFIG_AGENTIC_RETRIEVAL_ENABLED],
             "useStorageUrlForCitations": True,  # Enable storageUrl usage for citations
+            "showCategoryFilter": True,  # Enable category filtering feature
         }
     )
 
@@ -547,6 +548,52 @@ async def list_uploaded(auth_claims: dict[str, Any]):
         if error.status_code != 404:
             current_app.logger.exception("Error listing uploaded files", error)
     return jsonify(files), 200
+
+
+@bp.route("/api/categories", methods=["GET"])
+async def get_categories():
+    """
+    Fetch available categories from Azure Search index using faceted search.
+    Leverages existing search_client from config.
+    """
+    try:
+        search_client = current_app.config[CONFIG_SEARCH_CLIENT]
+
+        # Use faceted search to get unique categories efficiently
+        results = await search_client.search(
+            search_text="*",
+            facets=["category,count:1000"],
+            top=0,  # Don't return documents, only facets
+            select=["id"]  # Minimal field selection
+        )
+
+        # Extract categories from facets - await the coroutine
+        categories = []
+        facets = await results.get_facets()
+        if facets and "category" in facets:
+            for facet in facets["category"]:
+                if facet.get("value"):
+                    categories.append({
+                        "key": facet["value"],
+                        "text": facet["value"],
+                        "count": facet.get("count")
+                    })
+
+        # Sort alphabetically by category name
+        categories.sort(key=lambda x: x["text"])
+
+        # Add "All Categories" option at the beginning
+        categories.insert(0, {
+            "key": "",
+            "text": "All Categories",
+            "count": None
+        })
+
+        return jsonify({"categories": categories}), 200
+
+    except Exception as e:
+        current_app.logger.exception("Error fetching categories")
+        return jsonify({"error": str(e)}), 500
 
 
 @bp.before_app_serving
@@ -963,12 +1010,4 @@ def create_app():
             cors(app, allow_origin=allowed_origins, allow_methods=["GET", "POST"])
 
     return app
-    logging.getLogger("scripts").setLevel(app_level)
-
-    if allowed_origin := os.getenv("ALLOWED_ORIGIN"):
-        allowed_origins = allowed_origin.split(";")
-        if len(allowed_origins) > 0:
-            app.logger.info("CORS enabled for %s", allowed_origins)
-            cors(app, allow_origin=allowed_origins, allow_methods=["GET", "POST"])
-
     return app

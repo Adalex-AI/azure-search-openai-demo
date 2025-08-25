@@ -1,14 +1,15 @@
 # Citation System - Complete Flow Diagram
 
-## How Citations Work in Your Modified System
+## How Citations Work in Your Enhanced System
 
-This document explains the complete journey of how a citation is created, processed, and displayed to the user.
+This document explains the complete journey of how citations are created, processed, displayed, and interacted with through hover previews and category selection.
 
-## Citation Creation Flow
+## Enhanced Citation Creation Flow
 
 ```mermaid
 graph TD
-    Start[User Asks Question] --> Search[Search Documents]
+    Start[User Selects Category & Asks Question] --> CategoryFilter[Apply Category Filter]
+    CategoryFilter --> Search[Search Documents]
     Search --> Results[Get Search Results]
     
     Results --> Loop{For Each Document}
@@ -17,125 +18,156 @@ graph TD
     Extract --> Check{Multiple Subsections?}
     
     Check -->|Yes| Split[Split Document]
-    Split --> Multi[Create Multiple Citations]
-    Multi --> Format1[Format: 'subsection, page, file']
+    Split --> Multi[Create Multiple Citations with Previews]
+    Multi --> Format1[Format: 'subsection, page, file' + preview content]
     
     Check -->|No| Single[Keep as Single Source]
-    Single --> Format2[Format: 'page, file' or 'subsection, page, file']
+    Single --> Format2[Format: 'page, file' or 'subsection, page, file' + preview]
     
-    Format1 --> Store[Store in Citation Map]
+    Format1 --> Store[Store in Citation Map with Preview]
     Format2 --> Store
     
     Store --> AI[Send to OpenAI with [1], [2], [3] refs]
     AI --> Response[AI Response with [1], [2], [3]]
     
-    Response --> Map[Map Numbers to Full Citations]
-    Map --> Display[Display to User]
+    Response --> Enhance[Enhance with Hover Data]
+    Enhance --> Display[Display with Interactive Citations]
 ```
 
 ## Detailed Step-by-Step Process
 
-### Step 1: Document Search
-When a user asks a question, the system searches for relevant documents.
+### Step 1: Category Selection & Court Detection
+Users can select categories or the system auto-detects courts:
 
 ```python
-# User asks: "What are disclosure rules in fast track?"
+# User selects "Commercial Court" from dropdown
+# OR system detects "Commercial Court" in query
+
+def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]):
+    include_category = overrides.get("include_category", None)
+    
+    if include_category and include_category != "All":
+        # User explicitly selected a category
+        filters.append(f"category eq '{include_category}'")
+    else:
+        # Auto-detect court from query
+        detected_court = self.detect_court_in_query(original_user_query)
+        if detected_court:
+            normalized_court = self.normalize_court_to_category(detected_court)
+            filters.append(f"(category eq '{normalized_court}' or category eq 'Civil Procedure Rules')")
+```
+
+### Step 2: Enhanced Document Search
+Search respects category selection:
+
+```python
+# User asks: "What are case management powers in Commercial Court?"
+# With category: "Commercial Court" selected
+
 results = await search_client.search(
-    search_text="disclosure fast track",
-    filter="category eq 'Civil Procedure Rules'",
+    search_text="case management powers",
+    filter="category eq 'Commercial Court' or category eq 'Civil Procedure Rules'",
     top=10
 )
 ```
 
-### Step 2: Subsection Detection
-For each document found, the system looks for subsection markers.
-
-```python
-def _extract_subsection_from_document(self, doc):
-    # Looks for patterns in content:
-    # - "1.1 Disclosure obligations"
-    # - "Rule 31.1"
-    # - "Para 5.2"
-    # Returns the subsection identifier
-```
-
-### Step 3: Document Splitting (Your Innovation)
-If multiple subsections exist, split the document:
+### Step 3: Subsection Detection with Preview Creation
+For each document, extract subsections AND create preview content:
 
 ```python
 def _extract_multiple_subsections_from_document(self, doc):
-    # Input: One document with multiple rules
-    # Output: List of subsection chunks
+    # Example input document:
+    # "A4.1 Case Management Powers
+    #  The court has power to extend time limits and make case management directions...
+    #  
+    #  A4.2 Pre-Trial Review
+    #  The court will conduct a pre-trial review in appropriate cases..."
     
-    # Example:
-    # Document contains:
-    #   "31.1 Standard disclosure..."
-    #   "31.2 Specific disclosure..."
-    #   "31.3 Disclosure statements..."
-    
-    # Becomes three separate sources:
     subsections = [
-        {"subsection": "31.1", "content": "Standard disclosure..."},
-        {"subsection": "31.2", "content": "Specific disclosure..."},
-        {"subsection": "31.3", "content": "Disclosure statements..."}
+        {
+            "subsection": "A4.1", 
+            "content": "The court has power to extend time limits...",
+            "preview": "The court has power to extend time limits and make case management directions..."[:100]
+        },
+        {
+            "subsection": "A4.2",
+            "content": "The court will conduct a pre-trial review...", 
+            "preview": "The court will conduct a pre-trial review in appropriate cases..."[:100]
+        }
     ]
 ```
 
-### Step 4: Citation Building
-Create the three-part citation format:
+### Step 4: Enhanced Citation Building with Category Context
+Create citations that include category information:
 
 ```python
 def build_enhanced_citation_from_document(self, doc, source_index):
-    subsection = "31.1"
-    sourcepage = "CPR Part 31"
-    sourcefile = "Civil Procedure Rules"
+    subsection = "A4.1"
+    sourcepage = "Commercial Court Guide"
+    sourcefile = "Case Management Procedures"
+    category = doc.category  # "Commercial Court"
     
-    # Three-part format
+    # Three-part format with category context
     citation = f"{subsection}, {sourcepage}, {sourcefile}"
-    # Result: "31.1, CPR Part 31, Civil Procedure Rules"
+    preview = doc.content[:200] + "..." if len(doc.content) > 200 else doc.content
+    
+    return {
+        "citation": citation,
+        "preview": preview,
+        "category": category
+    }
 ```
 
-### Step 5: Citation Mapping
-Store the mapping between simple numbers and full citations:
+### Step 5: Citation Mapping with Hover Support
+Store mapping with preview content for hover functionality:
 
 ```python
 self.citation_map = {
-    "1": "31.1, CPR Part 31, Civil Procedure Rules",
-    "2": "31.2, CPR Part 31, Civil Procedure Rules",
-    "3": "31.3, CPR Part 31, Civil Procedure Rules"
+    "1": {
+        "citation": "A4.1, Commercial Court Guide, Case Management Procedures",
+        "preview": "The court has power to extend time limits and make case management directions...",
+        "category": "Commercial Court",
+        "full_content": "A4.1 Case Management Powers\nThe court has power to extend..."
+    },
+    "2": {
+        "citation": "31.1, CPR Part 31, Disclosure Rules", 
+        "preview": "Standard disclosure requires a party to disclose documents...",
+        "category": "Civil Procedure Rules",
+        "full_content": "31.1 Standard disclosure\nStandard disclosure requires..."
+    }
 }
 ```
 
-### Step 6: AI Processing
-Send sources to OpenAI with simple numbering:
+### Step 6: AI Processing with Enhanced Context
+Send sources to OpenAI with category-aware context:
 
 ```
-Sources sent to AI:
-[1]: Standard disclosure requires parties to disclose...
-[2]: Specific disclosure may be ordered by the court...
-[3]: Disclosure statements must be signed...
+Sources sent to AI (Commercial Court context):
+[1]: The court has power to extend time limits and make case management directions...
+[2]: Standard disclosure requires a party to disclose documents on which they rely...
 
 AI Response:
-"Standard disclosure is required in fast track cases [1]. 
-The court may order specific disclosure if needed [2]."
+"In Commercial Court proceedings, case management powers include the ability to extend time limits [1]. 
+Standard disclosure obligations still apply [2]."
 ```
 
-### Step 7: Frontend Display
-The frontend receives structured data:
+### Step 7: Frontend Display with Interactive Citations
+The frontend receives structured data with hover support:
 
 ```json
 {
-  "answer": "Standard disclosure is required...",
+  "answer": "In Commercial Court proceedings, case management powers include...",
   "context": {
     "data_points": {
       "text": [
         {
           "id": "doc_1",
-          "content": "Standard disclosure requires...",
-          "citation": "31.1, CPR Part 31, Civil Procedure Rules",
-          "storageUrl": "https://storage.azure.com/...",
-          "subsection_id": "31.1",
-          "is_subsection": true
+          "content": "A4.1 Case Management Powers\nThe court has power to extend...",
+          "citation": "A4.1, Commercial Court Guide, Case Management Procedures",
+          "preview": "The court has power to extend time limits...",
+          "category": "Commercial Court",
+          "storageUrl": "https://storage.azure.com/commercial-court-guide",
+          "subsection_id": "A4.1"
         }
       ]
     }
@@ -143,95 +175,151 @@ The frontend receives structured data:
 }
 ```
 
-## Special Cases Handled
+## Interactive Citation Features
 
-### Case 1: No Subsection Found
+### Hover Preview Implementation
+
+```typescript
+// Answer.tsx - Enhanced citation rendering
+const renderCitationWithPreview = (citationData) => {
+    return (
+        <sup 
+            className="citation-sup"
+            data-citation-text={citationData.citation}
+            data-citation-content={citationData.preview}
+            data-category={citationData.category}
+            onMouseEnter={showPreview}
+            onMouseLeave={hidePreview}
+            onClick={showFullDetails}
+        >
+            {citationNumber}
+        </sup>
+    );
+};
+```
+
+### Category-Aware Citation Display
+
+```typescript
+// Supporting Content displays category context
+const formatCitationWithCategory = (citation, category) => {
+    return (
+        <div className="citation-item">
+            <div className="citation-text">{citation}</div>
+            <div className="citation-category">Source: {category}</div>
+            <div className="citation-preview">{preview}</div>
+        </div>
+    );
+};
+```
+
+## Special Cases with Category Context
+
+### Case 1: Category Override
 ```python
-# Document has no clear subsection markers
-# Falls back to two-part citation:
-citation = "CPR Part 31, Civil Procedure Rules"
+# User selects "High Court" but query mentions "Commercial Court"
+# User selection takes priority
+selected_category = "High Court"
+detected_court = "Commercial Court" 
+# Result: Search High Court documents + CPR fallback
 ```
 
-### Case 2: Duplicate Detection
+### Case 2: Multi-Court Query
 ```python
-# Avoids repeating subsection in citation
-if sourcepage == subsection:
-    # Don't duplicate: "31.1, 31.1, Rules"
-    # Instead: "31.1, Civil Procedure Rules"
+# Query: "How do Commercial Court and High Court handle disclosure?"
+# System detects multiple courts
+detected_courts = ["Commercial Court", "High Court"]
+# Uses selected category if available, or defaults to CPR
 ```
 
-### Case 3: Encoded Formats
+### Case 3: No Category Context
 ```python
-# Handles encoded page names like "PD3E-1.1"
-# Extracts just "1.1" for the subsection
+# User selects "All Categories"
+# Shows all available sources regardless of court
+filter = None  # No category restriction
 ```
 
-## Citation Display Examples
+## Citation Display Examples with Hover
 
-### Simple Citation
+### Hover Preview
 ```
-User sees: [31.1, CPR Part 31, Civil Procedure Rules]
-Clicking opens: Direct link to document with section 31.1 highlighted
-```
-
-### Multiple Subsections from Same Document
-```
-User sees:
-[31.1, CPR Part 31, Civil Procedure Rules] - About standard disclosure
-[31.2, CPR Part 31, Civil Procedure Rules] - About specific disclosure
-[31.3, CPR Part 31, Civil Procedure Rules] - About disclosure statements
+User hovers over: [1]
+Shows tooltip: "The court has power to extend time limits and make case management directions in accordance with the overriding objective..."
+Category tag: "Commercial Court"
 ```
 
-### Court-Specific Citation
+### Click for Full Details  
 ```
-User sees: [A4.1, Circuit Commercial Court Guide, Court Procedures]
-This is specific to Circuit Commercial Court
-```
-
-## Benefits of Your Citation System
-
-1. **Precision**: Exact subsection references
-2. **Clarity**: Three-part format is unambiguous
-3. **Efficiency**: Direct storage URL access
-4. **Intelligence**: Automatic subsection detection
-5. **Flexibility**: Handles various document formats
-
-## Debugging Citations
-
-Your logging helps track citation creation:
-
-```python
-logging.info(f"🔍 DEBUG: Processing document {doc.id}")
-logging.info(f"🎯 DEBUG: Document split into {len(subsections)} sources")
-logging.info(f"Citation mapping [1] = '31.1, CPR Part 31, Civil Procedure Rules'")
+User clicks: [1]
+Opens panel with:
+- Full citation: "A4.1, Commercial Court Guide, Case Management Procedures"
+- Complete content: Full text of A4.1
+- Category: "Commercial Court" 
+- Direct link: Click to open source document
 ```
 
-Look for these log patterns to debug:
-- "🔍 DEBUG": Document processing
-- "🎯 DEBUG": Subsection splitting
-- "Citation mapping": Final citation format
+### Category-Specific Results
+```
+User selected "Circuit Commercial Court":
+[A4.1, Circuit Commercial Court Guide, Case Management] - Circuit-specific procedures
+[31.1, CPR Part 31, Disclosure Rules] - General CPR rule that applies
+```
 
-## Citation Storage URL Integration
+## Benefits of Enhanced Citation System
 
-When a user clicks a citation:
+### User Experience Benefits
+1. **Quick Preview**: Hover to see content without clicking
+2. **Category Control**: Select specific court for focused results
+3. **Smart Detection**: System understands court mentions in queries
+4. **Professional Format**: Three-part legal citation standard
+5. **Direct Access**: Click to open source with highlighting
+
+### Technical Benefits
+1. **Performance**: Preview content cached, no additional requests
+2. **Context Awareness**: Category information preserved throughout
+3. **Intelligent Filtering**: Combines user selection with auto-detection
+4. **Scalable**: Supports adding new courts and categories
+5. **Maintainable**: Clear separation of concerns
+
+## Debugging Enhanced Citations
+
+Your logging helps track the enhanced citation process:
 
 ```python
-# Original: Download file through app
-# Your version: Redirect to storage URL
-
-async def assets(path):
-    # Find document by citation
-    filter_query = f"sourcepage eq '{path}'"
-    results = await search_client.search(filter=filter_query)
-    
-    # Get storage URL
-    storage_url = document.get("storageUrl")
-    
-    # Add highlighting if needed
-    if highlight_terms:
-        url = f"{storage_url}?search={highlight_terms}"
-    
-    return redirect(url)
+logging.info(f"🎯 Category selected: {include_category}")
+logging.info(f"🔍 Court detected in query: {detected_court}")
+logging.info(f"📊 Filter applied: {search_filter}")
+logging.info(f"🏷️ Citation with preview created: {citation}")
+logging.info(f"👁️ Preview content: {preview[:50]}...")
 ```
 
-This makes citation links fast and supports search highlighting!
+Look for these enhanced log patterns:
+- "🎯 Category": User selection tracking
+- "🔍 Court detected": Auto-detection results
+- "📊 Filter": Final search filter applied
+- "🏷️ Citation": Enhanced citation format
+- "👁️ Preview": Hover content preparation
+
+## Citation Interaction Workflows
+
+### Workflow 1: Expert User
+1. Selects "Commercial Court" from category dropdown
+2. Asks specific question about case management
+3. Gets targeted Commercial Court results + CPR fallback
+4. Hovers over citations for quick verification
+5. Clicks relevant citations for detailed review
+
+### Workflow 2: General Query
+1. Leaves category as "All Categories"
+2. Asks question mentioning specific court
+3. System auto-detects court and filters accordingly
+4. Reviews results from detected court + general rules
+5. Uses hover preview to quickly assess relevance
+
+### Workflow 3: Research Comparison
+1. Asks question with "All Categories" selected
+2. Reviews citations from multiple courts
+3. Uses category tags to identify jurisdiction differences
+4. Compares approaches across different courts
+
+This enhanced citation system provides professional-grade legal research capabilities with intuitive user interactions!

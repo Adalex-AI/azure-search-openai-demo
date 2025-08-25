@@ -71,134 +71,41 @@ class RetrieveThenReadApproach(Approach):
         self.agent_deployment = agent_deployment
         self.agent_client = agent_client
         # Add missing answer_prompt initialization
-        self.answer_prompt = self.prompt_manager.load_prompt("ask_answer_question.prompty")
-
-    def detect_court_in_query(self, query: str) -> Optional[str]:
-        """
-        Detect if a specific court is mentioned in the user query.
-        Returns the court name if found, None otherwise.
-        """
-        # Common court patterns to look for
-        court_patterns = [
-            r'\b(?:county\s+court|high\s+court|crown\s+court|magistrates?\s+court|circuit\s+commercial\s+court|commercial\s+court|family\s+court|employment\s+tribunal|court\s+of\s+appeal|supreme\s+court)\b',
-            r'\b(?:CC|HC|QBD|ChD|FD|CCC)\b',  # Common abbreviations
-        ]
-        
-        query_lower = query.lower()
-        for pattern in court_patterns:
-            match = re.search(pattern, query_lower, re.IGNORECASE)
-            if match:
-                return match.group(0)
-        
-        return None
-
-    def normalize_court_to_category(self, court_name: str) -> Optional[str]:
-        """
-        Normalize court name to match category format.
-        Returns the normalized category name if the court should be treated as a category.
-        """
-        if not court_name:
-            return None
-            
-        # Map of court names to their category format
-        court_category_map = {
-            'circuit commercial court': 'Circuit Commercial Court',
-            'commercial court': 'Commercial Court',
-            'high court': 'High Court',
-            'county court': 'County Court',
-            'crown court': 'Crown Court',
-            'magistrates court': 'Magistrates Court',
-            'family court': 'Family Court',
-            'employment tribunal': 'Employment Tribunal',
-            'court of appeal': 'Court of Appeal',
-            'supreme court': 'Supreme Court',
-            'ccc': 'Circuit Commercial Court',
-            'hc': 'High Court',
-            'qbd': "Queen's Bench Division",
-            'chd': 'Chancery Division',
-            'fd': 'Family Division'
-        }
-        
-        court_lower = court_name.lower().strip()
-        return court_category_map.get(court_lower)
-
-    async def check_if_court_is_category(self, court_name: str) -> bool:
-        """
-        Check if the detected court name exists as a category in the search index.
-        """
-        if not court_name:
-            return False
-            
-        normalized_court = self.normalize_court_to_category(court_name)
-        if not normalized_court:
-            return False
-            
-        try:
-            # Search for documents with this category
-            filter_query = f"category eq '{normalized_court}'"
-            results = await self.search_client.search(
-                search_text="",
-                filter=filter_query,
-                top=1,
-                select=["category"]
-            )
-            
-            # If we get any results, the court exists as a category
-            async for _ in results:
-                return True
-                
-        except Exception as e:
-            import logging
-            logging.warning(f"Error checking if court is category: {e}")
-            
-        return False
+        self.answer_prompt = self.try_load_prompt("ask_answer_question.prompty")
 
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
-        """Build search filter with enhanced court/category detection"""
-        filters = []
-        
-        # First, check if exclude_category is specified
-        exclude_category = overrides.get("exclude_category", None)
-        if exclude_category:
-            filters.append(f"category ne '{exclude_category}'")
-        
-        # Check if include_category is specified
-        include_category = overrides.get("include_category", None)
-        if include_category and include_category != "All":
-            filters.append(f"category eq '{include_category}'")
-        else:
-            # If no specific category is included, check if court is mentioned in the query
-            original_user_query = overrides.get("original_user_query", "")
-            detected_court = self.detect_court_in_query(original_user_query)
-            
-            if detected_court:
-                # Check if this court is actually a category
-                normalized_court = self.normalize_court_to_category(detected_court)
-                if normalized_court:
-                    # Store this for async check later
-                    overrides["detected_court_category"] = normalized_court
-                    # For now, we'll build the filter assuming it is a category
-                    # The actual check will be done in run method
-                    filters.append(f"(category eq '{normalized_court}' or category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-                else:
-                    # Court detected but not a category, use default
-                    filters.append("(category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-            elif not include_category:
-                # No court detected and no category specified, use default
-                filters.append("(category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-        
-        # Add security filters if needed
+        """Build search filter with multi-category support - no automatic court detection"""
+        filters: list[str] = []
+
+        if ex := overrides.get("exclude_category"):
+            ex_escaped = str(ex).replace("'", "''")
+            filters.append(f"category ne '{ex_escaped}'")
+
+        # Only apply category filter if user explicitly selected categories
+        inc = overrides.get("include_category")
+        if inc and inc not in ("All", ""):
+            parts = [p.strip() for p in inc.split(",")]
+            cat_filters = ["category eq '{}'".format(p.replace("'", "''")) for p in parts if p]
+            if cat_filters:
+                filters.append("(" + " or ".join(cat_filters) + ")")
+        # No automatic fallback - if "All" or nothing selected, show everything
+
         if overrides.get("use_oid_security_filter"):
             oid = auth_claims.get("oid")
             if oid:
-                filters.append(f"oids/any(g:search.in(g, '{oid}'))")
-        
+                oid_escaped = str(oid).replace("'", "''")
+                filters.append(f"oids/any(g:g eq '{oid_escaped}')")
+
         if overrides.get("use_groups_security_filter"):
-            groups = auth_claims.get("groups", [])
+            groups = auth_claims.get("groups", []) or []
             if groups:
-                group_str = ", ".join([f"'{g}'" for g in groups])
-                filters.append(f"groups/any(g:search.in(g, '{group_str}'))")
-        
+                group_conditions = []
+                for g in groups:
+                    g_escaped = str(g).replace("'", "''")
+                    group_conditions.append(f"g eq '{g_escaped}'")
+                if group_conditions:
+                    filters.append(f"groups/any(g:{' or '.join(group_conditions)})")
+
         return " and ".join(filters) if filters else None
 
     def get_sources_content(self, results: list[Document], use_semantic_captions: bool, use_image_citation: bool) -> list[dict[str, Any]]:
@@ -273,23 +180,8 @@ class RetrieveThenReadApproach(Approach):
         top = overrides.get("top", 3)
         query_text = str(messages[-1]["content"]) if messages else ""
         
-        # Store the original query in overrides for the filter building
-        overrides["original_user_query"] = query_text
-        
-        # Build filter with enhanced category logic
+        # Build filter with user selection only (no automatic detection)
         filter = self.build_filter(overrides, auth_claims)
-        
-        # Check if we need to verify court-as-category
-        if overrides.get("detected_court_category"):
-            court_category = overrides["detected_court_category"]
-            is_category = await self.check_if_court_is_category(court_category)
-            
-            if not is_category:
-                # Court is not a category, rebuild filter with default
-                import logging
-                logging.info(f"Court '{court_category}' is not a category, using default filter")
-                overrides.pop("detected_court_category", None)
-                filter = self.build_filter(overrides, auth_claims)
         
         use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
         use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
@@ -303,7 +195,6 @@ class RetrieveThenReadApproach(Approach):
         # Log the search parameters for debugging
         import logging
         logging.info(f"Ask Question - Searching with query: {query_text}, top: {top}, filter: {filter}")
-        logging.info(f"Ask Question - Detected court in query: {self.detect_court_in_query(query_text)}")
         
         results = await self.search(
             top=top,
@@ -365,7 +256,8 @@ class RetrieveThenReadApproach(Approach):
                         "filter": filter,
                         "use_vector_search": use_vector_search,
                         "use_text_search": use_text_search,
-                        "detected_court": self.detect_court_in_query(query_text),
+                        # removed leftover automatic court detection reference
+                        # "detected_court": self.detect_court_in_query(query_text),
                     },
                 ),
                 ThoughtStep(
@@ -377,11 +269,40 @@ class RetrieveThenReadApproach(Approach):
 
         q = query_text
         seed = overrides.get("seed", None)
-        
-        messages = self.prompt_manager.render_prompt(
-            self.answer_prompt,
-            self.get_system_prompt_variables(overrides.get("prompt_template"))
-            | {"user_query": q, "text_sources": sources_for_prompt},  # Use formatted sources for prompt
+
+        messages = self.render_prompt(
+             self.answer_prompt,
+             self.get_system_prompt_variables(overrides.get("prompt_template"))
+             | {"user_query": q, "text_sources": sources_for_prompt},  # Use formatted sources for prompt
+         )
+
+        # Append the properly formatted “Prompt to generate answer” ThoughtStep using the rendered prompt
+        try:
+            readable = self.prompt_manager.messages_to_readable(messages)
+            # Prefer array of lines for UI; split by blank lines between messages
+            description = [seg for seg in readable.split("\n\n") if seg.strip()]
+        except Exception:
+            # Fallback to minimal per-message rendering
+            description = []
+            for m in messages:
+                role = (m.get("role") if isinstance(m, dict) else getattr(m, "role", "unknown")) or "unknown"
+                content = (m.get("content") if isinstance(m, dict) else getattr(m, "content", "")) or ""
+                if isinstance(content, list):
+                    content = f"[content parts: {len(content)}]"
+                description.append(f"{role.upper()}:\n{str(content).strip()[:2000]}{' …' if len(str(content))>2000 else ''}")
+
+        extra_info.thoughts.append(
+            ThoughtStep(
+                "Prompt to generate answer",
+                description,
+                {
+                    "model": self.chatgpt_model,
+                    "deployment": self.chatgpt_deployment,
+                    "temperature": overrides.get("temperature", 0.3),
+                    "max_tokens": 8192,
+                    "raw_messages": messages,  # keep for debugging
+                },
+            )
         )
 
         chat_completion = await self.openai_client.chat.completions.create(
@@ -434,7 +355,8 @@ class RetrieveThenReadApproach(Approach):
             thoughts=[
                 ThoughtStep(
                     "Use agentic retrieval",
-                    messages,
+                    # Convert messages to readable format
+                    self.prompt_manager.messages_to_readable(messages) if hasattr(self.prompt_manager, 'messages_to_readable') else str(messages),
                     {
                         "reranker_threshold": minimum_reranker_score,
                         "max_docs_for_reranker": max_docs_for_reranker,
@@ -515,6 +437,7 @@ class RetrieveThenReadApproach(Approach):
             structured_results.append(result_obj)
 
         return structured_results
+
 
     def nonewlines(self, text: str) -> str:
         """Utility function to remove newlines from text"""

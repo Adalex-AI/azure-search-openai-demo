@@ -118,7 +118,7 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean)
                 match,
                 `<sup class="citation-sup" data-citation-text="${encodeHtml(fixedCitation)}" data-citation-content="${encodeHtml(
                     citationContent || ""
-                )}">${citationIndex}</sup>`
+                )}" title="${encodeHtml(fixedCitation)}" aria-label="${encodeHtml(fixedCitation)}">${citationIndex}</sup>`
             );
         }
     });

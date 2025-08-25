@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton, Spinner } from "@fluentui/react";
+import { Panel, DefaultButton, Spinner, Dropdown, IDropdownOption } from "@fluentui/react";
 
 import styles from "./Ask.module.css";
 
@@ -18,6 +18,7 @@ import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
+import { useCategories } from "../../hooks/useCategories";
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -58,6 +59,7 @@ export function Component(): JSX.Element {
     const [isPlaying, setIsPlaying] = useState(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
     const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
+    const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
 
@@ -108,6 +110,8 @@ export function Component(): JSX.Element {
             if (config.showAgenticRetrievalOption) {
                 setRetrieveCount(10);
             }
+            // 'showCategoryFilter' may not exist on older/alternate Config types — cast to any to safely read optional field
+            setShowCategoryFilter(!!(config as any).showCategoryFilter);
         });
     };
 
@@ -115,7 +119,72 @@ export function Component(): JSX.Element {
         getConfig();
     }, []);
 
+    // Add state for category confirmation and user interaction tracking
+    const [categoryConfirmed, setCategoryConfirmed] = useState<boolean>(true); // Start as true
+    const [userTriedToSearch, setUserTriedToSearch] = useState<boolean>(false); // Track search attempts
+    const [userHasInteracted, setUserHasInteracted] = useState<boolean>(false); // Track if user interacted with the category dropdown
+    const [allCategoriesSelected, setAllCategoriesSelected] = useState<boolean>(false);
+
+    // Load categories
+    const { categories, loading: categoriesLoading } = useCategories();
+    const categoryOptions: IDropdownOption[] = [
+        { key: "", text: "All Categories" },
+        ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
+    ];
+
+    const includeKeys = includeCategory
+        ? includeCategory
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
+        : [];
+
+    const onIncludeCategoryChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+        if (!option) return;
+
+        const key = String(option.key || "");
+        if (key === "") {
+            // Toggle All tick
+            setAllCategoriesSelected(!!option.selected);
+            setUserHasInteracted(true);
+            setUserTriedToSearch(false);
+            handleSettingsChange("includeCategory", "");
+            return;
+        }
+
+        // Selecting specific category clears "All"
+        setAllCategoriesSelected(false);
+
+        let next = includeKeys.slice();
+        if (option.selected) {
+            if (!next.includes(key)) next.push(key);
+        } else {
+            next = next.filter(k => k !== key);
+        }
+
+        setUserHasInteracted(true);
+        setUserTriedToSearch(false);
+        handleSettingsChange("includeCategory", next.join(","));
+    };
+
+    // Add useEffect to handle category confirmation properly
+    useEffect(() => {
+        if (showCategoryFilter) {
+            // Category is confirmed if user has selected anything (including empty string for "All")
+            setCategoryConfirmed(true); // Always confirmed when category filter is shown
+        } else {
+            setCategoryConfirmed(true);
+        }
+    }, [includeCategory, showCategoryFilter]);
+
     const makeApiRequest = async (question: string) => {
+        // Check if category filter is enabled and no category is explicitly selected
+        if (showCategoryFilter && includeCategory === "" && !userHasInteracted) {
+            setUserTriedToSearch(true);
+            return; // Don't proceed with search
+        }
+
+        setUserTriedToSearch(false); // Reset warning state on successful search
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -224,6 +293,8 @@ export function Component(): JSX.Element {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                setUserHasInteracted(true); // Mark that user has interacted
+                setUserTriedToSearch(false); // Clear any previous warning
                 break;
             case "useOidSecurityFilter":
                 setUseOidSecurityFilter(value);
@@ -287,6 +358,9 @@ export function Component(): JSX.Element {
 
     const { t, i18n } = useTranslation();
 
+    // Disable submit if category not confirmed
+    const isSubmitDisabled = isLoading || !categoryConfirmed;
+
     return (
         <div className={styles.askContainer}>
             {/* Setting the page title using react-helmet-async */}
@@ -306,7 +380,25 @@ export function Component(): JSX.Element {
                         initQuestion={question}
                         onSend={question => makeApiRequest(question)}
                         showSpeechInput={showSpeechInput}
+                        leftOfSend={
+                            showCategoryFilter ? (
+                                <Dropdown
+                                    multiSelect
+                                    styles={{ dropdown: { minWidth: 220 } }}
+                                    options={categoryOptions}
+                                    selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                    onChange={onIncludeCategoryChange}
+                                    disabled={isLoading || categoriesLoading}
+                                    placeholder="Select categories or All"
+                                />
+                            ) : undefined
+                        }
                     />
+                    {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
+                        <div className={styles.categoryWarning}>
+                            Please select a category before searching. Choose "All Categories" to search all documents.
+                        </div>
+                    )}
                 </div>
             </div>
             <div className={styles.askBottomSection}>
@@ -401,4 +493,5 @@ export function Component(): JSX.Element {
     );
 }
 
+Component.displayName = "Ask";
 Component.displayName = "Ask";

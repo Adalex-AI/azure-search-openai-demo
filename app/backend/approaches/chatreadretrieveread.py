@@ -2,6 +2,7 @@ from collections.abc import Awaitable
 from typing import Any, Optional, Union, cast
 import re
 import logging
+import json
 
 from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
 from azure.search.documents.aio import SearchClient
@@ -73,9 +74,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         self.query_language = query_language
         self.query_speller = query_speller
         self.prompt_manager = prompt_manager
-        self.query_rewrite_prompt = self.prompt_manager.load_prompt("chat_query_rewrite.prompty")
-        self.query_rewrite_tools = self.prompt_manager.load_tools("chat_query_rewrite_tools.json")
-        self.answer_prompt = self.prompt_manager.load_prompt("chat_answer_question.prompty")
+        self.query_rewrite_prompt = self.try_load_prompt("chat_query_rewrite.prompty")
+        self.query_rewrite_tools = self.try_load_tools("chat_query_rewrite_tools.json")
+        self.answer_prompt = self.try_load_prompt("chat_answer_question.prompty")
         self.reasoning_effort = reasoning_effort
         self.include_token_usage = True
         # Add citation mapping storage
@@ -331,16 +332,16 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             source_text = f"[{i}]: {content}"
             text_sources_for_prompt.append(source_text)
 
-        messages = self.prompt_manager.render_prompt(
-            self.answer_prompt,
-            self.get_system_prompt_variables(overrides.get("prompt_template"))
-            | {
-                "include_follow_up_questions": bool(overrides.get("suggest_followup_questions")),
-                "past_messages": messages[:-1],
-                "user_query": original_user_query,
-                "text_sources": text_sources_for_prompt,
-            },
-        )
+        messages = self.render_prompt(
+             self.answer_prompt,
+             self.get_system_prompt_variables(overrides.get("prompt_template"))
+             | {
+                 "include_follow_up_questions": bool(overrides.get("suggest_followup_questions")),
+                 "past_messages": messages[:-1],
+                 "user_query": original_user_query,
+                 "text_sources": text_sources_for_prompt,
+             },
+         )
 
         # Increase token limit to accommodate full content
         response_token_limit = self.get_response_token_limit(self.chatgpt_model, 8192)  # Increased from 4096
@@ -355,6 +356,19 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                 response_token_limit,
                 should_stream,
             ),
+        )
+
+        # Add a readable ThoughtStep for the final answer prompt so it renders in the UI
+        extra_info.thoughts.append(
+            self.format_thought_step_for_chatcompletion(
+                title="Prompt to generate answer",
+                messages=messages,
+                overrides=overrides,
+                model=self.chatgpt_model,
+                deployment=self.chatgpt_deployment,
+                usage=None,
+                reasoning_effort=overrides.get("reasoning_effort", self.reasoning_effort),
+            )
         )
         
         # Store enhanced citations in extra_info for frontend access
@@ -375,132 +389,41 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         
         return (extra_info, chat_coroutine)
 
-    def detect_court_in_query(self, query: str) -> Optional[str]:
-        """
-        Detect if a specific court is mentioned in the user query.
-        Returns the court name if found, None otherwise.
-        """
-        # Common court patterns to look for
-        court_patterns = [
-            r'\b(?:county\s+court|high\s+court|crown\s+court|magistrates?\s+court|circuit\s+commercial\s+court|commercial\s+court|family\s+court|employment\s+tribunal|court\s+of\s+appeal|supreme\s+court)\b',
-            r'\b(?:CC|HC|QBD|ChD|FD|CCC)\b',  # Common abbreviations
-        ]
-        
-        query_lower = query.lower()
-        for pattern in court_patterns:
-            match = re.search(pattern, query_lower, re.IGNORECASE)
-            if match:
-                return match.group(0)
-        
-        return None
-
-    def normalize_court_to_category(self, court_name: str) -> Optional[str]:
-        """
-        Normalize court name to match category format.
-        Returns the normalized category name if the court should be treated as a category.
-        """
-        if not court_name:
-            return None
-            
-        # Map of court names to their category format
-        court_category_map = {
-            'circuit commercial court': 'Circuit Commercial Court',
-            'commercial court': 'Commercial Court',
-            'high court': 'High Court',
-            'county court': 'County Court',
-            'crown court': 'Crown Court',
-            'magistrates court': 'Magistrates Court',
-            'family court': 'Family Court',
-            'employment tribunal': 'Employment Tribunal',
-            'court of appeal': 'Court of Appeal',
-            'supreme court': 'Supreme Court',
-            'ccc': 'Circuit Commercial Court',
-            'hc': 'High Court',
-            'qbd': "Queen's Bench Division",
-            'chd': 'Chancery Division',
-            'fd': 'Family Division'
-        }
-        
-        court_lower = court_name.lower().strip()
-        return court_category_map.get(court_lower)
-
-    async def check_if_court_is_category(self, court_name: str) -> bool:
-        """
-        Check if the detected court name exists as a category in the search index.
-        """
-        if not court_name:
-            return False
-            
-        normalized_court = self.normalize_court_to_category(court_name)
-        if not normalized_court:
-            return False
-            
-        try:
-            # Search for documents with this category
-            filter_query = f"category eq '{normalized_court}'"
-            results = await self.search_client.search(
-                search_text="",
-                filter=filter_query,
-                top=1,
-                select=["category"]
-            )
-            
-            # If we get any results, the court exists as a category
-            async for _ in results:
-                return True
-                
-        except Exception as e:
-            import logging
-            logging.warning(f"Error checking if court is category: {e}")
-            
-        return False
-
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
-        """Build search filter with enhanced court/category detection"""
-        filters = []
-        
-        # First, check if exclude_category is specified
-        exclude_category = overrides.get("exclude_category", None)
-        if exclude_category:
-            filters.append(f"category ne '{exclude_category}'")
-        
-        # Check if include_category is specified
-        include_category = overrides.get("include_category", None)
-        if include_category and include_category != "All":
-            filters.append(f"category eq '{include_category}'")
-        else:
-            # If no specific category is included, check if court is mentioned in the query
-            original_user_query = overrides.get("original_user_query", "")
-            detected_court = self.detect_court_in_query(original_user_query)
-            
-            if detected_court:
-                # Check if this court is actually a category
-                normalized_court = self.normalize_court_to_category(detected_court)
-                if normalized_court:
-                    # Store this for async check later
-                    overrides["detected_court_category"] = normalized_court
-                    # For now, we'll build the filter assuming it is a category
-                    # The actual check will be done in run_search_approach
-                    filters.append(f"(category eq '{normalized_court}' or category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-                else:
-                    # Court detected but not a category, use default
-                    filters.append("(category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-            elif not include_category:
-                # No court detected and no category specified, use default
-                filters.append("(category eq 'Civil Procedure Rules and Practice Directions' or category eq null or category eq '')")
-        
-        # Add security filters if needed
+        """Build search filter with multi-category support - no automatic court detection"""
+        filters: list[str] = []
+
+        # Exclude category
+        if ex := overrides.get("exclude_category"):
+            escaped = str(ex).replace("'", "''")
+            filters.append(f"category ne '{escaped}'")
+
+        # Include categories (CSV) - user must explicitly select
+        inc = overrides.get("include_category")
+        if inc and inc not in ("All", ""):
+            parts = [p.strip() for p in inc.split(",")]
+            cat_filters = ["category eq '{}'".format(p.replace("'", "''")) for p in parts if p]
+            if cat_filters:
+                filters.append(f"({' or '.join(cat_filters)})")
+        # If no category selected or "All" selected, show everything (no category filter)
+        # This removes the automatic fallback to CPR
+
+        # Security filters
         if overrides.get("use_oid_security_filter"):
             oid = auth_claims.get("oid")
             if oid:
-                filters.append(f"oids/any(g:search.in(g, '{oid}'))")
-        
+                escaped = str(oid).replace("'", "''")
+                filters.append(f"oids/any(g:g eq '{escaped}')")
         if overrides.get("use_groups_security_filter"):
-            groups = auth_claims.get("groups", [])
+            groups = auth_claims.get("groups", []) or []
             if groups:
-                group_str = ", ".join([f"'{g}'" for g in groups])
-                filters.append(f"groups/any(g:search.in(g, '{group_str}'))")
-        
+                group_conditions = []
+                for g in groups:
+                    g_escaped = str(g).replace("'", "''")
+                    group_conditions.append(f"g eq '{g_escaped}'")
+                if group_conditions:
+                    filters.append(f"groups/any(g:{' or '.join(group_conditions)})")
+
         return " and ".join(filters) if filters else None
 
     async def run_search_approach(
@@ -519,25 +442,10 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         if not isinstance(original_user_query, str):
             raise ValueError("The most recent message content must be a string.")
         
-        # Store the original query in overrides for the filter building
-        overrides["original_user_query"] = original_user_query
-        
-        # Build filter with category logic
+        # Remove automatic court detection - just build filter with user selection
         search_index_filter = self.build_filter(overrides, auth_claims)
         
-        # Check if we need to verify court-as-category
-        if overrides.get("detected_court_category"):
-            court_category = overrides["detected_court_category"]
-            is_category = await self.check_if_court_is_category(court_category)
-            
-            if not is_category:
-                # Court is not a category, rebuild filter with default
-                import logging
-                logging.info(f"Court '{court_category}' is not a category, using default filter")
-                overrides.pop("detected_court_category", None)
-                search_index_filter = self.build_filter(overrides, auth_claims)
-
-        query_messages = self.prompt_manager.render_prompt(
+        query_messages = self.render_prompt(
             self.query_rewrite_prompt, {"user_query": original_user_query, "past_messages": messages[:-1]}
         )
         tools: list[ChatCompletionToolParam] = self.query_rewrite_tools
@@ -569,11 +477,10 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         if use_vector_search:
             vectors.append(await self.compute_text_embedding(query_text))
 
-        # Log the search parameters for debugging
+        # Log the search parameters for debugging (remove court detection logging)
         import logging
         logging.info(f"Searching with query: {query_text}, top: {top}, filter: {search_index_filter}")
-        logging.info(f"Detected court in query: {self.detect_court_in_query(original_user_query)}")
-
+        
         results = await self.search(
             top,
             query_text,
@@ -670,6 +577,151 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         )
         return extra_info
 
+    def _normalize_agent_results_to_documents(self, response, results) -> list[Document]:
+        """
+        Convert agentic retrieval results into Document objects for consistent processing
+        with the existing citation pipeline.
+        """
+        documents = []
+        for i, result in enumerate(results):
+            try:
+                source_data = getattr(result, "source_data", None) if hasattr(result, "source_data") else None
+                if source_data is None and isinstance(result, dict):
+                    source_data = result
+                if source_data is None:
+                    source_data = {
+                        "id": getattr(result, "id", f"agent_result_{i}"),
+                        "content": getattr(result, "content", ""),
+                        "category": getattr(result, "category", ""),
+                        "sourcepage": getattr(result, "sourcepage", ""),
+                        "sourcefile": getattr(result, "sourcefile", ""),
+                        "storageUrl": getattr(result, "storage_url", getattr(result, "storageUrl", "")),
+                    }
+
+                # Prefer parent_id for hydration if present (agent chunks vs full doc)
+                parent_id = (
+                    source_data.get("parent_id")
+                    or source_data.get("parentId")
+                    or source_data.get("parentid")
+                )
+                raw_id = source_data.get("id", f"agent_result_{i}")
+                effective_id = parent_id or raw_id
+
+                # Broaden key mapping for robustness
+                src_page = (
+                    source_data.get("sourcepage")
+                    or source_data.get("source_page")
+                    or source_data.get("page")
+                    or source_data.get("filepath")
+                    or ""
+                )
+                src_file = (
+                    source_data.get("sourcefile")
+                    or source_data.get("source_file")
+                    or source_data.get("document")
+                    or source_data.get("title")
+                    or ""
+                )
+                storage_url = (
+                    source_data.get("storageUrl")
+                    or source_data.get("storage_url")
+                    or source_data.get("document_url")
+                    or source_data.get("documentUrl")
+                    or source_data.get("url")
+                    or ""
+                )
+                updated = (
+                    source_data.get("updated")
+                    or source_data.get("last_updated")
+                    or source_data.get("date_updated")
+                    or ""
+                )
+
+                doc = Document(
+                    id=effective_id,
+                    content=source_data.get("content", ""),
+                    category=source_data.get("category", ""),
+                    sourcepage=src_page,
+                    sourcefile=src_file,
+                    storage_url=storage_url,
+                    updated=updated,
+                    oids=source_data.get("oids", []),
+                    groups=source_data.get("groups", []),
+                    score=getattr(result, "score", source_data.get("score", 0.0)),
+                    reranker_score=getattr(result, "reranker_score", source_data.get("reranker_score", 0.0)),
+                    captions=getattr(result, "captions", []),
+                )
+
+                logging.info(
+                    f"Normalized agent result {i} -> id='{doc.id}' "
+                    f"(parent_id='{parent_id}', raw_id='{raw_id}'), "
+                    f"sourcepage='{doc.sourcepage}', sourcefile='{doc.sourcefile}', storage_url set={bool(doc.storage_url)}"
+                )
+                documents.append(doc)
+            except Exception as e:
+                logging.warning(f"Failed to normalize agent result {i}: {e}")
+                documents.append(
+                    Document(
+                        id=f"agent_result_{i}",
+                        content=str(getattr(result, "content", "")),
+                        category="",
+                        sourcepage="",
+                        sourcefile="",
+                        storage_url="",
+                        updated="",
+                        oids=[],
+                        groups=[],
+                        score=0.0,
+                        reranker_score=0.0,
+                        captions=[],
+                    )
+                )
+
+        logging.info(f"Normalized {len(results)} agent results to {len(documents)} Document objects")
+        return documents
+
+    async def _hydrate_agent_documents_metadata(self, docs: list[Document]) -> list[Document]:
+        """
+        For agentic retrieval docs that lack full metadata, fetch the full document
+        from the search index by id and fill in missing fields (sourcefile, storageUrl, updated, etc.).
+        This does not affect the normal search path.
+        """
+        hydrated: list[Document] = []
+        for i, doc in enumerate(docs):
+            try:
+                # Decide if hydration is needed
+                needs_hydration = any(
+                    [
+                        not doc.sourcefile,
+                        not doc.storage_url,
+                        not doc.updated,
+                        not doc.category,
+                        not doc.sourcepage,
+                    ]
+                )
+                if needs_hydration and doc.id:
+                    try:
+                        # Fetch full document from the index
+                        raw = await self.search_client.get_document(key=str(doc.id))
+                        # Safely map known fields (prefer existing values)
+                        doc.sourcepage = doc.sourcepage or raw.get(self.sourcepage_field, raw.get("sourcepage", ""))
+                        doc.sourcefile = doc.sourcefile or raw.get("sourcefile", raw.get("source_file", ""))
+                        doc.category = doc.category or raw.get("category", "")
+                        # storage URL appears in different casings
+                        doc.storage_url = doc.storage_url or raw.get("storageUrl", raw.get("storage_url", raw.get("url", "")))
+                        # updated could be named differently
+                        doc.updated = doc.updated or raw.get("updated", raw.get("last_updated", raw.get("date_updated", "")))
+                        # Content: keep agent content if present; otherwise hydrate
+                        if not doc.content:
+                            doc.content = raw.get(self.content_field, raw.get("content", ""))
+                    except Exception as e:
+                        logging.warning(f"Agentic hydration: failed to fetch doc id='{doc.id}': {e}")
+                hydrated.append(doc)
+            except Exception as e:
+                logging.warning(f"Agentic hydration: error processing doc index {i}: {e}")
+                hydrated.append(doc)
+        return hydrated
+
     async def run_agentic_retrieval_approach(
         self,
         messages: list[ChatCompletionMessageParam],
@@ -695,14 +747,22 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             results_merge_strategy=results_merge_strategy,
         )
 
-        structured_sources = self.get_sources_content(results, use_semantic_captions=False, use_image_citation=False)
+        # Normalize agent results to Document objects for consistent processing
+        normalized_documents = self._normalize_agent_results_to_documents(response, results)
+
+        # NEW: Hydrate missing metadata from the search index (sourcefile, storageUrl, updated, category, etc.)
+        hydrated_documents = await self._hydrate_agent_documents_metadata(normalized_documents)
+        
+        # Reuse existing pipeline for subsection splitting and citation building
+        structured_sources = self.get_sources_content(hydrated_documents, use_semantic_captions=False, use_image_citation=False)
 
         extra_info = ExtraInfo(
             DataPoints(text=structured_sources),  # Pass structured data to frontend
             thoughts=[
                 ThoughtStep(
                     "Use agentic retrieval",
-                    messages,
+                    # Convert messages to readable format
+                    self.prompt_manager.messages_to_readable(messages) if hasattr(self.prompt_manager, 'messages_to_readable') else str(messages),
                     {
                         "reranker_threshold": minimum_reranker_score,
                         "max_docs_for_reranker": max_docs_for_reranker,
@@ -852,7 +912,6 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         usage: Optional[CompletionUsage] = None,
         reasoning_effort: Optional[str] = None,
     ) -> ThoughtStep:
-        from openai.types import CompletionUsage
         properties: dict[str, Any] = {"model": model}
         if deployment:
             properties["deployment"] = deployment
@@ -863,7 +922,58 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             )
         if usage:
             properties["token_usage"] = TokenUsageProps.from_completion_usage(usage)
-        return ThoughtStep(title, messages, properties)
+
+        # Build a readable array of strings, one entry per message, with no truncation
+        try:
+            readable = self.prompt_manager.messages_to_readable(messages)
+            description_segments = [seg for seg in readable.split("\n\n") if seg.strip()]
+        except Exception:
+            # Fallback to minimal per-message rendering (no trimming)
+            description_segments: list[str] = []
+            for m in messages:
+                if isinstance(m, dict):
+                    role = m.get("role", "unknown") or "unknown"
+                    content = m.get("content", "")
+                else:
+                    role = getattr(m, "role", "unknown") or "unknown"
+                    content = getattr(m, "content", "")
+                if isinstance(content, list):
+                    content = json.dumps(content, ensure_ascii=False)
+                description_segments.append(f"{role.upper()}:\n{str(content)}")
+
+        # Keep raw messages only if explicitly requested, to avoid the JSON “box” in UI
+        if overrides.get("include_raw_messages"):
+            properties["raw_messages"] = messages
+
+        return ThoughtStep(title, description_segments, properties)
+
+    def _messages_to_description_segments(self, messages: list[ChatCompletionMessageParam]) -> list[str]:
+        """Return an array of concise, role-prefixed strings for each message."""
+        if not messages:
+            return ["No messages"]
+
+        def _as_str(content: Any) -> str:
+            if isinstance(content, str):
+                return content
+            if isinstance(content, list):
+                # multimodal content – indicate count instead of dumping JSON
+                return f"[content parts: {len(content)}]"
+            return str(content)
+
+        def _trim(s: str, limit: int = 12000) -> str:  # Increased limit to show full prompts without truncation
+            s = s.strip()
+            return s if len(s) <= limit else s[:limit] + " …"
+
+        segments: list[str] = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                role = msg.get("role", "unknown")
+                content = _as_str(msg.get("content", ""))
+            else:
+                role = getattr(msg, "role", "unknown")
+                content = _as_str(getattr(msg, "content", ""))
+            segments.append(f"{role.upper()}:\n{_trim(content)}")
+        return segments
 
     def format_search_results_for_prompt(self, search_results):
         """Format search results to include all key fields in the prompt"""

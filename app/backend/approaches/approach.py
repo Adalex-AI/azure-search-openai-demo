@@ -196,15 +196,85 @@ class Approach(ABC):
         self.reasoning_effort = reasoning_effort
         self.include_token_usage = True
 
+    # NEW: safe loaders and fallback prompt renderer to avoid NotImplementedError during startup/use
+    def try_load_prompt(self, name: str):
+        try:
+            return self.prompt_manager.load_prompt(name)
+        except NotImplementedError:
+            return None
+        except Exception:
+            return None
+
+    def try_load_tools(self, name: str):
+        try:
+            return self.prompt_manager.load_tools(name)
+        except NotImplementedError:
+            return None
+        except Exception:
+            return None
+
+    def render_prompt(self, prompt: Any, variables: dict[str, Any]) -> list[ChatCompletionMessageParam]:
+        """
+        Wrapper around prompt_manager.render_prompt with a minimal, robust fallback.
+        Produces a simple system + sources + user message when PromptManager isn't implemented.
+        """
+        try:
+            return self.prompt_manager.render_prompt(prompt, variables)
+        except NotImplementedError:
+            pass
+        except Exception:
+            pass
+
+        # Fallback: simple messages
+        messages: list[ChatCompletionMessageParam] = []
+        system_content = (
+            "You are an assistant. Answer using only the provided sources. "
+            "Use simple numeric citations like [1], [2]. If the answer is unknown, say you don't know."
+        )
+        messages.append({"role": "system", "content": system_content})
+
+        text_sources = variables.get("text_sources")
+        if text_sources:
+            # Ensure each source is a string; keep as-is (already numbered or labeled by caller)
+            joined_sources = "\n".join(str(s) for s in text_sources)
+            messages.append({"role": "system", "content": "Sources:\n" + joined_sources})
+
+        past = variables.get("past_messages")
+        if isinstance(past, list) and past:
+            for m in past:
+                # Keep minimal mapping; ignore malformed entries
+                role = (m.get("role") if isinstance(m, dict) else getattr(m, "role", None)) or "user"
+                content = (m.get("content") if isinstance(m, dict) else getattr(m, "content", "")) or ""
+                messages.append({"role": role, "content": str(content)})
+
+        user_query = variables.get("user_query", "")
+        messages.append({"role": "user", "content": str(user_query)})
+
+        return messages
+
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
         exclude_category = overrides.get("exclude_category")
         security_filter = self.auth_helper.build_security_filters(overrides, auth_claims)
         filters = []
-        if include_category:
-            filters.append("category eq '{}'".format(include_category.replace("'", "''")))
+
+        if include_category and include_category not in ("All", ""):
+            if "," in include_category:
+                cats = []
+                for c in include_category.split(","):
+                    c = c.strip()
+                    if c:
+                        escaped = c.replace("'", "''")
+                        cats.append(f"category eq '{escaped}'")
+                if cats:
+                    filters.append(f"({' or '.join(cats)})")
+            else:
+                escaped = include_category.replace("'", "''")
+                filters.append(f"category eq '{escaped}'")
+
         if exclude_category:
-            filters.append("category ne '{}'".format(exclude_category.replace("'", "''")))
+            escaped = exclude_category.replace("'", "''")
+            filters.append(f"category ne '{escaped}'")
         if security_filter:
             filters.append(security_filter)
         return None if len(filters) == 0 else " and ".join(filters)
@@ -212,94 +282,76 @@ class Approach(ABC):
     async def search(
         self,
         top: int,
-        query_text: Optional[str],
+        query_text: str,
         filter: Optional[str],
         vectors: list[VectorQuery],
         use_text_search: bool,
         use_vector_search: bool,
         use_semantic_ranker: bool,
         use_semantic_captions: bool,
-        minimum_search_score: Optional[float] = None,
-        minimum_reranker_score: Optional[float] = None,
-        use_query_rewriting: Optional[bool] = None,
+        minimum_search_score: float,
+        minimum_reranker_score: float,
+        use_query_rewriting: bool = False,
     ) -> list[Document]:
         search_text = query_text if use_text_search else ""
-        search_vectors = vectors if use_vector_search else []
-        
-        # Explicitly request all fields including full content without truncation
-        # Azure Cognitive Search should return full field values when explicitly selected
-        select_fields = ["id", "content", "category", "sourcepage", "sourcefile", "storageUrl", "oids", "groups", "updated"]
-        
-        # Set search mode based on query rewriting requirement
-        # Query rewriting requires "any" mode, otherwise use "all" for comprehensive matching
-        search_mode = "any" if use_query_rewriting else "all"
-        
-        # Add search_mode to ensure we get comprehensive results
-        search_kwargs = {
-            "search_text": search_text,
-            "filter": filter,
-            "top": top * 3,  # Request more results initially to account for filtering
-            "select": select_fields,
-            "search_mode": search_mode,
-            "include_total_count": True,  # Include total count for debugging
-        }
-        
-        if use_semantic_ranker:
-            search_kwargs.update({
-                "query_caption": "extractive|highlight-false" if use_semantic_captions else None,
-                "query_rewrites": "generative" if use_query_rewriting else None,
-                "vector_queries": search_vectors,
-                "query_type": QueryType.SEMANTIC,
-                "query_language": self.query_language,
-                "query_speller": self.query_speller,
-                "semantic_configuration_name": "default",
-                "semantic_query": query_text,
-            })
-        else:
-            search_kwargs["vector_queries"] = search_vectors
-            
-        results = await self.search_client.search(**search_kwargs)
+        vector_queries = vectors if use_vector_search else []
 
-        documents = []
+        select_fields = [
+            "id", "content", "category", "sourcepage", "sourcefile",
+            "storageUrl", "updated", "oids", "groups"
+        ]
+
+        if use_semantic_ranker:
+            results = await self.search_client.search(
+                search_text=search_text,
+                filter=filter,
+                top=top,
+                select=select_fields,
+                query_caption="extractive|highlight-false" if use_semantic_captions else None,
+                query_rewrites="generative" if use_query_rewriting else None,
+                vector_queries=vector_queries,
+                query_type=QueryType.SEMANTIC,
+                query_language=self.query_language,
+                query_speller=self.query_speller,
+                semantic_configuration_name="default",
+                semantic_query=query_text,
+            )
+        else:
+            results = await self.search_client.search(
+                search_text=search_text,
+                filter=filter,
+                top=top,
+                select=select_fields,
+                vector_queries=vector_queries,
+            )
+
+        documents: list[Document] = []
         async for page in results.by_page():
-            async for document in page:
-                # Get the full content from the document
-                full_content = document.get("content", "")
-                
-                # Log if content appears truncated
-                if full_content and len(full_content) < 100 and full_content.endswith("..."):
-                    import logging
-                    logging.warning(f"Potentially truncated content for document {document.get('id')}: {full_content}")
-                
+            async for d in page:
                 documents.append(
                     Document(
-                        id=document.get("id"),
-                        content=full_content,  # Use the full content
-                        category=document.get("category"),
-                        sourcepage=document.get("sourcepage"),
-                        sourcefile=document.get("sourcefile"),
-                        storage_url=document.get("storageUrl"),
-                        oids=document.get("oids"),
-                        groups=document.get("groups"),
-                        captions=cast(list[QueryCaptionResult], document.get("@search.captions")),
-                        score=document.get("@search.score"),
-                        reranker_score=document.get("@search.reranker_score"),
-                        updated=document.get("updated"),
+                        id=d.get("id"),
+                        content=d.get("content"),
+                        category=d.get("category"),
+                        sourcepage=d.get("sourcepage"),
+                        sourcefile=d.get("sourcefile"),
+                        storage_url=d.get("storageUrl"),
+                        oids=d.get("oids"),
+                        groups=d.get("groups"),
+                        captions=cast(list[QueryCaptionResult], d.get("@search.captions")),
+                        score=d.get("@search.score"),
+                        reranker_score=d.get("@search.reranker_score"),
+                        search_agent_query=d.get("@search.query"),
+                        updated=d.get("updated"),
                     )
                 )
 
-        # Apply filtering and return only requested number of results
-        qualified_documents = [
-            doc
-            for doc in documents
-            if (
-                (doc.score or 0) >= (minimum_search_score or 0)
-                and (doc.reranker_score or 0) >= (minimum_reranker_score or 0)
-            )
+        qualified = [
+            doc for doc in documents
+            if (doc.score or 0) >= (minimum_search_score or 0)
+            and (doc.reranker_score or 0) >= (minimum_reranker_score or 0)
         ]
-        
-        # Return only the top N results as requested
-        return qualified_documents[:top]
+        return qualified[:top]
 
     async def run_agentic_retrieval(
         self,
@@ -468,6 +520,160 @@ class Approach(ABC):
         # Fallback: alphabetical sort
         return (subsection_id, 0, 0, 0)
 
+    def _extract_subsection_from_document(self, doc: Document) -> str:
+        """Extract subsection from document content with improved logic"""
+        if not doc:
+            return ""
+        
+        # Priority 1: Check content first for specific subsection numbers (like 1.1, A4.1)
+        if doc.content:
+            lines = doc.content.split('\n')[:20]  # Check first 20 lines
+            
+            for line in lines:
+                line = line.strip()
+                if not line or line == "---":  # Skip empty lines and dividers
+                    continue
+                
+                # Look for specific subsection patterns at start of line OR standalone on line
+                subsection_patterns = [
+                    r'^([A-Z]\d+\.\d+)\b',           # A4.1, B2.3, etc.
+                    r'^(\d+\.\d+)\b',                # 1.1, 2.3, etc.
+                    r'^([A-Z]\d+)\b',                # A1, B2, etc.
+                    r'^(Rule \d+(?:\.\d+)?)\b',      # Rule 1, Rule 1.1
+                    r'^(Para \d+(?:\.\d+)?)\b',      # Para 1.1
+                    r'^(\d+\.\d+)$',                 # Standalone subsection number (exact match)
+                ]
+                
+                for pattern in subsection_patterns:
+                    match = re.match(pattern, line, re.IGNORECASE)
+                    if match:
+                        return match.group(1)
+                        
+                # Special case: check if this line is JUST a subsection number (like "1.1" on its own line)
+                if re.match(r'^\d+\.\d+$', line):
+                    return line
+                    
+        # Priority 2: Check sourcepage for encoded subsections (like PD3E-1.1)
+        if doc.sourcepage:
+            # Handle encoded formats like "PD3E-1.1" -> extract "1.1"
+            encoded_patterns = [
+                r'[A-Z]+\d*[A-Z]*-([A-Z]\d+\.\d+)',  # PD3E-A4.1 -> A4.1
+                r'[A-Z]+\d*[A-Z]*-(\d+\.\d+)',       # PD3E-1.1 -> 1.1
+                r'[A-Z]+\d*[A-Z]*-([A-Z]\d+)',       # PD3E-A4 -> A4
+            ]
+            
+            for pattern in encoded_patterns:
+                match = re.search(pattern, doc.sourcepage)
+                if match:
+                    return match.group(1)
+        
+        # Priority 3: Check sourcepage for direct subsection patterns
+        if doc.sourcepage:
+            direct_patterns = [
+                r'^([A-Z]\d+\.\d+)\b',           # A4.1, B2.3, etc.
+                r'^(\d+\.\d+)\b',                # 1.1, 2.3, etc.
+                r'^([A-Z]\d+)\b',                # A1, B2, etc.
+                r'^(Rule \d+(?:\.\d+)?)\b',      # Rule 1, Rule 1.1
+                r'^(Part \d+)\b',                # Part 1, Part 2, etc.
+            ]
+            
+            for pattern in direct_patterns:
+                match = re.match(pattern, doc.sourcepage, re.IGNORECASE)
+                if match:
+                    return match.group(1)
+        
+        return ""
+
+    def _extract_multiple_subsections_from_document(self, doc: Document) -> list[dict[str, str]]:
+        """
+        Scan document content and split into multiple subsections when clear subsection
+        markers are found (e.g., '1.1', 'A4.1', 'Rule 31.1', 'Para 5.2'). Returns a list
+        of dicts with keys: 'subsection' and 'content'. Returns [] if no reliable split.
+        """
+        if not doc or not doc.content:
+            return []
+
+        lines = doc.content.splitlines()
+        # Pattern covers: Rule 1.1, CPR 1.1, Para/Paragraph 1.1, A4.1, 1.1, A4
+        pattern = re.compile(
+            r'^(?:'
+            r'(?P<rule>Rule\s+\d+(?:\.\d+)?)|'
+            r'(?P<cpr>CPR\s+\d+(?:\.\d+)?)|'
+            r'(?P<para>Para(?:graph)?\s+\d+(?:\.\d+)?)|'
+            r'(?P<alpha_num_dotted>[A-Z]\d+\.\d+)|'
+            r'(?P<num_dotted>\d+\.\d+)|'
+            r'(?P<alpha_num>[A-Z]\d+)'
+            r')\b',
+            re.IGNORECASE,
+        )
+
+        # Collect candidate subsection headings with their start line index
+        headings: list[tuple[str, int]] = []
+        for i, raw in enumerate(lines):
+            line = raw.strip()
+            if not line or line == "---":
+                continue
+            m = pattern.match(line)
+            if not m:
+                continue
+            label = m.group(0)
+            # Normalize common prefixes for consistency
+            if m.lastgroup == "rule":
+                label = "Rule " + re.search(r'\d+(?:\.\d+)?', label).group(0)
+            elif m.lastgroup == "cpr":
+                label = "CPR " + re.search(r'\d+(?:\.\d+)?', label, re.IGNORECASE).group(0)
+            elif m.lastgroup and m.lastgroup.startswith("para"):
+                label = "Para " + re.search(r'\d+(?:\.\d+)?', label, re.IGNORECASE).group(0)
+            else:
+                # Ensure uppercase for alpha prefix like 'a4.1' -> 'A4.1'
+                label = label.upper()
+            headings.append((label, i))
+
+        # If we can't confidently detect multiple subsections, don't split
+        if len(headings) <= 1:
+            return []
+
+        # Build subsection chunks
+        subsections: list[dict[str, str]] = []
+        for idx, (label, start_line) in enumerate(headings):
+            end_line = headings[idx + 1][1] if idx + 1 < len(headings) else len(lines)
+            chunk_lines = lines[start_line:end_line]
+            content = "\n".join(chunk_lines).strip()
+            # Skip pathological tiny chunks
+            if not content or len(content) < 10:
+                continue
+            subsections.append({"subsection": label, "content": content})
+
+        return subsections
+
+    def get_system_prompt_variables(self, prompt_template: Optional[str] = None) -> dict[str, Any]:
+        """Get system prompt variables"""
+        return {
+            "prompt_template": prompt_template or "Default system prompt",
+        }
+
+    async def compute_text_embedding(self, query_text: str) -> VectorQuery:
+        """Compute text embedding for vector search"""
+        if not query_text:
+            raise ValueError("Query text cannot be empty")
+        
+        # Create embedding using OpenAI client
+        embedding_response = await self.openai_client.embeddings.create(
+            model=self.embedding_deployment if self.embedding_deployment else self.embedding_model,
+            input=query_text
+        )
+        
+        # Extract the embedding vector
+        embedding_vector = embedding_response.data[0].embedding
+        
+        # Create and return VectorQuery
+        return VectorQuery(
+            vector=embedding_vector,
+            k_nearest_neighbors=50,
+            fields=self.embedding_field
+        )
+
+# Add missing run methods to satisfy ABC requirements
 async def run(
     self,
     messages: list[ChatCompletionMessageParam],

@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton } from "@fluentui/react";
+import { Panel, DefaultButton, Dropdown, IDropdownOption } from "@fluentui/react";
 import readNDJSONStream from "ndjson-readablestream";
 
 import appLogo from "../../assets/applogo.svg";
@@ -36,6 +36,7 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
+import { useCategories } from "../../hooks/useCategories";
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -63,6 +64,9 @@ const Chat = () => {
     const [useGroupsSecurityFilter, setUseGroupsSecurityFilter] = useState<boolean>(false);
     const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
+    const [userHasInteracted, setUserHasInteracted] = useState<boolean>(false);
+    const [userTriedToSearch, setUserTriedToSearch] = useState<boolean>(false);
+    const [allCategoriesSelected, setAllCategoriesSelected] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
@@ -97,6 +101,7 @@ const Chat = () => {
     const [showChatHistoryCosmos, setShowChatHistoryCosmos] = useState<boolean>(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
     const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
+    const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const audio = useRef(new Audio()).current;
     const [isPlaying, setIsPlaying] = useState(false);
@@ -110,7 +115,7 @@ const Chat = () => {
     };
 
     const getConfig = async () => {
-        configApi().then(config => {
+        configApi().then((config: any) => {
             setShowGPT4VOptions(config.showGPT4VOptions);
             if (config.showGPT4VOptions) {
                 setUseGPT4V(true);
@@ -143,6 +148,7 @@ const Chat = () => {
             if (config.showAgenticRetrievalOption) {
                 setRetrieveCount(10);
             }
+            setShowCategoryFilter(!!config.showCategoryFilter);
         });
     };
 
@@ -200,6 +206,13 @@ const Chat = () => {
     const historyManager = useHistoryManager(historyProvider);
 
     const makeApiRequest = async (question: string) => {
+        // Block first search if user hasn't interacted with category yet
+        if (showCategoryFilter && includeCategory === "" && !userHasInteracted) {
+            setUserTriedToSearch(true);
+            return;
+        }
+        setUserTriedToSearch(false);
+
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -342,6 +355,8 @@ const Chat = () => {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                setUserHasInteracted(true); // Mark that user has interacted
+                setUserTriedToSearch(false); // Clear any previous warning
                 break;
             case "useOidSecurityFilter":
                 setUseOidSecurityFilter(value);
@@ -410,6 +425,51 @@ const Chat = () => {
     };
 
     const { t, i18n } = useTranslation();
+
+    // Load categories for dropdown (ensure options are strings, not objects)
+    const { categories = [], loading: categoriesLoading } = useCategories();
+
+    const categoryOptions: IDropdownOption[] = [
+        { key: "", text: "All Categories" },
+        // Ensure each option is a simple { key: string, text: string }
+        ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
+    ];
+
+    // Selected keys from CSV
+    const includeKeys = includeCategory
+        ? includeCategory
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
+        : [];
+
+    const onIncludeCategoryChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+        if (!option) return;
+        const key = String(option.key || "");
+
+        // Selecting "All" toggles the checkmark and clears specific selections
+        if (key === "") {
+            setAllCategoriesSelected(!!option.selected);
+            setIncludeCategory(""); // keep backend filter as "no filter"
+            setUserHasInteracted(true);
+            setUserTriedToSearch(false);
+            return;
+        }
+
+        // Selecting any specific category clears "All"
+        setAllCategoriesSelected(false);
+
+        let next = includeKeys.slice();
+        if (option.selected) {
+            if (!next.includes(key)) next.push(key);
+        } else {
+            next = next.filter(k => k !== key);
+        }
+
+        setIncludeCategory(next.join(","));
+        setUserHasInteracted(true);
+        setUserTriedToSearch(false);
+    };
 
     return (
         <div className={styles.container}>
@@ -516,7 +576,25 @@ const Chat = () => {
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                             showSpeechInput={showSpeechInput}
+                            leftOfSend={
+                                showCategoryFilter ? (
+                                    <Dropdown
+                                        multiSelect
+                                        styles={{ dropdown: { minWidth: 220 } }}
+                                        options={categoryOptions}
+                                        selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                        onChange={onIncludeCategoryChange}
+                                        disabled={isLoading || categoriesLoading}
+                                        placeholder="Select categories or All"
+                                    />
+                                ) : undefined
+                            }
                         />
+                        {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
+                            <div className={styles.categoryWarning}>
+                                Please select a category before searching. Choose "All Categories" to search all documents.
+                            </div>
+                        )}
                     </div>
                 </div>
 

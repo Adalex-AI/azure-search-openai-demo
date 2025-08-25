@@ -6,6 +6,7 @@ import { GPT4VSettings } from "../GPT4VSettings";
 import { VectorSettings } from "../VectorSettings";
 import { RetrievalMode, VectorFields, GPT4VInput } from "../../api";
 import styles from "./Settings.module.css";
+import { useEffect, useState } from "react";
 
 // Add type for onRenderLabel
 type RenderLabelType = ITextFieldProps | IDropdownProps | ICheckboxProps;
@@ -133,6 +134,78 @@ export const Settings = ({
     const renderLabel = (props: RenderLabelType | undefined, labelId: string, fieldId: string, helpText: string) => (
         <HelpCallout labelId={labelId} fieldId={fieldId} helpText={helpText} label={props?.label} />
     );
+
+    // Fetch categories from backend and expose as dropdown options
+    type Category = { key: string; text: string; count?: number | null };
+    const [categoryOptions, setCategoryOptions] = useState<IDropdownOption[]>([{ key: "", text: t("labels.includeCategoryOptions.all") }]);
+    const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
+    const [categoriesError, setCategoriesError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        const fetchCategories = async () => {
+            try {
+                setCategoriesLoading(true);
+                setCategoriesError(null);
+                const res = await fetch("/api/categories");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                const items: Category[] = (json?.categories as Category[]) || [];
+                // Map to Dropdown options
+                const opts: IDropdownOption[] = items.map(c => ({
+                    key: c.key ?? "",
+                    text: c.count ? `${c.text} (${c.count})` : c.text
+                }));
+                if (mounted) {
+                    // Always include "All Categories" at the top so it can be ticked
+                    const withAll = [{ key: "", text: "All Categories" }, ...opts.filter(o => o.key !== "")];
+                    setCategoryOptions(withAll);
+                }
+            } catch (e) {
+                // Keep All as default, show a subtle error
+                if (mounted) setCategoriesError(t("errors.categoriesFailed") || "Failed to load categories");
+            } finally {
+                if (mounted) setCategoriesLoading(false);
+            }
+        };
+        fetchCategories();
+        return () => {
+            mounted = false;
+        };
+    }, [t]);
+
+    // Helpers to handle CSV selection for multi-select dropdown
+    const includeKeys = includeCategory
+        ? includeCategory
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
+        : [];
+
+    const onIncludeCategoryChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+        if (!option) return;
+
+        // Handle "All Categories" selection
+        if (option.key === "" || option.key === "All" || option.text === "All Categories" || option.text?.includes("All Categories")) {
+            // When "All" is selected, clear any specific category selections
+            onChange("includeCategory", "");
+            return;
+        }
+
+        let next: string[] = includeKeys.slice();
+
+        if (option.selected) {
+            // If user selects a specific category, add it
+            if (!next.includes(option.key as string)) {
+                next.push(option.key as string);
+            }
+        } else {
+            // Remove the category from selection
+            next = next.filter(k => k !== option.key);
+        }
+
+        onChange("includeCategory", next.join(","));
+    };
 
     return (
         <div className={className}>
@@ -264,15 +337,17 @@ export const Settings = ({
             <Dropdown
                 id={includeCategoryFieldId}
                 className={styles.settingsSeparator}
-                label={t("labels.includeCategory")}
-                selectedKey={includeCategory}
-                onChange={(_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => onChange("includeCategory", option?.key || "")}
+                label="Include Category"
+                multiSelect
+                options={categoryOptions}
+                // Previously: includeKeys.length ? includeKeys : [""]
+                selectedKeys={includeKeys} // nothing selected initially
+                onChange={onIncludeCategoryChange}
+                disabled={categoriesLoading}
+                errorMessage={categoriesError || undefined}
                 aria-labelledby={includeCategoryId}
-                options={[
-                    { key: "", text: t("labels.includeCategoryOptions.all") }
-                    // { key: "example", text: "Example Category" } // Add more categories as needed
-                ]}
-                onRenderLabel={props => renderLabel(props, includeCategoryId, includeCategoryFieldId, t("helpTexts.includeCategory"))}
+                onRenderLabel={props => renderLabel(props, includeCategoryId, includeCategoryFieldId, "Select categories to include in search results")}
+                placeholder={categoriesLoading ? "Loading..." : includeKeys.length ? `${includeKeys.length} selected` : "All Categories"}
             />
 
             <TextField
