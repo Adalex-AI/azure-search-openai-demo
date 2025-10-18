@@ -162,9 +162,15 @@ export function Component(): JSX.Element {
             next = next.filter(k => k !== key);
         }
 
+        const newValue = next.join(",");
         setUserHasInteracted(true);
         setUserTriedToSearch(false);
-        handleSettingsChange("includeCategory", next.join(","));
+        handleSettingsChange("includeCategory", newValue);
+
+        // If user deselects all categories (empty selection), require new interaction
+        if (newValue === "" && !allCategoriesSelected) {
+            setUserHasInteracted(false);
+        }
     };
 
     // Add useEffect to handle category confirmation properly
@@ -178,13 +184,13 @@ export function Component(): JSX.Element {
     }, [includeCategory, showCategoryFilter]);
 
     const makeApiRequest = async (question: string) => {
-        // Check if category filter is enabled and no category is explicitly selected
-        if (showCategoryFilter && includeCategory === "" && !userHasInteracted) {
+        // Block search if no category is selected and "All" isn't ticked
+        if (showCategoryFilter && includeCategory.trim() === "" && !allCategoriesSelected) {
             setUserTriedToSearch(true);
             return; // Don't proceed with search
         }
 
-        setUserTriedToSearch(false); // Reset warning state on successful search
+        setUserTriedToSearch(false);
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -384,7 +390,45 @@ export function Component(): JSX.Element {
                             showCategoryFilter ? (
                                 <Dropdown
                                     multiSelect
-                                    styles={{ dropdown: { minWidth: 220 } }}
+                                    styles={{
+                                        dropdown: {
+                                            minWidth: 220,
+                                            minHeight: 48
+                                        },
+                                        title: {
+                                            minHeight: 48,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            paddingTop: 10,
+                                            paddingBottom: 10,
+                                            fontSize: 14
+                                        },
+                                        caretDownWrapper: {
+                                            height: 48,
+                                            display: "flex",
+                                            alignItems: "center"
+                                        },
+                                        callout: {
+                                            minWidth: 350,
+                                            maxWidth: 500,
+                                            width: "auto"
+                                        },
+                                        dropdownItem: {
+                                            whiteSpace: "normal",
+                                            overflow: "visible",
+                                            textOverflow: "initial",
+                                            padding: "8px 12px",
+                                            wordWrap: "break-word",
+                                            minHeight: 36
+                                        },
+                                        dropdownOptionText: {
+                                            whiteSpace: "normal",
+                                            overflow: "visible",
+                                            textOverflow: "initial",
+                                            wordWrap: "break-word",
+                                            lineHeight: 1.4
+                                        }
+                                    }}
                                     options={categoryOptions}
                                     selectedKeys={allCategoriesSelected ? [""] : includeKeys}
                                     onChange={onIncludeCategoryChange}

@@ -1,6 +1,6 @@
 {
-    "pageTitle": "ADALEX AI",
-    "headerTitle": "ADALEX AI",
+    "pageTitle": "",
+    "headerTitle": "",
     "chat": "Chat",
     "qa": "Ask a question",
     "login": "Login",
@@ -40,14 +40,14 @@
         "1": "What documents are required in a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "In one sentence what is the overriding objective?",
-        "placeholder": "Type a new question (e.g. what is the overriding objective?)"
+        "placeholder": "Search here"
     },
     "askTitle": "CPR Chatbot",
     "gpt4vExamples": {
         "1": "What documents are required in a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "What are the rules of service?",
-        "placeholder": "Type a new question (e.g. what is the overriding objective?)"
+        "placeholder": "Search here"
     },
     "generatingAnswer": "Generating answer",
     "citationWithColon": "Citation:",

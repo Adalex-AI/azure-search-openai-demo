@@ -1,10 +1,6 @@
 import React from "react";
 import { TokenUsageGraph, TokenUsage } from "./TokenUsageGraph";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
-import { a11yLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
 import styles from "./AnalysisPanel.module.css";
-SyntaxHighlighter.registerLanguage("json", json);
 
 type ModelQueryPlanningStep = {
     id: number;

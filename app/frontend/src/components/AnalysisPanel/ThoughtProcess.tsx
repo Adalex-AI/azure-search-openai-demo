@@ -1,21 +1,33 @@
 import { Stack } from "@fluentui/react";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
-import json from "react-syntax-highlighter/dist/esm/languages/hljs/json";
-import { a11yLight } from "react-syntax-highlighter/dist/esm/styles/hljs";
-
 import styles from "./AnalysisPanel.module.css";
-
 import { Thoughts } from "../../api";
 import { TokenUsageGraph } from "./TokenUsageGraph";
 import { AgentPlan } from "./AgentPlan";
-
-SyntaxHighlighter.registerLanguage("json", json);
 
 interface Props {
     thoughts: Thoughts[];
 }
 
 export const ThoughtProcess = ({ thoughts }: Props) => {
+    const renderCode = (content: any) => {
+        // Simple fallback without syntax highlighting
+        return (
+            <pre
+                className={styles.tCodeBlock}
+                style={{
+                    backgroundColor: "#f8f8f8",
+                    padding: "10px",
+                    borderRadius: "4px",
+                    overflow: "auto",
+                    fontSize: "0.85em",
+                    lineHeight: "1.4"
+                }}
+            >
+                {JSON.stringify(content, null, 2)}
+            </pre>
+        );
+    };
+
     return (
         <ul className={styles.tList}>
             {thoughts.map((t, ind) => {
@@ -32,13 +44,7 @@ export const ThoughtProcess = ({ thoughts }: Props) => {
                         </Stack>
                         {t.props?.token_usage && <TokenUsageGraph tokenUsage={t.props.token_usage} reasoningEffort={t.props.reasoning_effort} />}
                         {t.props?.query_plan && <AgentPlan query_plan={t.props.query_plan} description={t.description} />}
-                        {Array.isArray(t.description) ? (
-                            <SyntaxHighlighter language="json" wrapLongLines className={styles.tCodeBlock} style={a11yLight}>
-                                {JSON.stringify(t.description, null, 2)}
-                            </SyntaxHighlighter>
-                        ) : (
-                            <div>{t.description}</div>
-                        )}
+                        {Array.isArray(t.description) ? renderCode(t.description) : <div>{t.description}</div>}
                     </li>
                 );
             })}

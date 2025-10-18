@@ -2,7 +2,7 @@ import json
 import pathlib
 import asyncio
 import openai
-from fastapi import HTTPException
+from quart import abort
 
 import prompty
 from openai.types.chat import ChatCompletionMessageParam
@@ -78,8 +78,8 @@ class PromptyManager(PromptManager):
             )
             return response
         except asyncio.TimeoutError:
-            raise HTTPException(status_code=504, detail="Upstream model timeout")
+            abort(504, description="Upstream model timeout")
         except openai.APIError as e:
-            raise HTTPException(status_code=502, detail=f"OpenAI API error: {e}")
+            abort(502, description=f"OpenAI API error: {e}")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Generation failed: {e}")
+            abort(500, description=f"Generation failed: {e}")

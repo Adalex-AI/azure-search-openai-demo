@@ -340,14 +340,13 @@ export const Settings = ({
                 label="Include Category"
                 multiSelect
                 options={categoryOptions}
-                // Previously: includeKeys.length ? includeKeys : [""]
-                selectedKeys={includeKeys} // nothing selected initially
+                selectedKeys={includeKeys.length > 0 ? includeKeys : []} // Don't auto-select "All"
                 onChange={onIncludeCategoryChange}
                 disabled={categoriesLoading}
                 errorMessage={categoriesError || undefined}
                 aria-labelledby={includeCategoryId}
                 onRenderLabel={props => renderLabel(props, includeCategoryId, includeCategoryFieldId, "Select categories to include in search results")}
-                placeholder={categoriesLoading ? "Loading..." : includeKeys.length ? `${includeKeys.length} selected` : "All Categories"}
+                placeholder={categoriesLoading ? "Loading..." : includeKeys.length ? `${includeKeys.length} selected` : "Select categories or choose All"}
             />
 
             <TextField

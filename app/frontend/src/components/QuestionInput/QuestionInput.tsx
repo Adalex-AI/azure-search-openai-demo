@@ -36,6 +36,8 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
 
         onSend(question);
 
+        // Only clear if clearOnSend is true - let parent handle clearing on success
+        // This prevents clearing the question when validation fails
         if (clearOnSend) {
             setQuestion("");
         }
@@ -76,7 +78,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
     }
 
     return (
-        <Stack horizontal className={styles.questionInputContainer}>
+        <Stack horizontal className={styles.questionInputContainer} tokens={{ childrenGap: 8 }}>
             <TextField
                 className={styles.questionInputTextArea}
                 disabled={disableRequiredAccessControl}
@@ -89,6 +91,16 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
                 onKeyDown={onEnterPress}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
+                styles={{
+                    root: { flex: 1, minWidth: 0 },
+                    fieldGroup: { minHeight: 44 },
+                    field: {
+                        minHeight: 44,
+                        maxHeight: 120,
+                        overflowY: "auto",
+                        overflowX: "hidden"
+                    }
+                }}
             />
             <div className={styles.questionInputButtonsContainer}>
                 {leftOfSend && <div style={{ marginRight: 8 }}>{leftOfSend}</div>}

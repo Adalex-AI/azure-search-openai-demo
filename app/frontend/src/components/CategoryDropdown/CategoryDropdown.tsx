@@ -78,11 +78,14 @@ export const CategoryDropdown: React.FC<CategoryDropdownProps> = ({
 
     const selectedKeys = multiSelect
         ? selectedCategory.trim() === ""
-            ? [] // show no selection so backend court detection/CPR fallback applies
-            : selectedCategory.split(",").map(s => s.trim()).filter(Boolean)
+            ? [] // show no selection when empty
+            : selectedCategory
+                  .split(",")
+                  .map(s => s.trim())
+                  .filter(Boolean)
         : selectedCategory !== undefined
-          ? [selectedCategory === "" ? "" : selectedCategory]
-          : [""];
+          ? [selectedCategory]
+          : [];
 
     return (
         <Dropdown

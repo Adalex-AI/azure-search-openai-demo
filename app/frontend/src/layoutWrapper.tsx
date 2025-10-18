@@ -1,6 +1,6 @@
+import React, { useEffect, useState } from "react";
 import { AccountInfo, EventType, PublicClientApplication } from "@azure/msal-browser";
 import { checkLoggedIn, msalConfig, useLogin } from "./authConfig";
-import { useEffect, useState } from "react";
 import { MsalProvider } from "@azure/msal-react";
 import { LoginContext } from "./loginContext";
 import Layout from "./pages/layout/Layout";

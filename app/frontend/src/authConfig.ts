@@ -54,11 +54,35 @@ interface AuthSetup {
 
 // Fetch the auth setup JSON data from the API if not already cached
 async function fetchAuthSetup(): Promise<AuthSetup> {
-    const response = await fetch("/auth_setup");
-    if (!response.ok) {
-        throw new Error(`auth setup response was not ok: ${response.status}`);
+    const defaultAuthSetup: AuthSetup = {
+        useLogin: false,
+        requireAccessControl: false,
+        enableUnauthenticatedAccess: true,
+        msalConfig: {
+            auth: {
+                clientId: "",
+                authority: "",
+                redirectUri: "/",
+                postLogoutRedirectUri: "/",
+                navigateToLoginRequestUrl: false
+            },
+            cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
+        },
+        loginRequest: { scopes: [] },
+        tokenRequest: { scopes: [] }
+    };
+
+    try {
+        const response = await fetch("/auth_setup");
+        if (!response.ok) {
+            console.warn("auth setup response was not ok:", response.status);
+            return defaultAuthSetup;
+        }
+        return await response.json();
+    } catch (e) {
+        console.warn("auth setup fetch failed; falling back to defaults", e);
+        return defaultAuthSetup;
     }
-    return await response.json();
 }
 
 const authSetup = await fetchAuthSetup();
@@ -114,32 +138,43 @@ const getAppServicesToken = (): Promise<AppServicesToken | null> => {
         return expiresOnDate > currentDate;
     };
 
+    // Skip completely when login is disabled
+    if (!useLogin) {
+        return Promise.resolve(null);
+    }
+
+    // Skip when running locally (no App Service /.auth endpoints)
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) {
+        return Promise.resolve(null);
+    }
+
     if (globalThis.cachedAppServicesToken && checkNotExpired(globalThis.cachedAppServicesToken)) {
         return Promise.resolve(globalThis.cachedAppServicesToken);
     }
 
     const getAppServicesTokenFromMe: () => Promise<AppServicesToken | null> = () => {
-        return fetch(appServicesAuthTokenUrl).then(r => {
-            if (r.ok) {
-                return r.json().then(json => {
-                    if (json.length > 0) {
-                        return {
-                            id_token: json[0]["id_token"] as string,
-                            access_token: json[0]["access_token"] as string,
-                            user_claims: json[0]["user_claims"].reduce((acc: Record<string, any>, item: Record<string, any>) => {
-                                acc[item.typ] = item.val;
-                                return acc;
-                            }, {}) as Record<string, any>,
-                            expires_on: json[0]["expires_on"] as string
-                        } as AppServicesToken;
-                    }
-
-                    return null;
-                });
-            }
-
-            return null;
-        });
+        return fetch(appServicesAuthTokenUrl)
+            .then(r => {
+                if (r.ok) {
+                    return r.json().then(json => {
+                        if (json.length > 0) {
+                            return {
+                                id_token: json[0]["id_token"] as string,
+                                access_token: json[0]["access_token"] as string,
+                                user_claims: json[0]["user_claims"].reduce((acc: Record<string, any>, item: Record<string, any>) => {
+                                    acc[item.typ] = item.val;
+                                    return acc;
+                                }, {}) as Record<string, any>,
+                                expires_on: json[0]["expires_on"] as string
+                            } as AppServicesToken;
+                        }
+                        return null;
+                    });
+                }
+                return null;
+            })
+            .catch(() => null);
     };
 
     return getAppServicesTokenFromMe().then(token => {
@@ -148,20 +183,24 @@ const getAppServicesToken = (): Promise<AppServicesToken | null> => {
                 globalThis.cachedAppServicesToken = token;
                 return token;
             }
-
-            return fetch(appServicesAuthTokenRefreshUrl).then(r => {
-                if (r.ok) {
-                    return getAppServicesTokenFromMe();
-                }
-                return null;
-            });
+            return fetch(appServicesAuthTokenRefreshUrl).then(r => (r.ok ? getAppServicesTokenFromMe() : null));
         }
-
         return null;
     });
 };
 
-export const isUsingAppServicesLogin = (await getAppServicesToken()) != null;
+// Replace eager top-level probe with lazy, guarded init
+// export const isUsingAppServicesLogin = (await getAppServicesToken()) != null;
+export let isUsingAppServicesLogin = false;
+(async () => {
+    try {
+        if (useLogin) {
+            isUsingAppServicesLogin = (await getAppServicesToken()) != null;
+        }
+    } catch {
+        isUsingAppServicesLogin = false;
+    }
+})();
 
 // Sign out of app services
 // Learn more at https://learn.microsoft.com/azure/app-service/configure-authentication-customize-sign-in-out#sign-out-of-a-session

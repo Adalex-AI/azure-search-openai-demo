@@ -206,8 +206,8 @@ const Chat = () => {
     const historyManager = useHistoryManager(historyProvider);
 
     const makeApiRequest = async (question: string) => {
-        // Block first search if user hasn't interacted with category yet
-        if (showCategoryFilter && includeCategory === "" && !userHasInteracted) {
+        // Block search if no category is selected and "All" isn't ticked
+        if (showCategoryFilter && includeCategory.trim() === "" && !allCategoriesSelected) {
             setUserTriedToSearch(true);
             return;
         }
@@ -466,9 +466,15 @@ const Chat = () => {
             next = next.filter(k => k !== key);
         }
 
-        setIncludeCategory(next.join(","));
+        const newValue = next.join(",");
+        setIncludeCategory(newValue);
         setUserHasInteracted(true);
         setUserTriedToSearch(false);
+
+        // If user deselects all categories (empty selection), require new interaction
+        if (newValue === "" && !allCategoriesSelected) {
+            setUserHasInteracted(false);
+        }
     };
 
     return (
@@ -571,7 +577,7 @@ const Chat = () => {
 
                     <div className={styles.chatInput}>
                         <QuestionInput
-                            clearOnSend
+                            clearOnSend={false}
                             placeholder={t("defaultExamples.placeholder")}
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
@@ -580,7 +586,45 @@ const Chat = () => {
                                 showCategoryFilter ? (
                                     <Dropdown
                                         multiSelect
-                                        styles={{ dropdown: { minWidth: 220 } }}
+                                        styles={{
+                                            dropdown: {
+                                                minWidth: 220,
+                                                minHeight: 48
+                                            },
+                                            title: {
+                                                minHeight: 48,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                paddingTop: 10,
+                                                paddingBottom: 10,
+                                                fontSize: 14
+                                            },
+                                            caretDownWrapper: {
+                                                height: 48,
+                                                display: "flex",
+                                                alignItems: "center"
+                                            },
+                                            callout: {
+                                                minWidth: 350,
+                                                maxWidth: 500,
+                                                width: "auto"
+                                            },
+                                            dropdownItem: {
+                                                whiteSpace: "normal",
+                                                overflow: "visible",
+                                                textOverflow: "initial",
+                                                padding: "8px 12px",
+                                                wordWrap: "break-word",
+                                                minHeight: 36
+                                            },
+                                            dropdownOptionText: {
+                                                whiteSpace: "normal",
+                                                overflow: "visible",
+                                                textOverflow: "initial",
+                                                wordWrap: "break-word",
+                                                lineHeight: 1.4
+                                            }
+                                        }}
                                         options={categoryOptions}
                                         selectedKeys={allCategoriesSelected ? [""] : includeKeys}
                                         onChange={onIncludeCategoryChange}
