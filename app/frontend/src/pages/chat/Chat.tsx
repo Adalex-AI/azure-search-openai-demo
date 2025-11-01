@@ -46,13 +46,13 @@ const Chat = () => {
     const [seed, setSeed] = useState<number | null>(null);
     const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(0);
     const [minimumSearchScore, setMinimumSearchScore] = useState<number>(0);
-    const [retrieveCount, setRetrieveCount] = useState<number>(3);
-    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(10);
+    const [retrieveCount, setRetrieveCount] = useState<number>(5);
+    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(5);
     const [resultsMergeStrategy, setResultsMergeStrategy] = useState<string>("interleaved");
     const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Hybrid);
     const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(true);
     const [useQueryRewriting, setUseQueryRewriting] = useState<boolean>(false);
-    const [reasoningEffort, setReasoningEffort] = useState<string>("");
+    const [reasoningEffort, setReasoningEffort] = useState<string>("low");
     const [streamingEnabled, setStreamingEnabled] = useState<boolean>(true);
     const [shouldStream, setShouldStream] = useState<boolean>(true);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);

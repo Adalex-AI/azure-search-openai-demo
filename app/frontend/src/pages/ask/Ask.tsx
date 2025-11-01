@@ -30,13 +30,13 @@ export function Component(): JSX.Element {
     const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(0);
     const [minimumSearchScore, setMinimumSearchScore] = useState<number>(0);
     const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Hybrid);
-    const [retrieveCount, setRetrieveCount] = useState<number>(3);
-    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(10);
+    const [retrieveCount, setRetrieveCount] = useState<number>(5);
+    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(5);
     const [resultsMergeStrategy, setResultsMergeStrategy] = useState<string>("interleaved");
     const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(true);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [useQueryRewriting, setUseQueryRewriting] = useState<boolean>(false);
-    const [reasoningEffort, setReasoningEffort] = useState<string>("");
+    const [reasoningEffort, setReasoningEffort] = useState<string>("low");
     const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
     const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [includeCategory, setIncludeCategory] = useState<string>("");

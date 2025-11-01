@@ -123,7 +123,7 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
     const stripLeadingIndexPrefix = (s: string) => s.replace(/^\[\d+\]:\s?/, "");
 
     // Enhanced content rendering with subsection highlighting
-    const renderContent = (content: string, isHighlighted: boolean = false, targetSubsection?: string) => {
+    const renderContent = (content: string, isHighlighted: boolean = false, targetSubsection?: string, sourceInfo?: string) => {
         if (!content) return null;
 
         // NO CLEANING - Use the original content structure as created in the search index
@@ -142,8 +142,12 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                 const afterSubsection = originalContent.substring(section.endIndex);
 
                 // Reduce vertical padding to avoid overlapping the previous line
+                // Add id for scrolling and title for hover tooltip with full source information
+                // Escape quotes and HTML entities for the title attribute
+                const escapedSourceInfo = (sourceInfo || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+                console.log("Setting highlight tooltip - sourceInfo:", sourceInfo, "escaped:", escapedSourceInfo);
                 const highlightedSubsection =
-                    `<mark style="background-color:#3b82f6;color:#fff;padding:0 4px;border-radius:4px;display:inline;line-height:inherit;">` +
+                    `<mark id="highlighted-subsection" title="${escapedSourceInfo}" style="background-color:#3b82f6;color:#fff;padding:0 4px;border-radius:4px;display:inline;line-height:inherit;scroll-margin-top:20px;">` +
                     subsectionContent +
                     `</mark>`;
                 const highlightedContent = beforeSubsection + highlightedSubsection + afterSubsection;
@@ -287,6 +291,14 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                     setTimeout(() => {
                         targetElement.style.backgroundColor = "";
                     }, 5000);
+
+                    // Scroll to the highlighted mark within the section if it exists
+                    setTimeout(() => {
+                        const highlightedMark = targetElement.querySelector("#highlighted-subsection");
+                        if (highlightedMark) {
+                            highlightedMark.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }
+                    }, 300);
                 }
             }
         }
@@ -329,7 +341,14 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                     if (parsedItem.sourcefile) parts.push(parsedItem.sourcefile);
                     if (parsedItem.sourcepage) parts.push(parsedItem.sourcepage);
                     if (parsedItem.category) parts.push(parsedItem.category);
-                    return parts.length > 0 ? parts.join(", ") : "Document Source";
+                    const title = parts.length > 0 ? parts.join(", ") : "Document Source";
+                    console.log("getDisplayTitle:", {
+                        sourcefile: parsedItem.sourcefile,
+                        sourcepage: parsedItem.sourcepage,
+                        category: parsedItem.category,
+                        title
+                    });
+                    return title;
                 };
 
                 const documentUrl = parsedItem.storageurl || parsedItem.url;
@@ -353,7 +372,7 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                         </div>
 
                         {/* Always render full content; highlight specific subsection if active */}
-                        {renderContent(parsedItem.content, isActive, targetSubsection ?? undefined)}
+                        {renderContent(parsedItem.content, isActive, targetSubsection ?? undefined, getDisplayTitle())}
 
                         <div className={styles.supportingContentActions} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {hasDocumentUrl && (

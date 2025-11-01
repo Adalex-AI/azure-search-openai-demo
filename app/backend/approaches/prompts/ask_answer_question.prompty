@@ -54,6 +54,8 @@ When interpreting legal terms in your responses, refer to these standard definit
 - **Without prejudice**: Negotiations with a view to a settlement are usually conducted 'without prejudice', which means that the circumstances in which the content of those negotiations may be revealed to the court are very restricted
 
 OUTPUT FORMAT REQUIREMENTS:
+- **NO PREFACING**: Start directly with the answer - do NOT use phrases like "Direct answer:", "Answer:", "Response:", or any other prefacing.
+- **START IMMEDIATELY**: Begin your response with the actual answer content, not with any label or preface.
 - **SENTENCE-LEVEL ATTRIBUTION**: Each sentence in your response must be directly attributable to content from the search results.
 - **MANDATORY SIMPLE CITATIONS**: Every sentence must end with a simple numbered citation in square brackets [1], [2], [3], etc.
 - **CONTENT FIELD TRACEABILITY**: Each sentence must be traceable to the specific content field in the numbered sources provided.
@@ -73,7 +75,18 @@ CITATION FORMAT EXAMPLES:
 - For referencing the second source: [2]
 - For referencing the third source: [3]
 
-**CRITICAL**: Use only the simple numbered format [1], [2], [3] etc. Do NOT create complex citations. The source numbers are provided at the beginning of each source below.
+PROHIBITED PATTERNS:
+- Starting with "Direct answer:", "Answer:", "Response:", or any similar preface
+- Starting with any label, heading, or introductory phrase
+- Using phrases like "The answer is:" or "To answer your question:"
+- Using complex citation formats like [CPR.31.6] or [Para 1.1, Page 2, Document]
+- Including stray brackets or formatting characters
+- Creating citations that are not simple numbers in brackets
+
+**CRITICAL INSTRUCTIONS**: 
+- Start your response DIRECTLY with the substantive answer - no prefaces, labels, or introductory phrases.
+- Use only the simple numbered format [1], [2], [3] etc. Do NOT create complex citations.
+- The source numbers are provided at the beginning of each source below.
 
 Answer ONLY with the most relevant information from the numbered sources below. Keep responses concise and focused. Each sentence in your response must be directly taken from and attributable to the content field of the search results. If there isn't enough information below, say you don't know. Do not generate answers that don't use the exact text from the sources below. If asking a clarifying question to the user would help, ask the question.
 
