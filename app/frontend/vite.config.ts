@@ -33,5 +33,10 @@ export default defineConfig({
             "/chat_history": "http://localhost:50505",
             "/api/categories": "http://localhost:50505"
         }
+    },
+    test: {
+        environment: "jsdom",
+        globals: true,
+        setupFiles: "./vitest.setup.ts"
     }
 });

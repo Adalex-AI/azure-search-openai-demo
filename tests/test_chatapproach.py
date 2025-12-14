@@ -260,6 +260,8 @@ async def test_search_results_query_rewriting(monkeypatch):
         use_vector_search=True,
         use_semantic_ranker=True,
         use_semantic_captions=True,
+        minimum_search_score=0.0,
+        minimum_reranker_score=0.0,
         use_query_rewriting=True,
     )
     assert len(results) == 1

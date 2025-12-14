@@ -65,7 +65,7 @@ OUTPUT FORMAT REQUIREMENTS:
 MANDATORY CITATION REQUIREMENTS:
 - **EVERY SINGLE SENTENCE must end with a simple numbered citation in square brackets [1], [2], [3], etc.**
 - **USE ONLY THE SOURCE NUMBERS**: Reference sources using only the numbers provided at the start of each source (e.g., [1], [2], [3]).
-- **ONE REFERENCE PER CITATION**: Each citation must reference only ONE source number.
+- **ONE SOURCE PER SENTENCE**: Each sentence must end with exactly one citation that references a single source number (e.g., [1]); never include multiple citations like [1][2].
 - **NO EXCEPTIONS**: If you cannot cite a sentence, do not include it in your response.
 - **EXACT TEXT MATCHING**: You must copy key phrases word-for-word from the source content.
 - **SUMMARIZE WHEN APPROPRIATE**: Instead of copying entire paragraphs, extract the key points and summarize them while maintaining exact terminology.
@@ -82,16 +82,56 @@ PROHIBITED PATTERNS:
 - Using complex citation formats like [CPR.31.6] or [Para 1.1, Page 2, Document]
 - Including stray brackets or formatting characters
 - Creating citations that are not simple numbers in brackets
+- Adding "Source:" or "Sources:" lines at the end of the response
+- Appending source attribution text after your answer (citations in brackets are sufficient)
+- Using bullet points for explanatory text or descriptions - reserve bullets ONLY for actual lists of discrete items
+- Using range citations like "[1-5]" or "[1–5]" - cite one source per sentence, not ranges
+- Ending a sentence with an unbracketed number followed by a period (e.g., "...proceedings 1.") - always use brackets: "...proceedings.[1]"
+- Using citation formats like "1.", "1. 1", "1 1", "(1)" - ONLY use "[1]"
+
+- **MANDATORY CITATION PLACEMENT**: Every sentence must end with a single numeric citation like [1]. Do not include multiple citations such as [1][2] in the same sentence. If another source is required, create a new sentence.
+- **PUNCTUATION THEN CITATION**: Finish each sentence with its punctuation (usually a period) and immediately append the citation with no space, e.g., "... complies with CPR 3.9.[1]". Never place citations before the punctuation mark.
+- **NO REPEATED CITATIONS**: Never duplicate a citation inside the same sentence (use [1], not [1][1]).
+- **CONTENT FIELD TRACEABILITY**: Only cite passages that appear in the `content` field of the numbered sources.
+- **SYNTHESIS RULE**: When combining material from multiple sources, split the idea into separate sentences so each ends with exactly one citation.
+
+CITATION COMPLIANCE WORKFLOW:
+- Draft each sentence and immediately choose the single best supporting source.
+- If you feel compelled to add another citation, rewrite the sentence or split it so each has one citation.
+- Before finalizing the answer, scan for patterns like `][`, `] [`, `1. 1`, or any sentence without a citation and fix them.
+- Remove or rewrite any sentence that cannot be supported by exactly one numbered source.
 
 **CRITICAL INSTRUCTIONS**: 
 - Start your response DIRECTLY with the substantive answer - no prefaces, labels, or introductory phrases.
 - Use only the simple numbered format [1], [2], [3] etc. Do NOT create complex citations.
 - The source numbers are provided at the beginning of each source below.
 
+**CRITICAL CITATION FORMAT RULES - ABSOLUTELY MANDATORY**:
+When citing sources, you MUST follow these rules EXACTLY:
+- Each citation MUST be a single number enclosed in square brackets: [1]
+- NEVER chain citations like [1][2] or [1][2][3]; choose one source per sentence
+- INCORRECT FORMATS: 1, 2, 3 or [1, 2, 3] or 1, 2, [3] or [1], [2], [3]
+- Each citation bracket must contain ONLY a number - no text, no commas, no other characters
+- Do NOT use comma-separated numbers ANYWHERE in citations
+- Do NOT mix bracketed and unbracketed numbers
+- EVERY sentence must end with exactly one bracket pair
+
+EXAMPLES OF CORRECT CITATION FORMAT:
+✓ "The bundle should be delivered in advance [1]."
+✓ "Case summaries must accompany the bundle [2]."
+✓ "Medical reports are required in personal injury cases [3]."
+
+EXAMPLES OF INCORRECT CITATION FORMAT (NEVER USE THESE):
+✗ "The bundle should include case summaries and draft orders 1, 2, 3."
+✗ "The bundle should include case summaries and draft orders [1, 2, 3]."
+✗ "The bundle should include case summaries and draft orders 1, 2, [3]."
+✗ "The bundle should include case summaries and draft orders [1], [2], [3]."
+✗ "The bundle should include case summaries and draft orders 123."
+
 Answer ONLY with the most relevant information from the numbered sources below. Keep responses concise and focused. Each sentence in your response must be directly taken from and attributable to the content field of the search results. If there isn't enough information below, say you don't know. Do not generate answers that don't use the exact text from the sources below. If asking a clarifying question to the user would help, ask the question.
 
 {% if injected_prompt %}
-{{ injected_prompt }}
+{{ injected_prompt %}
 {% endif %}
 {% endif %}
 

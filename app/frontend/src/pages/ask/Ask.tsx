@@ -58,7 +58,7 @@ export function Component(): JSX.Element {
     const audio = useRef(new Audio()).current;
     const [isPlaying, setIsPlaying] = useState(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
     const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
@@ -93,7 +93,7 @@ export function Component(): JSX.Element {
             setUseQueryRewriting(config.showQueryRewritingOption);
             setShowQueryRewritingOption(config.showQueryRewritingOption);
             setShowReasoningEffortOption(config.showReasoningEffortOption);
-            if (config.showReasoningEffortOption) {
+            if (config.showReasoningEffortOption && config.defaultReasoningEffort) {
                 setReasoningEffort(config.defaultReasoningEffort);
             }
             setShowVectorOption(config.showVectorOption);
@@ -106,10 +106,6 @@ export function Component(): JSX.Element {
             setShowSpeechOutputBrowser(config.showSpeechOutputBrowser);
             setShowSpeechOutputAzure(config.showSpeechOutputAzure);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
-            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
-            if (config.showAgenticRetrievalOption) {
-                setRetrieveCount(10);
-            }
             // 'showCategoryFilter' may not exist on older/alternate Config types — cast to any to safely read optional field
             setShowCategoryFilter(!!(config as any).showCategoryFilter);
         });
@@ -483,6 +479,7 @@ export function Component(): JSX.Element {
                         activeTab={activeAnalysisPanelTab}
                         activeCitationContent={activeCitationContent}
                         enableCitationTab={enableCitationTab}
+                        onCitationChanged={setActiveCitation}
                     />
                 )}
             </div>

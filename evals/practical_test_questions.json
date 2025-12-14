@@ -1,0 +1,215 @@
+{
+  "description": "Practical legal questions that solicitors and barristers in England and Wales actually ask in day-to-day practice",
+  "categories": {
+    "pre_action_protocol": {
+      "description": "Questions about pre-action conduct and letters before claim",
+      "questions": [
+        "What are the requirements for a compliant letter before claim?",
+        "What is required for a valid letter of response?",
+        "How many days do I have to acknowledge a letter before claim?",
+        "How can I prevent pre-action disclosure?",
+        "What must be included in a pre-action disclosure application?",
+        "When can I apply for pre-action disclosure against a non-party?",
+        "What happens if I don't comply with the pre-action protocol?",
+        "Can the court impose costs sanctions for failure to follow pre-action protocols?",
+        "What is the timeline for responding to a letter before claim in a personal injury case?",
+        "Do pre-action protocols apply in the Commercial Court?"
+      ]
+    },
+    "limitation_periods": {
+      "description": "Questions about limitation periods and time limits for bringing claims",
+      "questions": [
+        "When does the limitation period start for a personal injury claim?",
+        "What is the limitation period for a breach of contract claim?",
+        "How is the limitation period calculated for negligence claims?",
+        "Can the court extend the limitation period in personal injury cases?",
+        "What is the limitation period for professional negligence claims?",
+        "When does time start running for a claim based on fraudulent concealment?",
+        "What is the limitation period for defamation claims?",
+        "How do I calculate the limitation period for contribution claims?",
+        "What is the date of knowledge for limitation purposes in clinical negligence?",
+        "Can I claim under section 33 discretion if my claim is statute-barred?"
+      ]
+    },
+    "case_management_cmc": {
+      "description": "Questions about case management conferences and directions",
+      "questions": [
+        "What documents are required for a CMC in the Circuit Commercial Court?",
+        "What are the deadlines for filing documents before a CMC in the Circuit Commercial Court?",
+        "What should be included in a case management information sheet?",
+        "When must I file and serve my directions questionnaire?",
+        "What happens if I miss the deadline for filing the directions questionnaire?",
+        "What case management directions are typically made at a first CMC?",
+        "How do I apply for an extension of time for filing a CMC bundle?",
+        "What is required in a Commercial Court case management bundle?",
+        "Do I need to attend the CMC or can I appear remotely?",
+        "What costs consequences follow from non-attendance at a CMC?"
+      ]
+    },
+    "disclosure": {
+      "description": "Questions about disclosure obligations and procedures",
+      "questions": [
+        "What is standard disclosure under CPR Part 31?",
+        "When must I serve my disclosure statement?",
+        "What documents must be included in standard disclosure?",
+        "How do I claim privilege over disclosed documents?",
+        "What is the test for specific disclosure?",
+        "When can I apply for pre-action disclosure?",
+        "What are my obligations regarding electronic disclosure?",
+        "How should I deal with legally privileged documents in my disclosure list?",
+        "What is the procedure for challenging a claim to privilege?",
+        "What are the sanctions for failure to give proper disclosure?"
+      ]
+    },
+    "interim_applications": {
+      "description": "Questions about interim applications and urgent relief",
+      "questions": [
+        "What is the procedure for making an urgent application?",
+        "How much notice must I give for an interim application?",
+        "What evidence do I need for an application for summary judgment?",
+        "When can I apply for an interim payment?",
+        "What is required for a without notice application?",
+        "How do I apply for a freezing injunction?",
+        "What undertakings must I give when seeking a search order?",
+        "What is the test for granting an interim injunction?",
+        "How long before the hearing must I serve my application notice?",
+        "Can I make an application by telephone in urgent cases?"
+      ]
+    },
+    "statements_of_case": {
+      "description": "Questions about particulars of claim, defences, and amendments",
+      "questions": [
+        "How long do I have to file a defence after service of particulars of claim?",
+        "Can I extend time for filing my defence?",
+        "What must be included in particulars of claim?",
+        "When do I need to file and serve a reply?",
+        "What is the procedure for amending my statement of case?",
+        "Do I need permission to amend my particulars of claim after service?",
+        "How do I respond to a request for further information?",
+        "What happens if I file my defence late?",
+        "Can I amend my defence after the expiry of the limitation period?",
+        "What level of detail is required in particulars of personal injury?"
+      ]
+    },
+    "court_specific_commercial": {
+      "description": "Questions specific to Commercial Court procedures",
+      "questions": [
+        "What are the requirements for issuing in the Commercial Court?",
+        "Do the standard CPR disclosure rules apply in the Commercial Court?",
+        "What is a case memorandum in the Commercial Court?",
+        "When must I serve my Commercial Court case memorandum?",
+        "What are the time estimates required for Commercial Court trials?",
+        "How do expert witness rules differ in the Commercial Court?",
+        "What skeleton arguments are required for Commercial Court hearings?",
+        "What is the Commercial Court's approach to witness statements?",
+        "Are there special rules for bundles in the Commercial Court?",
+        "What sanctions can the Commercial Court impose for non-compliance?"
+      ]
+    },
+    "court_specific_circuit_commercial": {
+      "description": "Questions specific to Circuit Commercial Court procedures",
+      "questions": [
+        "What are the financial thresholds for Circuit Commercial Court claims?",
+        "Which Circuit Commercial Courts are available outside London?",
+        "What documents must be filed with a claim form in the Circuit Commercial Court?",
+        "How do Circuit Commercial Court procedures differ from the Commercial Court?",
+        "What support is available for litigants in person in the Circuit Commercial Court?",
+        "What are the time limits for applications in the Circuit Commercial Court?",
+        "Do I need a case management information sheet in the Circuit Commercial Court?",
+        "What are the costs consequences of issuing in the wrong court?",
+        "Can I transfer my case from County Court to Circuit Commercial Court?",
+        "What case management directions are standard in Circuit Commercial Court?"
+      ]
+    },
+    "expert_evidence": {
+      "description": "Questions about expert witnesses and expert evidence",
+      "questions": [
+        "When do I need the court's permission to call an expert witness?",
+        "What are the expert's duties to the court under CPR Part 35?",
+        "How should experts communicate after exchange of reports?",
+        "What must be included in an expert's report?",
+        "When should a joint expert be appointed?",
+        "Can I rely on more than one expert in the same field?",
+        "What happens at an experts' discussion?",
+        "What questions can I ask an expert witness at trial?",
+        "How do I challenge the admissibility of expert evidence?",
+        "What are the costs consequences of unreasonable expert evidence?"
+      ]
+    },
+    "costs": {
+      "description": "Questions about costs orders, budgets, and assessment",
+      "questions": [
+        "When must I serve my costs budget?",
+        "What is included in costs budgeting under CPR Part 3?",
+        "What costs orders can the court make?",
+        "When can I recover my costs on the indemnity basis?",
+        "What is a Costs and Case Management Conference?",
+        "How do I challenge an opponent's costs budget?",
+        "What are the sanctions for failing to file a costs budget on time?",
+        "When should I make a Part 36 offer?",
+        "What costs consequences follow from beating a Part 36 offer?",
+        "How is proportionality assessed in detailed assessment?"
+      ]
+    },
+    "evidence": {
+      "description": "Questions about witness statements, exhibits, and evidence generally",
+      "questions": [
+        "When must witness statements be exchanged?",
+        "What must be included in a witness statement of truth?",
+        "How should exhibits be referenced in witness statements?",
+        "Can a witness give evidence on matters not in their witness statement?",
+        "What is the procedure for challenging the admissibility of hearsay evidence?",
+        "How do I apply to cross-examine on a witness statement?",
+        "What are the rules for video link evidence?",
+        "Can I serve a supplemental witness statement?",
+        "What happens if a witness refuses to attend trial?",
+        "How do I apply for a witness summons?"
+      ]
+    },
+    "trial_preparation": {
+      "description": "Questions about preparing for trial and trial bundles",
+      "questions": [
+        "What documents must be included in the trial bundle?",
+        "When must the trial bundle be lodged with the court?",
+        "Who is responsible for preparing the trial bundle?",
+        "What is a reading list for trial?",
+        "When must skeleton arguments be filed for trial?",
+        "What authorities should be included in the bundle of authorities?",
+        "How should the trial bundle be paginated and indexed?",
+        "Can electronic bundles be used for trial?",
+        "What happens if the trial bundle is not prepared properly?",
+        "What are the requirements for chronologies and dramatis personae?"
+      ]
+    }
+  },
+  "cross_category_questions": {
+    "description": "Complex questions that span multiple areas of practice",
+    "questions": [
+      "If I receive a letter before claim today, what are all the key deadlines I need to be aware of?",
+      "What are the complete procedural steps from letter before claim to first CMC in a Circuit Commercial Court claim?",
+      "If my limitation period is about to expire, can I issue proceedings and serve later?",
+      "What disclosure obligations apply if I'm in the Commercial Court versus County Court?",
+      "How do the case management directions differ between fast track and multi-track claims?",
+      "If I miss the deadline for filing my defence, what are my options and what costs consequences might I face?",
+      "What evidence and documents do I need to prepare for a summary judgment application?",
+      "If the other side doesn't comply with disclosure orders, what enforcement options do I have?",
+      "What are the key differences in procedure between Commercial Court and Circuit Commercial Court for similar value claims?",
+      "How do I calculate whether my costs budget is proportionate to the value and complexity of the claim?"
+    ]
+  },
+  "urgency_questions": {
+    "description": "Time-sensitive questions lawyers need answered quickly",
+    "questions": [
+      "I need to apply for an urgent injunction tomorrow - what documents do I need?",
+      "The limitation period expires in 3 days - can I issue online?",
+      "I received a letter before claim yesterday - what's the deadline to acknowledge?",
+      "My client needs a freezing order urgently - can I apply without notice?",
+      "The other side served their defence today - how long do I have to file a reply?",
+      "I need to extend time for filing my costs budget - what's the procedure?",
+      "Can I make an urgent application by email out of hours?",
+      "My witness is unavailable for trial tomorrow - what do I do?",
+      "The other side just applied for summary judgment - when is the hearing?",
+      "I need to challenge jurisdiction - what's the time limit for my application?"
+    ]
+  }
+}

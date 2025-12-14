@@ -22,6 +22,7 @@ interface Props {
     activeCitationLabel?: string | undefined;
     activeCitationContent?: string | undefined;
     enableCitationTab?: boolean; // Add new prop
+    onCitationChanged?: (citation: string) => void; // Add callback to update parent's activeCitation
 }
 
 const pivotItemDisabledStyle = { disabled: true, style: { color: "grey" } };
@@ -35,7 +36,8 @@ export const AnalysisPanel = ({
     onActiveTabChanged,
     activeCitationLabel,
     activeCitationContent,
-    enableCitationTab = false // Default to false
+    enableCitationTab = false, // Default to false
+    onCitationChanged
 }: Props) => {
     // Add defensive handling for data_points structure first
     const getDataPointsArray = (dataPoints: any): any[] => {
@@ -236,17 +238,17 @@ export const AnalysisPanel = ({
 
             // For external URLs, use iframe directly
             if (activeCitation.startsWith("http://") || activeCitation.startsWith("https://")) {
-                return <iframe title="Citation" src={activeCitation} width="100%" height={citationHeight} />;
+                return <iframe title="Citation" src={activeCitation} width="100%" height={citationHeight} key={activeCitation} />;
             }
 
             // For internal content, use the citation blob URL
             switch (fileExtension) {
                 case "png":
-                    return <img src={citation} className={styles.citationImg} alt="Citation Image" />;
+                    return <img src={citation} className={styles.citationImg} alt="Citation Image" key={citation} />;
                 case "md":
                     return <MarkdownViewer src={activeCitation} />;
                 default:
-                    return <iframe title="Citation" src={citation} width="100%" height={citationHeight} />;
+                    return <iframe title="Citation" src={citation} width="100%" height={citationHeight} key={citation} />;
             }
         } catch (error) {
             console.error("Error rendering file viewer:", error);
@@ -257,9 +259,10 @@ export const AnalysisPanel = ({
     // Handle viewing source document from supporting content
     const handleViewSourceDocument = (citation: string) => {
         try {
-            // Set the citation URL for viewing
+            let finalCitation = citation;
+            // Determine the final citation URL
             if (citation.startsWith("http://") || citation.startsWith("https://")) {
-                setCitation(citation);
+                finalCitation = citation;
             } else {
                 // For non-URL citations, try to find the corresponding URL from dataPoints
                 const dataPoint = dataPointsArray.find(
@@ -267,16 +270,24 @@ export const AnalysisPanel = ({
                 );
 
                 if (dataPoint?.storageUrl) {
-                    setCitation(dataPoint.storageUrl);
-                } else {
-                    setCitation(citation);
+                    finalCitation = dataPoint.storageUrl;
                 }
+            }
+
+            console.log("View Source clicked - setting citation to:", finalCitation);
+
+            // Update parent's activeCitation state so the tab can be enabled
+            // The fetchCitation useEffect will handle setting the local citation state
+            if (onCitationChanged) {
+                onCitationChanged(finalCitation);
             }
             onActiveTabChanged(AnalysisPanelTabs.CitationTab);
         } catch (error) {
             console.error("Error handling view source document:", error);
-            // Fallback to just setting the citation
-            setCitation(citation);
+            // Fallback
+            if (onCitationChanged) {
+                onCitationChanged(citation);
+            }
             onActiveTabChanged(AnalysisPanelTabs.CitationTab);
         }
     };

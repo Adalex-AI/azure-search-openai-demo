@@ -147,7 +147,10 @@ if __name__ == "__main__":
         level=logging.WARNING, format="%(message)s", datefmt="[%X]", handlers=[RichHandler(rich_tracebacks=True)]
     )
     logger.setLevel(logging.INFO)
-    load_azd_env()
+    # Load from .env file instead of azd
+    from dotenv import load_dotenv
+    env_path = pathlib.Path(__file__).parent.parent / ".azure" / "cpr-rag" / ".env"
+    load_dotenv(env_path)
 
     parser = argparse.ArgumentParser(description="Generate ground truth data using AI Search index and RAGAS.")
     parser.add_argument("--numsearchdocs", type=int, help="Specify the number of search results to fetch")

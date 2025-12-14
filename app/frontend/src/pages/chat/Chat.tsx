@@ -100,7 +100,7 @@ const Chat = () => {
     const [showChatHistoryBrowser, setShowChatHistoryBrowser] = useState<boolean>(false);
     const [showChatHistoryCosmos, setShowChatHistoryCosmos] = useState<boolean>(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
     const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const audio = useRef(new Audio()).current;
@@ -129,7 +129,7 @@ const Chat = () => {
             if (!config.streamingEnabled) {
                 setShouldStream(false);
             }
-            if (config.showReasoningEffortOption) {
+            if (config.showReasoningEffortOption && config.defaultReasoningEffort) {
                 setReasoningEffort(config.defaultReasoningEffort);
             }
             setShowVectorOption(config.showVectorOption);
@@ -144,10 +144,6 @@ const Chat = () => {
             setShowChatHistoryBrowser(config.showChatHistoryBrowser);
             setShowChatHistoryCosmos(config.showChatHistoryCosmos);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
-            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
-            if (config.showAgenticRetrievalOption) {
-                setRetrieveCount(10);
-            }
             setShowCategoryFilter(!!config.showCategoryFilter);
         });
     };
@@ -653,6 +649,7 @@ const Chat = () => {
                         activeCitationLabel={activeCitationLabel}
                         activeCitationContent={activeCitationContent}
                         enableCitationTab={enableCitationTab}
+                        onCitationChanged={setActiveCitation}
                     />
                 )}
 

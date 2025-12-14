@@ -245,8 +245,35 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                     // If present, add a high score
                     score += 40;
                 }
+            } else if (citationParts.length === 2) {
+                // Two-part citation: could be (subsection, sourcefile) or (sourcepage, sourcefile)
+                const partA = citationParts[0];
+                const partB = citationParts[1];
+
+                console.log(`Two-part citation:`, { partA, partB });
+
+                // Check if partB matches sourcefile
+                if (parsedItem.sourcefile === partB || parsedItem.sourcefile?.includes(partB) || partB.includes(parsedItem.sourcefile || "")) {
+                    score += 30;
+                    console.log(`Document match for two-part citation`);
+
+                    // Check if partA is in the content (subsection) or matches sourcepage
+                    if (parsedItem.sourcepage === partA) {
+                        score += 20;
+                    } else if (parsedItem.content) {
+                        const escaped = partA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                        const patterns = [new RegExp(`(^|\\n)\\s*${escaped}\\b`, "i"), new RegExp(`\\b${escaped}\\b`, "i")];
+                        if (patterns.some(p => p.test(parsedItem.content || ""))) {
+                            score += 25;
+                            console.log(`Subsection '${partA}' found in content`);
+                        }
+                    }
+                } else {
+                    console.log(`Document mismatch for two-part citation`);
+                    continue;
+                }
             } else {
-                // Legacy two-part citation
+                // Single-part or legacy format
                 if (parsedItem.sourcepage && citation.includes(parsedItem.sourcepage)) {
                     score += 15;
                 } else if (parsedItem.sourcefile && citation.includes(parsedItem.sourcefile)) {
@@ -338,18 +365,27 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
 
                 const getDisplayTitle = () => {
                     const parts: string[] = [];
-                    if (parsedItem.sourcefile) parts.push(parsedItem.sourcefile);
-                    if (parsedItem.sourcepage) parts.push(parsedItem.sourcepage);
-                    if (parsedItem.category) parts.push(parsedItem.category);
+                    const rawItem = item as Record<string, string | undefined> | undefined;
+                    const sourcefile = parsedItem.sourcefile || rawItem?.sourcefile;
+                    const sourcepage = parsedItem.sourcepage || rawItem?.sourcepage;
+                    const category = parsedItem.category || rawItem?.category;
+                    if (sourcefile) parts.push(sourcefile);
+                    if (sourcepage) parts.push(sourcepage);
+                    if (category) parts.push(category);
                     const title = parts.length > 0 ? parts.join(", ") : "Document Source";
                     console.log("getDisplayTitle:", {
                         sourcefile: parsedItem.sourcefile,
                         sourcepage: parsedItem.sourcepage,
                         category: parsedItem.category,
+                        rawSourcefile: rawItem?.sourcefile,
+                        rawSourcepage: rawItem?.sourcepage,
+                        rawCategory: rawItem?.category,
                         title
                     });
                     return title;
                 };
+
+                const displayTitle = getDisplayTitle();
 
                 const documentUrl = parsedItem.storageurl || parsedItem.url;
                 const hasDocumentUrl = Boolean(documentUrl);
@@ -361,7 +397,9 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                 return (
                     <div key={docKey} className={`${styles.supportingItem} ${isActive ? styles.highlighted : ""}`}>
                         <div className={styles.itemHeader}>
-                            <div className={styles.itemTitle}>{getDisplayTitle()}</div>
+                            <div className={styles.itemTitle} title={displayTitle} aria-label={displayTitle}>
+                                {displayTitle}
+                            </div>
                             {parsedItem.updated && (
                                 <div className={styles.itemMeta}>
                                     <span className={styles.itemDate}>
@@ -372,7 +410,7 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                         </div>
 
                         {/* Always render full content; highlight specific subsection if active */}
-                        {renderContent(parsedItem.content, isActive, targetSubsection ?? undefined, getDisplayTitle())}
+                        {renderContent(parsedItem.content, isActive, targetSubsection ?? undefined, displayTitle)}
 
                         <div className={styles.supportingContentActions} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {hasDocumentUrl && (

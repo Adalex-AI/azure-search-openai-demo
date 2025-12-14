@@ -179,17 +179,28 @@ export function extractSubsectionContent(fullContent: string, targetSubsection: 
 
     // Enhanced patterns for finding the next subsection/title/divider boundary
     const nextSubsectionPatterns = [
-        // Standard patterns for various numbering systems
-        /\n\s*([A-Z]?\d+\.\d+(?:\.\d+)?)\s/i,
-        /\n\s*([A-Z]\d*\.?\d+\.?\d*)\s/i,
-        /\n\s*([A-Z]\.\d+)\s/i,
-        /\n\s*(Rule\s+\d+\.\d+|Para\s+\d+\.\d+)\s/i,
+        // Letter-Dot-Word patterns (A. Preliminary, B. Commencement)
+        /\n\s*([A-Z]\.?\s+[A-Z][a-z]+)/i,
+
+        // Letter-Number patterns (A.1, B.2, A1, B2)
+        /\n\s*([A-Z]\.?\d+)/i,
+
+        // Numeric patterns (1.1, 1.2.3)
+        /\n\s*(\d+\.\d+(?:\.\d+)?)\s/i,
+
+        // Rule/Para references
+        /\n\s*(Rule\s+\d+(\.\d+)?|Para\s+\d+(\.\d+)?)\s/i,
+        /\n\s*(rule\s+\d+(\.\d+)?|para\s+\d+(\.\d+)?)\s/i,
+
+        // Chapter/Section/Part/Appendix markers
+        /\n\s*(Chapter\s+\d+|Section\s+\d+|Part\s+\d+|Appendix\s+\d+)/i,
+
         // Section dividers
         /\n\s*---/i,
-        // Chapter/Part markers
-        /\n\s*(Chapter\s+\d+|Part\s+[A-Z\d]+|Section\s+[A-Z\d]+)\s/i,
-        // Double newlines as section breaks (likely titles)
-        /\n\s*\n\s*[A-Z]/
+        /\n\s*===+/i,
+
+        // Double newlines preceding another structured identifier (e.g., "D5.2" or "Rule 3.1")
+        /\n\s*\n\s*((?:[A-Z]\.?(?:\d+(?:\.\d+)*))|(?:\d+\.\d+(?:\.\d+)?)|(?:Rule\s+\d+)|(?:Para\s+\d+)|(?:Section\s+\d+)|(?:Chapter\s+\d+)|(?:Part\s+\d+))/i
     ];
 
     // Search for the earliest boundary across all patterns (not the first that happens to match)
@@ -248,18 +259,40 @@ export function parseSubsectionFromCitation(citation: string): string | null {
     if (citationParts.length >= 3) {
         const subsection = citationParts[0].trim();
 
-        // Enhanced validation for different subsection formats
+        // Comprehensive validation for all legal document subsection formats
         const subsectionPatterns = [
+            // Numeric patterns
             /^(\d+\.\d+(\.\d+)?)$/i, // 1.1, 1.2.3
-            /^([A-Z]\d*\.?\d+\.?\d*)$/i, // A1.1, B2, D5.6
-            /^([A-Z]\.\d+)$/i, // D.5, E.3
-            /^(Rule\s+\d+\.\d+)$/i, // Rule 1.2
-            /^(Para\s+\d+\.\d+)$/i, // Para 1.2
-            /^([A-Z]\d+)$/i // D5, E3
+
+            // Letter-Number combinations
+            /^([A-Z]\.\d+)$/i, // A.1, B.2, D.5, E.3
+            /^([A-Z]\d+\.?\d*)$/i, // A1, B2, D5, A1.1, B2.3
+
+            // Letter-Dot-Word patterns (with flexible spacing)
+            /^([A-Z]\.?\s+[A-Z][a-z]+.*?)$/i, // A. Preliminary, A.  Preliminary, B. Commencement, C. Particulars of Claim
+
+            // Rule/Para/Section references
+            /^(Rule\s+\d+(\.\d+)?)$/i, // Rule 1.2, Rule 5
+            /^(Para\s+\d+(\.\d+)?)$/i, // Para 1.2, Para 3
+            /^(rule\s+\d+(\.\d+)?)$/i, // rule 1.2 (lowercase)
+            /^(para\s+\d+(\.\d+)?)$/i, // para 1.2 (lowercase)
+
+            // Chapter/Section/Part/Appendix references
+            /^(Chapter\s+\d+)$/i, // Chapter 1, Chapter 10
+            /^(Section\s+\d+(\.\s+.+)?)$/i, // Section 1, Section 1. Introduction
+            /^(Part\s+\d+)$/i, // Part 1, Part 25
+            /^(Appendix\s+\d+)$/i, // Appendix 1, Appendix 10
+
+            // Plain word titles (multi-word headings)
+            /^([A-Z][a-z]+(\s+[A-Z][a-z]+)+)$/i, // Arbitration Claims, Civil Evidence Act, etc.
+
+            // Catch remaining single letter patterns
+            /^([A-Z])$/i // A, B, C (standalone letters)
         ];
 
         for (const pattern of subsectionPatterns) {
             if (pattern.test(subsection)) {
+                console.log(`Subsection "${subsection}" matched pattern:`, pattern);
                 return subsection;
             }
         }

@@ -278,8 +278,10 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         auth_claims: dict[str, Any],
         should_stream: bool = False,
     ) -> tuple[ExtraInfo, Union[Awaitable[ChatCompletion], Awaitable[AsyncStream[ChatCompletionChunk]]]]:
+        logging.info("🔍 DIAGNOSTIC_LOG_START: run_until_final_call entered")
         use_agentic_retrieval = True if overrides.get("use_agentic_retrieval") else False
         original_user_query = messages[-1]["content"]
+        logging.info(f"🔍 DIAGNOSTIC: use_agentic_retrieval={use_agentic_retrieval}, query='{original_user_query[:100]}...'")
 
         reasoning_model_support = self.GPT_REASONING_MODELS.get(self.chatgpt_model)
         if reasoning_model_support and (not reasoning_model_support.streaming and should_stream):
@@ -287,9 +289,13 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                 f"{self.chatgpt_model} does not support streaming. Please use a different model or disable streaming."
             )
         if use_agentic_retrieval:
+            logging.info("🔍 DIAGNOSTIC: Calling run_agentic_retrieval_approach...")
             extra_info = await self.run_agentic_retrieval_approach(messages, overrides, auth_claims)
+            logging.info("🔍 DIAGNOSTIC: run_agentic_retrieval_approach completed")
         else:
+            logging.info("🔍 DIAGNOSTIC: Calling run_search_approach...")
             extra_info = await self.run_search_approach(messages, overrides, auth_claims)
+            logging.info("🔍 DIAGNOSTIC: run_search_approach completed")
 
         # Pre-build enhanced citations from search results
         self.citation_map = {}
@@ -346,6 +352,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         # Increase token limit to accommodate full content
         response_token_limit = self.get_response_token_limit(self.chatgpt_model, 8192)  # Increased from 4096
         
+        logging.info(f"🔍 DIAGNOSTIC: STEP 3 - Creating final chat completion (max_tokens={response_token_limit})...")
         chat_coroutine = cast(
             Union[Awaitable[ChatCompletion], Awaitable[AsyncStream[ChatCompletionChunk]]],
             self.create_chat_completion(
@@ -371,6 +378,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             )
         )
         
+        logging.info("🔍 DIAGNOSTIC_LOG_END: run_until_final_call returning")
         # Store enhanced citations in extra_info for frontend access
         extra_info.enhanced_citations = enhanced_citations
         extra_info.citation_map = self.citation_map
@@ -452,6 +460,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
 
         # STEP 1: Generate an optimized keyword search query based on the chat history and the last question
 
+        logging.info("🔍 DIAGNOSTIC: STEP 1 - Calling OpenAI for query rewrite...")
         chat_completion = cast(
             ChatCompletion,
             await self.create_chat_completion(
@@ -469,6 +478,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         )
 
         query_text = self.get_search_query(chat_completion, original_user_query)
+        logging.info(f"🔍 DIAGNOSTIC: STEP 1 completed - optimized query: '{query_text}'")
 
         # STEP 2: Retrieve relevant documents from the search index with the GPT optimized query
 
@@ -478,9 +488,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             vectors.append(await self.compute_text_embedding(query_text))
 
         # Log the search parameters for debugging (remove court detection logging)
-        import logging
         logging.info(f"Searching with query: {query_text}, top: {top}, filter: {search_index_filter}")
         
+        logging.info("🔍 DIAGNOSTIC: STEP 2 - Calling Azure Search...")
         results = await self.search(
             top,
             query_text,
@@ -496,6 +506,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         )
 
         # Log the search results for debugging
+        logging.info("🔍 DIAGNOSTIC: STEP 2 completed")
         logging.info(f"Search returned {len(results)} results")
         for i, result in enumerate(results[:3]):  # Log first 3 results
             content_preview = result.content[:200] if result.content else "No content"
@@ -540,7 +551,6 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     source["url"] = source["storageurl"]
                 
                 # Log for debugging
-                import logging
                 logging.info(f"Final structured source fields: {list(source.keys())}")
                 logging.info(f"Final source data: sourcepage='{source.get('sourcepage')}', sourcefile='{source.get('sourcefile')}', category='{source.get('category')}', updated='{source.get('updated')}', storageurl='{source.get('storageurl')}'")
 
@@ -868,6 +878,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         n: Optional[int] = None,
         reasoning_effort: Optional[str] = None,
     ) -> Union[Awaitable[ChatCompletion], Awaitable[AsyncStream[ChatCompletionChunk]]]:
+        # GPT5_TEMPERATURE_FIX_APPLIED: GPT-5 models only support temperature=1 (default)
         if chatgpt_model in self.GPT_REASONING_MODELS:
             params: dict[str, Any] = {
                 # Increase max_completion_tokens to handle full content
@@ -880,6 +891,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                 params["stream"] = True
                 params["stream_options"] = {"include_usage": True}
             params["reasoning_effort"] = reasoning_effort or overrides.get("reasoning_effort") or self.reasoning_effort
+            
+            # GPT-5 models only support temperature=1, don't override it
+            # Ignore any temperature parameter passed in
 
         else:
             # Include parameters that may not be supported for reasoning models
@@ -1050,7 +1064,6 @@ class ChatReadRetrieveReadApproach(ChatApproach):
     def get_sources_content(self, results: list[Document], use_semantic_captions: bool, use_image_citation: bool) -> list[dict[str, Any]]:
         """Return structured data for consistent processing with full content preserved and multiple subsections support"""
         
-        import logging
         logging.info(f"🔍 DEBUG: ChatReadRetrieveRead processing {len(results)} documents for sources content")
         
         structured_results = []

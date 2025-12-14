@@ -1,0 +1,48 @@
+{
+    "gpt_groundedness": {
+        "pass_count": 10,
+        "pass_rate": 1.0,
+        "mean_rating": 5.0
+    },
+    "gpt_relevance": {
+        "pass_count": 9,
+        "pass_rate": 0.9,
+        "mean_rating": 3.9
+    },
+    "answer_length": {
+        "mean": 562.8,
+        "max": 1171,
+        "min": 54
+    },
+    "latency": {
+        "mean": 8.81,
+        "max": 11.122878,
+        "min": 5.316651
+    },
+    "any_citation": {
+        "total": 9,
+        "rate": 0.9
+    },
+    "citations_matched": {
+        "total": 10,
+        "rate": 1.0
+    },
+    "citation_format_compliance": {
+        "total_compliant": 10,
+        "compliance_rate": 1.0,
+        "total_violations": 0
+    },
+    "subsection_extraction_accuracy": {
+        "mean_accuracy": 1.0,
+        "perfect_extractions": 8,
+        "total_evaluated": 8
+    },
+    "category_coverage": {
+        "mean_coverage": NaN,
+        "perfect_coverage": 0,
+        "total_evaluated": 0
+    },
+    "num_questions": {
+        "total": 10
+    }
+}
