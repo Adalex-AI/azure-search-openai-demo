@@ -1,13 +1,19 @@
-# M365 Copilot Agent Implementation Guide
+# Agent Implementation Guide
 
-## Legal RAG as a Microsoft 365 Declarative Agent
+## Legal RAG as an AI Agent (M365 Copilot & Azure AI Foundry)
 
-This document provides a comprehensive implementation guide for deploying your Legal RAG solution as a **Microsoft 365 Copilot Declarative Agent**. This enables integration directly into Microsoft 365 Copilot, Teams, Word, and PowerPoint.
+This document provides comprehensive implementation guides for deploying your Legal RAG solution as:
+
+1. **Microsoft 365 Copilot Declarative Agent** - Integration into Teams, Word, PowerPoint, Outlook
+2. **Azure AI Foundry Agent** - Standalone agent with Azure AI Search integration via VS Code extension
+
+Both approaches share the same core components (prompts, citation logic, source processing) while adapting to platform-specific requirements.
 
 ---
 
 ## Table of Contents
 
+### Part 1: M365 Copilot Agent
 1. [Architecture Overview](#architecture-overview)
 2. [Comparison: Web App vs M365 Agent](#comparison-web-app-vs-m365-agent)
 3. [Shared Components Strategy](#shared-components-strategy)
@@ -20,6 +26,15 @@ This document provides a comprehensive implementation guide for deploying your L
 10. [API Plugin Development](#api-plugin-development)
 11. [Testing Strategy](#testing-strategy)
 12. [Deployment Guide](#deployment-guide)
+
+### Part 2: Azure AI Foundry Agent
+13. [Azure AI Foundry Overview](#azure-ai-foundry-overview)
+14. [Foundry vs M365 Comparison](#foundry-vs-m365-comparison)
+15. [Foundry Agent Architecture](#foundry-agent-architecture)
+16. [VS Code Extension Setup](#vs-code-extension-setup)
+17. [Foundry Agent Implementation](#foundry-agent-implementation)
+18. [Azure AI Search Tool Integration](#azure-ai-search-tool-integration)
+19. [Foundry Agent Deployment](#foundry-agent-deployment)
 
 ---
 
@@ -1204,10 +1219,716 @@ M365_APP_ID=your-app-guid
 
 ---
 
+---
+
+# Part 2: Azure AI Foundry Agent
+
+---
+
+## Azure AI Foundry Overview
+
+Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for building, deploying, and managing AI agents. The **Foundry Agent Service** enables you to create production-ready agents with built-in orchestration, tool calling, and observability.
+
+### What is Foundry Agent Service?
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           AZURE AI FOUNDRY AGENT SERVICE                                 │
+│                                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │                              FOUNDRY AGENT                                        │   │
+│  │                                                                                   │   │
+│  │    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                     │   │
+│  │    │    MODEL     │    │ INSTRUCTIONS │    │    TOOLS     │                     │   │
+│  │    │              │    │              │    │              │                     │   │
+│  │    │  GPT-4o      │    │  Legal CPR   │    │ • Azure AI   │                     │   │
+│  │    │  GPT-4       │    │  Prompts     │    │   Search     │                     │   │
+│  │    │  Llama       │    │              │    │ • Bing       │                     │   │
+│  │    │              │    │              │    │ • Functions  │                     │   │
+│  │    └──────────────┘    └──────────────┘    │ • OpenAPI    │                     │   │
+│  │                                             └──────────────┘                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                              │
+│                                          ▼                                              │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         FOUNDRY RUNTIME                                           │   │
+│  │                                                                                   │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │   │
+│  │  │ Conversation│  │ Tool        │  │ Content     │  │ Observability│           │   │
+│  │  │ Management  │  │ Orchestration│ │ Safety      │  │ & Logging   │           │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘            │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Models** | GPT-4o, GPT-4, GPT-3.5, Llama, and other LLMs |
+| **Tools** | Azure AI Search, Bing, Azure Functions, OpenAPI, Code Interpreter |
+| **Orchestration** | Server-side tool execution with automatic retry |
+| **Observability** | Full conversation traceability, Application Insights integration |
+| **Security** | Microsoft Entra ID, RBAC, content filters, encryption |
+| **VS Code Integration** | Build and test agents directly from VS Code |
+
+---
+
+## Foundry vs M365 Comparison
+
+| Aspect | M365 Declarative Agent | Azure AI Foundry Agent |
+|--------|----------------------|------------------------|
+| **Platform** | Microsoft 365 Copilot | Azure AI Foundry Portal / SDK |
+| **Runtime** | Microsoft 365 Copilot orchestrator | Foundry Agent Service |
+| **Development** | Manifest JSON files + API Plugin | Python/C#/TypeScript SDK or Portal |
+| **VS Code Extension** | M365 Agents Toolkit | Azure AI Foundry extension |
+| **Knowledge Sources** | SharePoint, OneDrive, Graph Connectors | Azure AI Search, Bing, Custom APIs |
+| **Tool Execution** | Client-side (API Plugin) | Server-side (Foundry runtime) |
+| **Deployment** | Teams App Store / Admin upload | Azure resource deployment |
+| **Authentication** | Microsoft 365 SSO | Azure AD / API Keys |
+| **Cost Model** | M365 Copilot license | Azure consumption-based |
+| **Best For** | M365 ecosystem users | Custom enterprise applications |
+
+### When to Choose Each Platform
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                        DECISION MATRIX: WHICH PLATFORM?                                  │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  CHOOSE M365 COPILOT AGENT WHEN:              CHOOSE AZURE AI FOUNDRY WHEN:             │
+│  ├── Users primarily work in Teams/Office     ├── Building custom chat applications     │
+│  ├── Need native M365 integration             ├── Need full control over orchestration  │
+│  ├── Want simple SharePoint grounding         ├── Using existing Azure AI Search index  │
+│  ├── Organization has M365 Copilot licenses   ├── Need advanced observability/tracing   │
+│  └── Prefer no-code/low-code approach         └── Building multi-agent systems          │
+│                                                                                          │
+│  CHOOSE BOTH WHEN:                                                                       │
+│  ├── Want to reach users in M365 AND standalone apps                                    │
+│  ├── Have shared knowledge base in Azure AI Search                                      │
+│  └── Need consistent behavior across platforms                                          │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Foundry Agent Architecture
+
+### Architecture with Shared Components
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              SHARED INFRASTRUCTURE                                        │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐   │
+│  │                         Azure AI Search Index                                      │   │
+│  │                    (Same index used by Web App & M365)                            │   │
+│  └──────────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                                │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐   │
+│  │                      SHARED COMPONENTS                                              │   │
+│  │   ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐         │   │
+│  │   │ Prompty Files      │  │ CitationBuilder    │  │ SourceProcessor    │         │   │
+│  │   └────────────────────┘  └────────────────────┘  └────────────────────┘         │   │
+│  └──────────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                                │
+│         ┌────────────────────────────────┼────────────────────────────────┐              │
+│         │                                │                                │              │
+│         ▼                                ▼                                ▼              │
+│  ┌───────────────────┐    ┌───────────────────┐    ┌───────────────────┐             │
+│  │    WEB APP        │    │   M365 AGENT      │    │ FOUNDRY AGENT     │             │
+│  │                   │    │                   │    │                   │             │
+│  │  Quart Backend    │    │  API Plugin +     │    │  Python SDK +     │             │
+│  │  React Frontend   │    │  Declarative      │    │  Azure AI Search  │             │
+│  │                   │    │  Manifest         │    │  Tool             │             │
+│  │                   │    │                   │    │                   │             │
+│  │  Features:        │    │  Features:        │    │  Features:        │             │
+│  │  ✅ Full UI       │    │  ✅ Teams/Word    │    │  ✅ Playground    │             │
+│  │  ✅ All settings  │    │  ✅ M365 native   │    │  ✅ API access    │             │
+│  │  ✅ Streaming     │    │  ❌ No settings   │    │  ✅ Multi-agent   │             │
+│  └───────────────────┘    └───────────────────┘    └───────────────────┘             │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## VS Code Extension Setup
+
+### Prerequisites
+
+1. **Azure Subscription** with appropriate permissions
+2. **VS Code** with Azure AI Foundry extension
+3. **Python 3.10+** (for SDK development)
+4. **Existing Azure AI Search index** (from your current deployment)
+
+### Installing the Azure AI Foundry Extension
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
+3. Search for "Azure AI Foundry" or "Azure AI"
+4. Install the extension
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                         VS CODE AZURE AI FOUNDRY EXTENSION                               │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  EXTENSION CAPABILITIES:                                                                 │
+│  ├── Create and manage Foundry projects                                                │
+│  ├── Design agents with visual editor                                                   │
+│  ├── Connect to Azure AI Search indexes                                                 │
+│  ├── Test agents in playground                                                          │
+│  ├── Deploy agents to Azure                                                             │
+│  └── View traces and logs                                                               │
+│                                                                                          │
+│  WORKFLOW:                                                                               │
+│  1. Sign in to Azure                                                                     │
+│  2. Select/create Foundry project                                                        │
+│  3. Create new agent                                                                     │
+│  4. Add Azure AI Search tool                                                            │
+│  5. Configure instructions (use shared prompts)                                         │
+│  6. Test in playground                                                                   │
+│  7. Deploy                                                                               │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Foundry Agent Implementation
+
+### Project Structure for Foundry Agent
+
+```
+azure-search-openai-demo-2/
+├── shared/                        # Shared with Web App & M365 Agent
+│   ├── prompts/
+│   │   ├── chat_answer_question.prompty
+│   │   └── ...
+│   └── legal/
+│       ├── citation_builder.py
+│       └── source_processor.py
+│
+├── foundry-agent/                 # NEW: Foundry Agent
+│   ├── agent_config.yaml          # Agent configuration
+│   ├── agent.py                   # Main agent implementation
+│   ├── tools/
+│   │   ├── legal_search.py        # Azure AI Search tool wrapper
+│   │   └── citation_processor.py  # Citation formatting
+│   ├── tests/
+│   │   └── test_agent.py
+│   └── requirements.txt
+│
+└── ...
+```
+
+### Step 1: Create Foundry Project and Agent (Portal Method)
+
+1. **Go to Azure AI Foundry Portal**: https://ai.azure.com
+2. **Create an Agent**:
+   - Click "Create an agent" from the home page
+   - Enter project name: "Legal-CPR-Agent"
+   - Wait for resources to provision (gpt-4o will be auto-deployed)
+
+3. **Configure Agent Instructions**:
+   Paste the condensed version of your legal prompts:
+
+```
+You are an expert legal assistant helping lawyers and legal professionals in England and Wales with questions about the Civil Procedure Rules (CPR), Practice Directions, and Court Guides.
+
+DOCUMENT STRUCTURE AWARENESS:
+The knowledge base contains documents from:
+- Civil Procedure Rules (Parts 1-89) and associated Practice Directions
+- Commercial Court Guide (11th Edition, July 2023)
+- King's Bench Division Guide (2025 Edition)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology and Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+When answering questions:
+- Court Guides may provide specialized procedures that supplement or modify general CPR rules
+- Practice Directions provide detailed implementation guidance for CPR Parts
+- Consider both the general rule (CPR) and any court-specific variations when applicable
+
+IMPORTANT CONTEXT AWARENESS:
+- If the user asks about a specific court, prioritize information specific to that court
+- If no specific court is mentioned, focus on general Civil Procedure Rules
+- Always note when rules or procedures are court-specific versus generally applicable
+
+CITATION REQUIREMENTS:
+- Every sentence must end with a numbered citation [1], [2], [3], etc.
+- Reference search results using their index numbers
+- Use one citation per sentence
+
+LEGAL TERMINOLOGY:
+- Affidavit: A written, sworn statement of evidence
+- Counterclaim: A claim brought by defendant in response to claimant's claim
+- Disclosure: The process of parties revealing documents to each other
+- Injunction: A court order prohibiting or requiring an action
+```
+
+### Step 2: Add Azure AI Search Tool
+
+1. In the agent playground, click **Knowledge > Add**
+2. Select **Azure AI Search**
+3. Choose **Indexes that are not part of this project**
+4. Enter your existing search connection:
+   - Azure AI Search resource connection: Create new or select existing
+   - Endpoint: `https://your-search.search.windows.net`
+   - API Key: Your admin key
+5. Select your index (e.g., `gptkbindex`)
+6. Configure search type: **Hybrid + Semantic** (recommended)
+7. Click **Connect**
+
+### Step 3: Python SDK Implementation
+
+For more control, implement the agent using the Python SDK:
+
+```python
+# foundry-agent/agent.py
+"""
+Legal CPR Agent for Azure AI Foundry
+
+This agent provides legal research capabilities using the same
+Azure AI Search index as the web application.
+"""
+
+import os
+import sys
+from pathlib import Path
+from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import (
+    Agent,
+    AgentThread,
+    AzureAISearchTool,
+    AzureAISearchToolResource,
+)
+from azure.identity import DefaultAzureCredential
+
+# Add shared components
+sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+from legal import CitationBuilder, SourceProcessor
+
+# Configuration
+PROJECT_ENDPOINT = os.environ.get("AZURE_AI_PROJECT_ENDPOINT")
+SEARCH_ENDPOINT = os.environ.get("AZURE_SEARCH_ENDPOINT")
+SEARCH_INDEX = os.environ.get("AZURE_SEARCH_INDEX", "gptkbindex")
+SEARCH_CONNECTION_NAME = os.environ.get("AZURE_SEARCH_CONNECTION", "legal-search")
+
+# Load instructions from shared prompts
+def load_instructions():
+    """Load and condense instructions from shared prompty files."""
+    prompty_path = Path(__file__).parent.parent / "shared" / "prompts" / "chat_answer_question.prompty"
+    
+    # For Foundry, we need condensed instructions (keep under 8000 chars for optimal performance)
+    instructions = """You are an expert legal assistant helping lawyers and legal professionals in England and Wales with questions about the Civil Procedure Rules (CPR), Practice Directions, and Court Guides.
+
+DOCUMENT STRUCTURE AWARENESS:
+The knowledge base contains documents from:
+- Civil Procedure Rules (Parts 1-89) and associated Practice Directions
+- Commercial Court Guide (11th Edition, July 2023)
+- King's Bench Division Guide (2025 Edition)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology and Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+When answering questions:
+- Court Guides may provide specialized procedures that supplement or modify general CPR rules
+- Practice Directions provide detailed implementation guidance for CPR Parts
+- Consider both the general rule (CPR) and any court-specific variations when applicable
+
+CITATION REQUIREMENTS:
+- Every sentence must end with a numbered citation [1], [2], [3], etc.
+- Reference the Azure AI Search results using their index numbers
+- Use one citation per sentence
+
+If the user asks about a specific court, prioritize information specific to that court.
+If no specific court is mentioned, focus on general Civil Procedure Rules.
+Always note when rules or procedures are court-specific versus generally applicable."""
+    
+    return instructions
+
+
+def create_legal_agent(client: AIProjectClient) -> Agent:
+    """Create the Legal CPR agent with Azure AI Search tool."""
+    
+    # Configure Azure AI Search tool
+    search_tool = AzureAISearchTool(
+        index_connection_id=SEARCH_CONNECTION_NAME,
+        index_name=SEARCH_INDEX,
+    )
+    
+    # Create agent
+    agent = client.agents.create_agent(
+        model="gpt-4o",  # Or your deployed model name
+        name="Legal CPR Assistant",
+        instructions=load_instructions(),
+        tools=[search_tool],
+    )
+    
+    print(f"Created agent: {agent.id}")
+    return agent
+
+
+def run_conversation(client: AIProjectClient, agent: Agent, user_message: str):
+    """Run a single conversation turn with the agent."""
+    
+    # Create thread
+    thread = client.agents.create_thread()
+    
+    # Add user message
+    client.agents.create_message(
+        thread_id=thread.id,
+        role="user",
+        content=user_message,
+    )
+    
+    # Run agent
+    run = client.agents.create_and_process_run(
+        thread_id=thread.id,
+        agent_id=agent.id,
+    )
+    
+    # Get response
+    messages = client.agents.list_messages(thread_id=thread.id)
+    
+    # Process with shared citation builder
+    citation_builder = CitationBuilder()
+    
+    for message in messages:
+        if message.role == "assistant":
+            return message.content[0].text.value
+    
+    return None
+
+
+def main():
+    """Main entry point."""
+    # Initialize client
+    client = AIProjectClient(
+        endpoint=PROJECT_ENDPOINT,
+        credential=DefaultAzureCredential(),
+    )
+    
+    # Create or get agent
+    agent = create_legal_agent(client)
+    
+    # Interactive loop
+    print("Legal CPR Assistant Ready. Type 'quit' to exit.")
+    print("-" * 50)
+    
+    while True:
+        user_input = input("\nYou: ").strip()
+        
+        if user_input.lower() in ('quit', 'exit', 'q'):
+            break
+        
+        if not user_input:
+            continue
+        
+        response = run_conversation(client, agent, user_input)
+        print(f"\nAssistant: {response}")
+    
+    # Cleanup
+    client.agents.delete_agent(agent.id)
+    print("\nAgent deleted. Goodbye!")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Step 4: Agent Configuration File
+
+```yaml
+# foundry-agent/agent_config.yaml
+name: Legal CPR Assistant
+description: Expert legal assistant for Civil Procedure Rules in England and Wales
+
+model:
+  deployment: gpt-4o
+  parameters:
+    temperature: 0.2
+    max_tokens: 4000
+
+tools:
+  - type: azure_ai_search
+    connection: legal-search-connection
+    index: gptkbindex
+    search_type: hybrid_semantic
+    top_k: 5
+    
+instructions_file: ../shared/prompts/chat_answer_question.prompty
+
+conversation_starters:
+  - "What are the disclosure requirements under CPR Part 31?"
+  - "Explain the fast track allocation criteria"
+  - "What are the Commercial Court's case management procedures?"
+  - "When can a party apply for summary judgment?"
+```
+
+---
+
+## Azure AI Search Tool Integration
+
+### Connecting Your Existing Index
+
+Your Legal RAG already has an Azure AI Search index. Here's how to connect it to Foundry:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    CONNECTING EXISTING AZURE AI SEARCH INDEX                             │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  PREREQUISITES:                                                                          │
+│  ├── Azure AI Search index with vector fields                                           │
+│  ├── Index must have:                                                                   │
+│  │   ├── Edm.String fields (searchable, retrievable)                                   │
+│  │   └── Collection(Edm.Single) vector fields (searchable)                             │
+│  └── Foundry project in same tenant as search resource                                 │
+│                                                                                          │
+│  YOUR INDEX FIELDS (from current deployment):                                           │
+│  ├── content: Edm.String (main text)                                                   │
+│  ├── sourcepage: Edm.String (page/section reference)                                   │
+│  ├── sourcefile: Edm.String (document name)                                            │
+│  ├── category: Edm.String (court/document type)                                        │
+│  ├── storageUrl: Edm.String (blob storage URL)                                         │
+│  └── embedding: Collection(Edm.Single) (vector embeddings)                             │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Creating the Connection via Azure CLI
+
+```bash
+# Create connection configuration
+cat > connection.yml << EOF
+name: legal-search-connection
+type: azure_ai_search
+endpoint: https://your-search.search.windows.net
+api_key: your-admin-key
+EOF
+
+# Create connection in Foundry project
+az ml connection create \
+  --file connection.yml \
+  --resource-group your-resource-group \
+  --workspace-name your-foundry-project
+```
+
+### Configuring Search in Python SDK
+
+```python
+# foundry-agent/tools/legal_search.py
+"""
+Legal Search Tool Configuration for Azure AI Foundry
+
+This module configures the Azure AI Search tool to work with
+the existing legal documents index.
+"""
+
+from azure.ai.projects.models import (
+    AzureAISearchTool,
+    AzureAISearchQueryType,
+)
+
+
+def create_legal_search_tool(connection_id: str, index_name: str) -> AzureAISearchTool:
+    """
+    Create Azure AI Search tool configured for legal documents.
+    
+    Args:
+        connection_id: The Foundry connection ID for Azure AI Search
+        index_name: Name of the search index (e.g., 'gptkbindex')
+        
+    Returns:
+        Configured AzureAISearchTool instance
+    """
+    return AzureAISearchTool(
+        index_connection_id=connection_id,
+        index_name=index_name,
+        query_type=AzureAISearchQueryType.HYBRID_SEMANTIC,  # Best for legal docs
+        top_k=5,
+        # Filter can be added for category-specific searches
+        # filter="category eq 'Commercial Court'"
+    )
+
+
+def create_filtered_search_tool(
+    connection_id: str, 
+    index_name: str,
+    category: str = None
+) -> AzureAISearchTool:
+    """
+    Create search tool with optional category filter.
+    
+    This allows creating court-specific search experiences.
+    """
+    filter_expr = f"category eq '{category}'" if category else None
+    
+    return AzureAISearchTool(
+        index_connection_id=connection_id,
+        index_name=index_name,
+        query_type=AzureAISearchQueryType.HYBRID_SEMANTIC,
+        top_k=5,
+        filter=filter_expr,
+    )
+```
+
+---
+
+## Foundry Agent Deployment
+
+### Deployment Options
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                         FOUNDRY AGENT DEPLOYMENT OPTIONS                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  OPTION 1: FOUNDRY PORTAL DEPLOYMENT (Recommended for Testing)                          │
+│  ├── Create agent in portal                                                             │
+│  ├── Test in playground                                                                  │
+│  ├── Share playground link for testing                                                  │
+│  └── Access via REST API                                                                │
+│                                                                                          │
+│  OPTION 2: SDK DEPLOYMENT (Recommended for Production)                                  │
+│  ├── Define agent in code (agent.py)                                                    │
+│  ├── Deploy via Azure CLI or SDK                                                        │
+│  ├── Integrate with your application                                                    │
+│  └── Full control over lifecycle                                                        │
+│                                                                                          │
+│  OPTION 3: HOSTED CONTAINER (Advanced)                                                  │
+│  ├── Package agent as container                                                         │
+│  ├── Deploy to Azure Container Apps                                                     │
+│  ├── Custom scaling and networking                                                      │
+│  └── Bring your own infrastructure                                                      │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### REST API Access
+
+Once deployed, access your agent via REST API:
+
+```python
+# Example: Calling Foundry Agent from external application
+import requests
+import os
+
+PROJECT_ENDPOINT = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
+AGENT_ID = os.environ["AGENT_ID"]
+
+def query_legal_agent(question: str, session_id: str = None):
+    """Query the Legal CPR agent via REST API."""
+    
+    headers = {
+        "Authorization": f"Bearer {get_access_token()}",
+        "Content-Type": "application/json",
+    }
+    
+    # Create thread if new session
+    if not session_id:
+        thread_response = requests.post(
+            f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads",
+            headers=headers,
+        )
+        session_id = thread_response.json()["id"]
+    
+    # Send message
+    message_response = requests.post(
+        f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/messages",
+        headers=headers,
+        json={"role": "user", "content": question},
+    )
+    
+    # Run agent
+    run_response = requests.post(
+        f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/runs",
+        headers=headers,
+    )
+    
+    # Get response
+    messages_response = requests.get(
+        f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/messages",
+        headers=headers,
+    )
+    
+    return messages_response.json()
+```
+
+### Environment Variables
+
+```bash
+# foundry-agent/.env
+
+# Azure AI Foundry Project
+AZURE_AI_PROJECT_ENDPOINT=https://your-project.api.azureml.ms
+
+# Azure AI Search (existing from web app)
+AZURE_SEARCH_ENDPOINT=https://your-search.search.windows.net
+AZURE_SEARCH_KEY=your-search-key
+AZURE_SEARCH_INDEX=gptkbindex
+
+# Azure OpenAI (if using separate deployment)
+AZURE_OPENAI_ENDPOINT=https://your-openai.openai.azure.com
+AZURE_OPENAI_KEY=your-openai-key
+
+# Foundry Agent
+AGENT_ID=your-created-agent-id
+SEARCH_CONNECTION_NAME=legal-search-connection
+```
+
+---
+
+## Summary: Three Platforms Compared
+
+| Capability | Web App | M365 Agent | Foundry Agent |
+|------------|---------|------------|---------------|
+| **Chat with legal knowledge** | ✅ | ✅ | ✅ |
+| **Same Azure AI Search index** | ✅ | ✅ (API Plugin) | ✅ (Native tool) |
+| **Same prompts/instructions** | ✅ Full | ✅ Condensed | ✅ Condensed |
+| **Same citation logic** | ✅ | ✅ | ✅ |
+| **Full UI with all settings** | ✅ | ❌ | ❌ |
+| **Supporting content tab** | ✅ | ❌ | ❌ |
+| **Teams/Word integration** | ❌ | ✅ | ❌ |
+| **REST API access** | ✅ | ❌ | ✅ |
+| **Playground testing** | ❌ | ✅ | ✅ |
+| **Multi-agent orchestration** | ❌ | ❌ | ✅ |
+| **Server-side tool execution** | ❌ | ❌ | ✅ |
+| **Full observability/tracing** | Limited | Limited | ✅ |
+| **VS Code development** | ✅ | ✅ | ✅ |
+
+---
+
+## Combined Implementation Timeline
+
+| Phase | Week | Web App | M365 Agent | Foundry Agent |
+|-------|------|---------|------------|---------------|
+| **Phase 1** | 1 | Extract shared components | - | - |
+| **Phase 2** | 2 | Update imports | Create manifests | Create project |
+| **Phase 3** | 3 | - | Implement API Plugin | Connect AI Search |
+| **Phase 4** | 4 | Test shared components | Test in Teams | Test in playground |
+| **Phase 5** | 5 | - | Deploy to org | Deploy agent |
+
+---
+
 ## References
 
+### M365 Copilot
 - [Microsoft 365 Copilot Extensibility Documentation](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/)
 - [Declarative Agent Manifest Schema v1.2](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.2)
 - [API Plugin Development](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-api-plugins)
 - [Microsoft 365 Agents Toolkit](https://aka.ms/M365AgentsToolkit)
 - [Build Declarative Agents Tutorial](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/build-declarative-agents)
+
+### Azure AI Foundry
+- [What is Foundry Agent Service?](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview)
+- [Foundry Agent Quickstart](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/quickstart)
+- [Azure AI Search Tool](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools-classic/azure-ai-search)
+- [Foundry Python SDK](https://learn.microsoft.com/en-us/python/api/azure-ai-projects/)
+- [Environment Setup](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/environment-setup)
