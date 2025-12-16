@@ -1932,3 +1932,922 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 - [Azure AI Search Tool](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools-classic/azure-ai-search)
 - [Foundry Python SDK](https://learn.microsoft.com/en-us/python/api/azure-ai-projects/)
 - [Environment Setup](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/environment-setup)
+
+### Teams Bot
+- [Teams Bot Concepts](https://learn.microsoft.com/en-us/microsoftteams/platform/bots/bot-basics)
+- [Teams Bot Conversations](https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-basics)
+- [Register a Bot with Azure](https://learn.microsoft.com/en-us/azure/bot-service/bot-service-quickstart-registration)
+- [Bot Framework SDK](https://github.com/microsoft/botbuilder-python)
+- [Teams Bot Samples](https://github.com/OfficeDev/Microsoft-Teams-Samples)
+
+---
+
+# Part 3: Teams Bot Integration
+
+This section covers deploying your Legal RAG solution as a Teams bot, which provides direct conversational access to your legal knowledge base within Microsoft Teams.
+
+## Teams Bot Overview
+
+There are **two approaches** to integrating your Legal RAG solution into Teams:
+
+| Approach | Description | Best For |
+|----------|-------------|----------|
+| **M365 Declarative Agent** | Extension of M365 Copilot (Part 1) | Organizations using M365 Copilot licenses |
+| **Standalone Azure Bot** | Custom bot using Bot Framework | Organizations without M365 Copilot, or needing custom control |
+
+---
+
+## Teams Bot Architecture
+
+### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              TEAMS BOT INTEGRATION                                    │
+│                                                                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐ │
+│  │                           Microsoft Teams                                        │ │
+│  │                                                                                  │ │
+│  │   ┌──────────────────────┐          ┌──────────────────────┐                   │ │
+│  │   │   Personal Chat      │          │   Channel/Group      │                   │ │
+│  │   │   1:1 with Bot       │          │   @mention Bot       │                   │ │
+│  │   └──────────────────────┘          └──────────────────────┘                   │ │
+│  │              │                                │                                  │ │
+│  └──────────────┼────────────────────────────────┼──────────────────────────────────┘ │
+│                 │                                │                                    │
+│                 └────────────────┬───────────────┘                                    │
+│                                  ▼                                                    │
+│            ┌─────────────────────────────────────────────────────────────┐           │
+│            │                  Bot Framework Connector                     │           │
+│            │              (Azure Bot Service Channel)                     │           │
+│            └─────────────────────────────────────────────────────────────┘           │
+│                                  │                                                    │
+│       ┌──────────────────────────┼──────────────────────────────────────┐            │
+│       │                          │                                       │            │
+│       ▼                          ▼                                       ▼            │
+│ ┌─────────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐   │
+│ │  Approach 1     │    │     Approach 2           │    │     Approach 3          │   │
+│ │  M365 Agent     │    │     Standalone Bot       │    │     Foundry + Bot       │   │
+│ │  (Part 1)       │    │     (Bot Framework)      │    │     (Hybrid)            │   │
+│ │                 │    │                          │    │                          │   │
+│ │  Declarative    │    │  ┌───────────────────┐  │    │  ┌───────────────────┐   │   │
+│ │  Agent +        │    │  │  Bot Application  │  │    │  │  Bot Application  │   │   │
+│ │  API Plugin     │    │  │  (Python/Node.js) │  │    │  │  + Foundry Agent  │   │   │
+│ │                 │    │  └─────────┬─────────┘  │    │  └─────────┬─────────┘   │   │
+│ │                 │    │            │            │    │            │             │   │
+│ │                 │    │            ▼            │    │            ▼             │   │
+│ │                 │    │  ┌───────────────────┐  │    │  ┌───────────────────┐   │   │
+│ │  Uses M365      │    │  │  Legal RAG Core   │  │    │  │  Foundry Agent    │   │   │
+│ │  Copilot UI     │    │  │  (Same Backend)   │  │    │  │  Service          │   │   │
+│ │                 │    │  └─────────┬─────────┘  │    │  └─────────┬─────────┘   │   │
+│ └─────────────────┘    │            │            │    │            │             │   │
+│                        │            ▼            │    │            ▼             │   │
+│                        │  ┌───────────────────┐  │    │  ┌───────────────────┐   │   │
+│                        │  │  Azure AI Search  │  │    │  │  Azure AI Search  │   │   │
+│                        │  │  (Legal Docs)     │  │    │  │  (Legal Docs)     │   │   │
+│                        │  └───────────────────┘  │    │  └───────────────────┘   │   │
+│                        └─────────────────────────┘    └─────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Approach 1: M365 Declarative Agent in Teams
+
+If you've already implemented Part 1 (M365 Copilot Declarative Agent), your agent is **automatically available in Teams** through M365 Copilot.
+
+### How It Works
+
+1. M365 Copilot is natively integrated into Teams
+2. Users access your Declarative Agent via the Copilot pane
+3. No additional development required
+
+### Enabling in Teams
+
+The M365 Declarative Agent from Part 1 appears in Teams when:
+- The app is deployed to the organization
+- Users have M365 Copilot licenses
+- The app manifest includes Teams as a supported scope
+
+```json
+// manifest.json - Teams scope configuration
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "{{APP_ID}}",
+  "name": {
+    "short": "Legal Advisor",
+    "full": "Legal RAG Advisor for UK Civil Procedure"
+  },
+  "description": {
+    "short": "AI-powered legal assistant",
+    "full": "Get answers to civil procedure questions with precise citations"
+  },
+  "developer": {
+    "name": "Your Organization",
+    "websiteUrl": "https://your-domain.com",
+    "privacyUrl": "https://your-domain.com/privacy",
+    "termsOfUseUrl": "https://your-domain.com/terms"
+  },
+  "copilotAgents": {
+    "declarativeAgents": [
+      {
+        "id": "legalAdvisor",
+        "file": "declarativeAgent.json"
+      }
+    ]
+  },
+  "validDomains": [
+    "your-api-domain.azurewebsites.net"
+  ]
+}
+```
+
+---
+
+## Approach 2: Standalone Azure Bot Service
+
+For organizations without M365 Copilot licenses or needing more control, deploy a custom Teams bot using Azure Bot Service.
+
+### Prerequisites
+
+- Azure subscription
+- Azure Bot Service resource
+- Microsoft App Registration (Entra ID)
+- Bot Framework SDK (Python or Node.js)
+
+### Project Structure
+
+```
+teams-bot/
+├── app.py                    # Main bot application
+├── bot.py                    # Bot logic and handlers
+├── legal_rag_client.py       # Client for Legal RAG backend
+├── adaptive_cards/           # Adaptive Card templates
+│   ├── citation_card.json
+│   ├── answer_card.json
+│   └── error_card.json
+├── config.py                 # Configuration settings
+├── requirements.txt          # Python dependencies
+├── Dockerfile                # Container deployment
+└── appPackage/               # Teams app manifest
+    ├── manifest.json
+    ├── color.png
+    └── outline.png
+```
+
+### Step 1: Register Azure Bot
+
+1. Go to Azure Portal → Create Resource → Azure Bot
+2. Configure:
+   - **Bot handle**: legal-advisor-bot
+   - **Pricing tier**: Standard S1
+   - **App type**: Single Tenant (recommended)
+   - **Microsoft App ID**: Create new or use existing
+
+```bash
+# Using Azure CLI
+az bot create \
+  --resource-group your-rg \
+  --name legal-advisor-bot \
+  --kind azurebot \
+  --sku S1 \
+  --app-type SingleTenant \
+  --location global
+```
+
+### Step 2: Enable Teams Channel
+
+```bash
+# Enable Teams channel
+az bot channel create \
+  --resource-group your-rg \
+  --name legal-advisor-bot \
+  --channel Teams
+```
+
+### Step 3: Bot Implementation
+
+#### config.py
+```python
+"""Bot configuration settings."""
+import os
+from dataclasses import dataclass
+
+@dataclass
+class BotConfig:
+    """Configuration for the Teams bot."""
+    # Bot Framework settings
+    APP_ID: str = os.environ.get("MicrosoftAppId", "")
+    APP_PASSWORD: str = os.environ.get("MicrosoftAppPassword", "")
+    APP_TENANT_ID: str = os.environ.get("MicrosoftAppTenantId", "")
+    
+    # Legal RAG Backend
+    BACKEND_URL: str = os.environ.get("LEGAL_RAG_BACKEND_URL", "http://localhost:50505")
+    
+    # Azure OpenAI (optional - if calling directly)
+    AZURE_OPENAI_ENDPOINT: str = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+    AZURE_OPENAI_API_KEY: str = os.environ.get("AZURE_OPENAI_API_KEY", "")
+    AZURE_OPENAI_DEPLOYMENT: str = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "")
+    
+    # Azure AI Search (optional - if searching directly)
+    AZURE_SEARCH_ENDPOINT: str = os.environ.get("AZURE_SEARCH_ENDPOINT", "")
+    AZURE_SEARCH_KEY: str = os.environ.get("AZURE_SEARCH_KEY", "")
+    AZURE_SEARCH_INDEX: str = os.environ.get("AZURE_SEARCH_INDEX", "gptkbindex")
+```
+
+#### legal_rag_client.py
+```python
+"""Client for calling the Legal RAG backend API."""
+import aiohttp
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class LegalAnswer:
+    """Response from the Legal RAG backend."""
+    answer: str
+    citations: list
+    thoughts: Optional[str] = None
+
+class LegalRAGClient:
+    """Async client for Legal RAG API calls."""
+    
+    def __init__(self, backend_url: str):
+        self.backend_url = backend_url.rstrip('/')
+    
+    async def ask(
+        self,
+        question: str,
+        category: Optional[str] = None,
+        history: Optional[list] = None
+    ) -> LegalAnswer:
+        """
+        Send a question to the Legal RAG backend.
+        
+        Args:
+            question: The user's legal question
+            category: Optional category filter (e.g., "cpr_part_*")
+            history: Optional conversation history
+            
+        Returns:
+            LegalAnswer with response and citations
+        """
+        payload = {
+            "messages": [
+                {"role": "user", "content": question}
+            ],
+            "context": {
+                "overrides": {
+                    "use_semantic_ranker": True,
+                    "use_semantic_captions": True,
+                    "top": 5,
+                    "retrieval_mode": "hybrid"
+                }
+            }
+        }
+        
+        if category:
+            payload["context"]["overrides"]["filter"] = f"category eq '{category}'"
+        
+        if history:
+            payload["messages"] = history + payload["messages"]
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.backend_url}/chat",
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Backend error: {error_text}")
+                
+                data = await response.json()
+                
+                # Extract answer and citations from response
+                answer = data.get("message", {}).get("content", "")
+                citations = self._extract_citations(data.get("context", {}))
+                thoughts = data.get("context", {}).get("thoughts", "")
+                
+                return LegalAnswer(
+                    answer=answer,
+                    citations=citations,
+                    thoughts=thoughts
+                )
+    
+    def _extract_citations(self, context: dict) -> list:
+        """Extract citations from the response context."""
+        citations = []
+        data_points = context.get("data_points", {})
+        
+        # Handle text citations
+        text_points = data_points.get("text", [])
+        for point in text_points:
+            if ":" in point:
+                source, content = point.split(":", 1)
+                citations.append({
+                    "source": source.strip(),
+                    "content": content.strip()[:200] + "..."
+                })
+        
+        return citations
+```
+
+#### bot.py
+```python
+"""Teams bot implementation for Legal RAG."""
+from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
+from botbuilder.schema import (
+    Activity,
+    ActivityTypes,
+    Attachment,
+    CardAction,
+    ActionTypes,
+    SuggestedActions
+)
+from botbuilder.core.teams import TeamsActivityHandler, TeamsInfo
+import json
+
+from legal_rag_client import LegalRAGClient, LegalAnswer
+from config import BotConfig
+
+
+class LegalAdvisorBot(TeamsActivityHandler):
+    """
+    Teams bot that provides legal advice using the Legal RAG backend.
+    """
+    
+    def __init__(self, config: BotConfig):
+        super().__init__()
+        self.config = config
+        self.legal_client = LegalRAGClient(config.BACKEND_URL)
+        self.conversation_history: dict = {}  # In production, use Redis/CosmosDB
+    
+    async def on_message_activity(self, turn_context: TurnContext):
+        """Handle incoming messages from Teams users."""
+        # Get the user's message
+        user_message = turn_context.activity.text
+        conversation_id = turn_context.activity.conversation.id
+        
+        # Remove bot mention if in channel
+        user_message = self._remove_mention(turn_context, user_message)
+        
+        # Send typing indicator
+        await turn_context.send_activity(Activity(type=ActivityTypes.typing))
+        
+        try:
+            # Get conversation history
+            history = self.conversation_history.get(conversation_id, [])
+            
+            # Call Legal RAG backend
+            answer = await self.legal_client.ask(
+                question=user_message,
+                history=history[-6:]  # Keep last 6 messages for context
+            )
+            
+            # Build response with Adaptive Card
+            card = self._build_answer_card(answer)
+            
+            # Send the response
+            await turn_context.send_activity(
+                MessageFactory.attachment(card)
+            )
+            
+            # Update conversation history
+            history.append({"role": "user", "content": user_message})
+            history.append({"role": "assistant", "content": answer.answer})
+            self.conversation_history[conversation_id] = history[-10:]
+            
+        except Exception as e:
+            # Send error card
+            error_card = self._build_error_card(str(e))
+            await turn_context.send_activity(
+                MessageFactory.attachment(error_card)
+            )
+    
+    async def on_members_added_activity(
+        self,
+        members_added,
+        turn_context: TurnContext
+    ):
+        """Welcome new users to the bot."""
+        for member in members_added:
+            if member.id != turn_context.activity.recipient.id:
+                welcome_card = self._build_welcome_card()
+                await turn_context.send_activity(
+                    MessageFactory.attachment(welcome_card)
+                )
+    
+    def _remove_mention(self, turn_context: TurnContext, text: str) -> str:
+        """Remove @mention from message text."""
+        if turn_context.activity.entities:
+            for entity in turn_context.activity.entities:
+                if entity.type == "mention":
+                    mentioned = entity.additional_properties.get("mentioned", {})
+                    if mentioned.get("id") == turn_context.activity.recipient.id:
+                        mention_text = entity.additional_properties.get("text", "")
+                        text = text.replace(mention_text, "").strip()
+        return text
+    
+    def _build_answer_card(self, answer: LegalAnswer) -> Attachment:
+        """Build an Adaptive Card for the answer."""
+        card_body = [
+            {
+                "type": "TextBlock",
+                "text": "Legal Advisor",
+                "weight": "bolder",
+                "size": "medium",
+                "color": "accent"
+            },
+            {
+                "type": "TextBlock",
+                "text": answer.answer,
+                "wrap": True,
+                "spacing": "medium"
+            }
+        ]
+        
+        # Add citations if available
+        if answer.citations:
+            card_body.append({
+                "type": "TextBlock",
+                "text": "📚 Sources",
+                "weight": "bolder",
+                "spacing": "large"
+            })
+            
+            for citation in answer.citations[:5]:  # Limit to 5 citations
+                card_body.append({
+                    "type": "Container",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": f"**{citation['source']}**",
+                            "wrap": True,
+                            "size": "small",
+                            "color": "accent"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": citation['content'],
+                            "wrap": True,
+                            "size": "small",
+                            "isSubtle": True
+                        }
+                    ],
+                    "style": "emphasis",
+                    "spacing": "small"
+                })
+        
+        card = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.5",
+            "body": card_body,
+            "actions": [
+                {
+                    "type": "Action.Submit",
+                    "title": "👍",
+                    "data": {"action": "feedback", "value": "positive"}
+                },
+                {
+                    "type": "Action.Submit",
+                    "title": "👎",
+                    "data": {"action": "feedback", "value": "negative"}
+                }
+            ]
+        }
+        
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive",
+            content=card
+        )
+    
+    def _build_welcome_card(self) -> Attachment:
+        """Build a welcome card for new users."""
+        card = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.5",
+            "body": [
+                {
+                    "type": "TextBlock",
+                    "text": "⚖️ Legal Advisor Bot",
+                    "weight": "bolder",
+                    "size": "large",
+                    "color": "accent"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Welcome! I'm your AI-powered legal assistant for UK Civil Procedure questions.",
+                    "wrap": True,
+                    "spacing": "medium"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "I can help you with:",
+                    "wrap": True,
+                    "weight": "bolder",
+                    "spacing": "large"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "• Civil Procedure Rules (Parts 1-89)\n• Practice Directions\n• Court Guides\n• Pre-Action Protocols",
+                    "wrap": True
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "Try asking: 'What are the requirements for service under CPR Part 6?'",
+                    "wrap": True,
+                    "isSubtle": True,
+                    "spacing": "large"
+                }
+            ]
+        }
+        
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive",
+            content=card
+        )
+    
+    def _build_error_card(self, error_message: str) -> Attachment:
+        """Build an error card."""
+        card = {
+            "type": "AdaptiveCard",
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.5",
+            "body": [
+                {
+                    "type": "TextBlock",
+                    "text": "⚠️ Error",
+                    "weight": "bolder",
+                    "color": "attention"
+                },
+                {
+                    "type": "TextBlock",
+                    "text": "I encountered an issue processing your request. Please try again.",
+                    "wrap": True
+                }
+            ]
+        }
+        
+        return Attachment(
+            content_type="application/vnd.microsoft.card.adaptive",
+            content=card
+        )
+```
+
+#### app.py
+```python
+"""Main application entry point for the Teams bot."""
+import sys
+import traceback
+from datetime import datetime
+from http import HTTPStatus
+
+from aiohttp import web
+from aiohttp.web import Request, Response
+from botbuilder.core import (
+    BotFrameworkAdapterSettings,
+    ConversationState,
+    MemoryStorage,
+    TurnContext,
+)
+from botbuilder.core.integration import aiohttp_error_middleware
+from botbuilder.integration.aiohttp import CloudAdapter, ConfigurationBotFrameworkAuthentication
+
+from bot import LegalAdvisorBot
+from config import BotConfig
+
+# Create configuration
+CONFIG = BotConfig()
+
+# Create adapter with authentication
+SETTINGS = ConfigurationBotFrameworkAuthentication(
+    configuration={
+        "MicrosoftAppId": CONFIG.APP_ID,
+        "MicrosoftAppPassword": CONFIG.APP_PASSWORD,
+        "MicrosoftAppTenantId": CONFIG.APP_TENANT_ID,
+        "MicrosoftAppType": "SingleTenant",
+    }
+)
+ADAPTER = CloudAdapter(SETTINGS)
+
+
+# Error handler
+async def on_error(context: TurnContext, error: Exception):
+    """Global error handler for the bot."""
+    print(f"\n [on_error] unhandled error: {error}", file=sys.stderr)
+    traceback.print_exc()
+    
+    # Send error message to user
+    await context.send_activity("I encountered an error. Please try again later.")
+
+
+ADAPTER.on_turn_error = on_error
+
+# Create bot instance
+BOT = LegalAdvisorBot(CONFIG)
+
+
+# Listen for incoming requests on /api/messages
+async def messages(req: Request) -> Response:
+    """Handle incoming Bot Framework messages."""
+    if "application/json" in req.headers.get("Content-Type", ""):
+        body = await req.json()
+    else:
+        return Response(status=HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+
+    activity = Activity().deserialize(body)
+    auth_header = req.headers.get("Authorization", "")
+
+    response = await ADAPTER.process_activity(auth_header, activity, BOT.on_turn)
+    if response:
+        return json_response(data=response.body, status=response.status)
+    return Response(status=HTTPStatus.OK)
+
+
+def init_app():
+    """Initialize the aiohttp web application."""
+    app = web.Application(middlewares=[aiohttp_error_middleware])
+    app.router.add_post("/api/messages", messages)
+    return app
+
+
+if __name__ == "__main__":
+    app = init_app()
+    web.run_app(app, host="0.0.0.0", port=3978)
+```
+
+### Step 4: Teams App Manifest
+
+#### appPackage/manifest.json
+```json
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "{{BOT_ID}}",
+  "packageName": "com.yourorg.legaladvisorbot",
+  "developer": {
+    "name": "Your Organization",
+    "websiteUrl": "https://your-domain.com",
+    "privacyUrl": "https://your-domain.com/privacy",
+    "termsOfUseUrl": "https://your-domain.com/terms"
+  },
+  "name": {
+    "short": "Legal Advisor",
+    "full": "Legal Advisor Bot - UK Civil Procedure"
+  },
+  "description": {
+    "short": "AI-powered legal assistant for civil procedure",
+    "full": "Get instant answers to UK Civil Procedure questions with precise citations from CPR, Practice Directions, and Court Guides."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#1e3a5f",
+  "bots": [
+    {
+      "botId": "{{BOT_ID}}",
+      "scopes": ["personal", "team", "groupChat"],
+      "supportsFiles": false,
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["personal", "team", "groupChat"],
+          "commands": [
+            {
+              "title": "help",
+              "description": "Get help using the Legal Advisor"
+            },
+            {
+              "title": "ask",
+              "description": "Ask a civil procedure question"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": [
+    "your-bot.azurewebsites.net",
+    "token.botframework.com"
+  ]
+}
+```
+
+### Step 5: Deploy to Azure
+
+#### requirements.txt
+```
+botbuilder-core>=4.14.0
+botbuilder-integration-aiohttp>=4.14.0
+aiohttp>=3.8.0
+```
+
+#### Dockerfile
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 3978
+
+CMD ["python", "app.py"]
+```
+
+#### Deploy Commands
+```bash
+# Build and push to Azure Container Registry
+az acr build --registry yourregistry --image legal-advisor-bot:latest .
+
+# Deploy to Azure Container Apps
+az containerapp create \
+  --name legal-advisor-bot \
+  --resource-group your-rg \
+  --image yourregistry.azurecr.io/legal-advisor-bot:latest \
+  --target-port 3978 \
+  --ingress external \
+  --env-vars \
+    MicrosoftAppId=your-app-id \
+    MicrosoftAppPassword=your-app-password \
+    MicrosoftAppTenantId=your-tenant-id \
+    LEGAL_RAG_BACKEND_URL=https://your-backend.azurewebsites.net
+```
+
+---
+
+## Approach 3: Foundry Agent + Teams Bot (Hybrid)
+
+Combine Azure AI Foundry Agent (Part 2) with Teams bot for the best of both worlds.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Teams Bot (Frontend)                         │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  • Receives Teams messages                                   │ │
+│  │  • Renders Adaptive Cards                                    │ │
+│  │  • Manages conversation state                                │ │
+│  └───────────────────────────┬─────────────────────────────────┘ │
+│                              │                                    │
+│                              ▼                                    │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │              Azure AI Foundry Agent (Backend)                │ │
+│  │  • Agent orchestration                                       │ │
+│  │  • Azure AI Search integration                               │ │
+│  │  • Tool execution                                            │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Implementation
+
+```python
+"""Hybrid bot using Foundry Agent as backend."""
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+from botbuilder.core import TurnContext
+from botbuilder.core.teams import TeamsActivityHandler
+
+
+class FoundryTeamsBot(TeamsActivityHandler):
+    """Teams bot backed by Azure AI Foundry Agent."""
+    
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        
+        # Initialize Foundry client
+        self.project_client = AIProjectClient(
+            credential=DefaultAzureCredential(),
+            subscription_id=config.AZURE_SUBSCRIPTION_ID,
+            resource_group_name=config.AZURE_RESOURCE_GROUP,
+            project_name=config.AZURE_AI_PROJECT_NAME
+        )
+        
+        self.agent_id = config.FOUNDRY_AGENT_ID
+        self.threads: dict = {}  # conversation_id -> thread_id
+    
+    async def on_message_activity(self, turn_context: TurnContext):
+        """Handle messages by routing to Foundry Agent."""
+        user_message = turn_context.activity.text
+        conversation_id = turn_context.activity.conversation.id
+        
+        # Get or create thread
+        thread_id = self.threads.get(conversation_id)
+        if not thread_id:
+            thread = self.project_client.agents.threads.create()
+            thread_id = thread.id
+            self.threads[conversation_id] = thread_id
+        
+        # Add message to thread
+        self.project_client.agents.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=user_message
+        )
+        
+        # Run the agent
+        run = self.project_client.agents.runs.create_and_process(
+            thread_id=thread_id,
+            agent_id=self.agent_id
+        )
+        
+        # Get the response
+        messages = self.project_client.agents.messages.list(thread_id=thread_id)
+        last_message = messages[0]  # Most recent
+        
+        # Build and send Adaptive Card
+        card = self._build_answer_card(last_message.content)
+        await turn_context.send_activity(
+            MessageFactory.attachment(card)
+        )
+```
+
+---
+
+## Comparison: Bot Approaches
+
+| Feature | M365 Declarative Agent | Standalone Bot | Foundry + Bot |
+|---------|------------------------|----------------|---------------|
+| **Development effort** | Low (if M365 done) | Medium | Medium |
+| **M365 license required** | Yes | No | No |
+| **Custom UI (Adaptive Cards)** | Limited | Full | Full |
+| **Conversation history** | Automatic | Manual | Automatic (threads) |
+| **Tool execution** | API Plugin | Direct call | Server-side |
+| **Channel/Group support** | Via Copilot | Full | Full |
+| **Deployment target** | M365 Copilot | Azure Bot Service | Azure Bot + Foundry |
+| **Best for** | M365 orgs | Non-M365 orgs | Complex orchestration |
+
+---
+
+## Teams Bot Best Practices
+
+### Message Handling
+
+1. **Keep responses concise** - Teams UI works best with shorter messages
+2. **Use Adaptive Cards** - Rich formatting with actions
+3. **Handle @mentions** - Strip bot mention in channels
+4. **Typing indicators** - Show typing while processing
+
+### Conversation Management
+
+1. **Limit history** - Keep last 6-10 messages for context
+2. **Use persistent storage** - Redis/CosmosDB for production
+3. **Handle timeouts** - Bot Framework has 15-second limit
+
+### Error Handling
+
+1. **Graceful degradation** - Show user-friendly error cards
+2. **Retry logic** - Use exponential backoff for backend calls
+3. **Logging** - Application Insights for monitoring
+
+---
+
+## Environment Variables Summary
+
+```env
+# Bot Framework
+MicrosoftAppId=your-bot-app-id
+MicrosoftAppPassword=your-bot-secret
+MicrosoftAppTenantId=your-tenant-id
+MicrosoftAppType=SingleTenant
+
+# Legal RAG Backend
+LEGAL_RAG_BACKEND_URL=https://your-backend.azurewebsites.net
+
+# Optional: Azure AI Foundry (for hybrid approach)
+AZURE_SUBSCRIPTION_ID=your-subscription-id
+AZURE_RESOURCE_GROUP=your-resource-group
+AZURE_AI_PROJECT_NAME=your-project
+FOUNDRY_AGENT_ID=your-agent-id
+```
+
+---
+
+## Four Platforms Compared (Updated)
+
+| Capability | Web App | M365 Agent | Foundry Agent | Teams Bot |
+|------------|---------|------------|---------------|-----------|
+| **Chat with legal knowledge** | ✅ | ✅ | ✅ | ✅ |
+| **Same Azure AI Search index** | ✅ | ✅ (API Plugin) | ✅ (Native) | ✅ (via backend) |
+| **Same prompts** | ✅ Full | ✅ Condensed | ✅ Condensed | ✅ (via backend) |
+| **Full UI with all settings** | ✅ | ❌ | ❌ | ❌ |
+| **Teams integration** | ❌ | ✅ (via Copilot) | ❌ | ✅ (native) |
+| **Adaptive Cards** | ❌ | Limited | ❌ | ✅ |
+| **Channel/Group chat** | ❌ | ❌ | ❌ | ✅ |
+| **M365 license required** | ❌ | ✅ | ❌ | ❌ |
+| **Custom conversation flow** | ✅ | ❌ | ✅ | ✅ |
+| **REST API access** | ✅ | ❌ | ✅ | ❌ |
