@@ -36,6 +36,13 @@ Both approaches share the same core components (prompts, citation logic, source 
 18. [Azure AI Search Tool Integration](#azure-ai-search-tool-integration)
 19. [Foundry Agent Deployment](#foundry-agent-deployment)
 
+### Part 2.5: Converting Foundry Agent to M365 Agent
+20. [Foundry-to-M365 Integration Overview](#foundry-to-m365-integration-overview)
+21. [API Wrapper for Foundry Agent](#api-wrapper-for-foundry-agent)
+22. [M365 API Plugin for Foundry](#m365-api-plugin-for-foundry)
+23. [Declarative Agent Manifest for Foundry](#declarative-agent-manifest-for-foundry)
+24. [Testing Foundry Agent in M365](#testing-foundry-agent-in-m365)
+
 ---
 
 ## Architecture Overview
@@ -1939,6 +1946,783 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 - [Register a Bot with Azure](https://learn.microsoft.com/en-us/azure/bot-service/bot-service-quickstart-registration)
 - [Bot Framework SDK](https://github.com/microsoft/botbuilder-python)
 - [Teams Bot Samples](https://github.com/OfficeDev/Microsoft-Teams-Samples)
+
+---
+
+# Part 2.5: Converting Foundry Agent to M365 Agent
+
+This section shows how to **expose your Azure AI Foundry Agent as an M365 Copilot Declarative Agent**, giving you the best of both worlds: Foundry's powerful orchestration and M365's native Teams/Office integration.
+
+---
+
+## Foundry-to-M365 Integration Overview
+
+### Why Convert Foundry Agent to M365?
+
+| Benefit | Description |
+|---------|-------------|
+| **Best of both platforms** | Foundry's server-side tool execution + M365's native UI |
+| **Unified agent logic** | Single agent definition, multiple frontends |
+| **Advanced orchestration** | Use Foundry's multi-agent, tool chaining, and observability |
+| **Native M365 experience** | Users interact via Teams, Word, PowerPoint |
+| **Centralized management** | Manage agent in Foundry, expose to M365 |
+
+### Architecture: Foundry Agent as M365 Backend
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                     FOUNDRY AGENT → M365 COPILOT INTEGRATION                             │
+│                                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐│
+│  │                         Microsoft 365 Copilot                                        ││
+│  │   ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐       ││
+│  │   │    Teams      │  │     Word      │  │  PowerPoint   │  │    Outlook    │       ││
+│  │   └───────────────┘  └───────────────┘  └───────────────┘  └───────────────┘       ││
+│  │              │                │                │                │                   ││
+│  │              └────────────────┴────────────────┴────────────────┘                   ││
+│  │                                       │                                              ││
+│  │                                       ▼                                              ││
+│  │                      ┌─────────────────────────────────────┐                        ││
+│  │                      │    Declarative Agent (Manifest)     │                        ││
+│  │                      │    ├── Instructions (condensed)     │                        ││
+│  │                      │    └── API Plugin (Foundry wrapper) │                        ││
+│  │                      └─────────────────────────────────────┘                        ││
+│  └─────────────────────────────────────────────────────────────────────────────────────┘│
+│                                          │                                               │
+│                                          ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐│
+│  │                         API WRAPPER SERVICE                                          ││
+│  │                     (Azure Functions / App Service)                                  ││
+│  │                                                                                      ││
+│  │   ┌───────────────────────────────────────────────────────────────────────────────┐ ││
+│  │   │  Endpoints:                                                                    │ ││
+│  │   │  ├── POST /api/legal/ask      → Forwards to Foundry Agent                     │ ││
+│  │   │  ├── POST /api/legal/search   → Executes search via Foundry                   │ ││
+│  │   │  └── GET  /api/legal/session  → Manages conversation threads                  │ ││
+│  │   └───────────────────────────────────────────────────────────────────────────────┘ ││
+│  └─────────────────────────────────────────────────────────────────────────────────────┘│
+│                                          │                                               │
+│                                          ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐│
+│  │                      AZURE AI FOUNDRY AGENT                                          ││
+│  │                                                                                      ││
+│  │   ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────────────────┐  ││
+│  │   │    Model     │    │ Instructions │    │              Tools                   │  ││
+│  │   │   (GPT-4o)   │    │  (Legal CPR) │    │  ├── Azure AI Search                 │  ││
+│  │   │              │    │              │    │  ├── Code Interpreter (optional)     │  ││
+│  │   │              │    │              │    │  └── Custom Functions (optional)     │  ││
+│  │   └──────────────┘    └──────────────┘    └──────────────────────────────────────┘  ││
+│  │                                                                                      ││
+│  │   Orchestration: Server-side tool execution, automatic retry, tracing               ││
+│  └─────────────────────────────────────────────────────────────────────────────────────┘│
+│                                          │                                               │
+│                                          ▼                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────┐│
+│  │                      AZURE AI SEARCH INDEX                                           ││
+│  │                   (Same index as Web App & Foundry)                                  ││
+│  └─────────────────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## API Wrapper for Foundry Agent
+
+Create an API service that wraps your Foundry Agent, making it accessible to M365 Copilot via API Plugin.
+
+### Project Structure
+
+```
+foundry-m365-wrapper/
+├── app.py                    # Main Flask/FastAPI application
+├── foundry_client.py         # Foundry Agent client
+├── models.py                 # Request/response models
+├── config.py                 # Configuration
+├── openapi.yaml              # OpenAPI spec for M365 Plugin
+├── requirements.txt
+└── Dockerfile
+```
+
+### foundry_client.py
+
+```python
+"""
+Foundry Agent Client for M365 Integration
+
+This client wraps the Azure AI Foundry Agent SDK to provide
+a simple interface for the M365 API Plugin.
+"""
+
+import os
+from dataclasses import dataclass
+from typing import Optional
+from azure.ai.projects import AIProjectClient
+from azure.ai.projects.models import MessageRole
+from azure.identity import DefaultAzureCredential
+
+
+@dataclass
+class LegalResponse:
+    """Response from the Foundry Agent."""
+    answer: str
+    citations: list
+    thread_id: str
+
+
+class FoundryAgentClient:
+    """
+    Client for interacting with the Foundry Legal Agent.
+    
+    Manages threads and conversations with the Foundry Agent Service.
+    """
+    
+    def __init__(self):
+        self.project_endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
+        self.agent_id = os.environ["FOUNDRY_AGENT_ID"]
+        
+        self.client = AIProjectClient(
+            endpoint=self.project_endpoint,
+            credential=DefaultAzureCredential(),
+        )
+        
+        # Thread cache (in production, use Redis/CosmosDB)
+        self._threads: dict = {}
+    
+    async def ask(
+        self, 
+        question: str, 
+        session_id: Optional[str] = None
+    ) -> LegalResponse:
+        """
+        Send a question to the Foundry Agent.
+        
+        Args:
+            question: The user's legal question
+            session_id: Optional session ID for conversation continuity
+            
+        Returns:
+            LegalResponse with answer, citations, and thread ID
+        """
+        # Get or create thread
+        thread_id = self._get_or_create_thread(session_id)
+        
+        # Add user message
+        self.client.agents.messages.create(
+            thread_id=thread_id,
+            role=MessageRole.USER,
+            content=question,
+        )
+        
+        # Run the agent
+        run = self.client.agents.runs.create_and_process(
+            thread_id=thread_id,
+            agent_id=self.agent_id,
+        )
+        
+        # Get the response
+        messages = self.client.agents.messages.list(thread_id=thread_id)
+        
+        # Find the assistant's response
+        answer = ""
+        citations = []
+        
+        for message in messages:
+            if message.role == MessageRole.ASSISTANT:
+                # Get the text content
+                for content_part in message.content:
+                    if hasattr(content_part, 'text'):
+                        answer = content_part.text.value
+                        # Extract citations from annotations
+                        citations = self._extract_citations(content_part.text)
+                break
+        
+        return LegalResponse(
+            answer=answer,
+            citations=citations,
+            thread_id=thread_id,
+        )
+    
+    def _get_or_create_thread(self, session_id: Optional[str]) -> str:
+        """Get existing thread or create new one."""
+        if session_id and session_id in self._threads:
+            return self._threads[session_id]
+        
+        thread = self.client.agents.threads.create()
+        
+        if session_id:
+            self._threads[session_id] = thread.id
+        
+        return thread.id
+    
+    def _extract_citations(self, text_content) -> list:
+        """Extract citations from Foundry response annotations."""
+        citations = []
+        
+        if hasattr(text_content, 'annotations'):
+            for annotation in text_content.annotations:
+                if hasattr(annotation, 'file_citation'):
+                    citations.append({
+                        "index": len(citations) + 1,
+                        "source": annotation.file_citation.file_id,
+                        "quote": annotation.file_citation.quote if hasattr(annotation.file_citation, 'quote') else "",
+                    })
+        
+        return citations
+    
+    def delete_thread(self, session_id: str):
+        """Clean up a conversation thread."""
+        if session_id in self._threads:
+            thread_id = self._threads.pop(session_id)
+            try:
+                self.client.agents.threads.delete(thread_id)
+            except Exception:
+                pass  # Thread may already be deleted
+```
+
+### app.py
+
+```python
+"""
+API Wrapper for Foundry Agent → M365 Copilot Integration
+
+This service exposes the Foundry Agent as REST endpoints
+that can be consumed by M365 Copilot via API Plugin.
+"""
+
+from fastapi import FastAPI, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, List
+import os
+
+from foundry_client import FoundryAgentClient, LegalResponse
+
+app = FastAPI(
+    title="Legal CPR Agent API",
+    description="API wrapper for Foundry Legal Agent - M365 Copilot integration",
+    version="1.0.0",
+)
+
+# CORS for M365 Copilot
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://*.microsoft.com", "https://*.office.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize Foundry client
+foundry_client = FoundryAgentClient()
+
+
+# Request/Response Models
+class LegalQuestion(BaseModel):
+    """Request model for legal questions."""
+    question: str
+    session_id: Optional[str] = None
+
+
+class Citation(BaseModel):
+    """Citation reference."""
+    index: int
+    source: str
+    quote: str = ""
+
+
+class LegalAnswer(BaseModel):
+    """Response model for legal answers."""
+    answer: str
+    citations: List[Citation]
+    session_id: str
+
+
+class SearchRequest(BaseModel):
+    """Request model for document search."""
+    query: str
+    category: Optional[str] = None
+    top: int = 5
+
+
+class SearchResult(BaseModel):
+    """Individual search result."""
+    title: str
+    content: str
+    source: str
+    relevance_score: float
+
+
+class SearchResponse(BaseModel):
+    """Response model for search results."""
+    results: List[SearchResult]
+    query: str
+
+
+# API Endpoints
+
+@app.post("/api/legal/ask", response_model=LegalAnswer)
+async def ask_legal_question(
+    request: LegalQuestion,
+    authorization: Optional[str] = Header(None)
+) -> LegalAnswer:
+    """
+    Ask a legal question to the Foundry Agent.
+    
+    This endpoint forwards the question to the Azure AI Foundry Agent
+    and returns the response with citations.
+    """
+    try:
+        response: LegalResponse = await foundry_client.ask(
+            question=request.question,
+            session_id=request.session_id,
+        )
+        
+        return LegalAnswer(
+            answer=response.answer,
+            citations=[
+                Citation(
+                    index=c["index"],
+                    source=c["source"],
+                    quote=c.get("quote", ""),
+                )
+                for c in response.citations
+            ],
+            session_id=response.thread_id,
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/legal/search", response_model=SearchResponse)
+async def search_legal_documents(
+    request: SearchRequest,
+    authorization: Optional[str] = Header(None)
+) -> SearchResponse:
+    """
+    Search legal documents directly.
+    
+    This endpoint performs a search without going through the full
+    agent conversation flow - useful for quick lookups.
+    """
+    try:
+        # For search-only, we can ask the agent with a search-focused prompt
+        search_question = f"Search for: {request.query}"
+        if request.category:
+            search_question += f" in {request.category} documents"
+        
+        response = await foundry_client.ask(
+            question=search_question,
+            session_id=None,  # Fresh session for search
+        )
+        
+        # Convert to search results format
+        results = []
+        for citation in response.citations[:request.top]:
+            results.append(SearchResult(
+                title=citation["source"],
+                content=citation.get("quote", ""),
+                source=citation["source"],
+                relevance_score=1.0,  # Foundry doesn't expose scores
+            ))
+        
+        return SearchResponse(
+            results=results,
+            query=request.query,
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "service": "foundry-m365-wrapper"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+### requirements.txt
+
+```
+fastapi>=0.100.0
+uvicorn>=0.23.0
+azure-ai-projects>=1.0.0
+azure-identity>=1.15.0
+pydantic>=2.0.0
+```
+
+### Deploy to Azure
+
+```bash
+# Deploy as Azure Container App
+az containerapp create \
+  --name foundry-m365-wrapper \
+  --resource-group your-rg \
+  --image your-registry.azurecr.io/foundry-m365-wrapper:latest \
+  --target-port 8000 \
+  --ingress external \
+  --env-vars \
+    AZURE_AI_PROJECT_ENDPOINT=https://your-project.api.azureml.ms \
+    FOUNDRY_AGENT_ID=your-agent-id
+```
+
+---
+
+## M365 API Plugin for Foundry
+
+Create the OpenAPI specification and API Plugin manifest that M365 Copilot will use.
+
+### openapi.yaml
+
+```yaml
+openapi: 3.0.3
+info:
+  title: Legal CPR Agent API
+  description: |
+    AI-powered legal assistant for UK Civil Procedure Rules.
+    This API provides access to the Legal CPR Agent powered by Azure AI Foundry.
+  version: 1.0.0
+  
+servers:
+  - url: https://your-foundry-wrapper.azurecontainerapps.io
+    description: Production API
+
+paths:
+  /api/legal/ask:
+    post:
+      operationId: askLegalQuestion
+      summary: Ask a legal question
+      description: |
+        Ask any question about UK Civil Procedure Rules, Practice Directions,
+        or Court Guides. The agent will search the knowledge base and provide
+        an accurate answer with citations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+              properties:
+                question:
+                  type: string
+                  description: The legal question to ask
+                  example: "What are the time limits for filing a defence under CPR?"
+                session_id:
+                  type: string
+                  description: Optional session ID for conversation continuity
+      responses:
+        '200':
+          description: Successful response with answer and citations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    description: The legal answer with inline citations
+                  citations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        source:
+                          type: string
+                        quote:
+                          type: string
+                  session_id:
+                    type: string
+                    description: Session ID for follow-up questions
+
+  /api/legal/search:
+    post:
+      operationId: searchLegalDocuments
+      summary: Search legal documents
+      description: |
+        Search the legal knowledge base for specific documents or topics.
+        Returns relevant document excerpts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: Search query
+                  example: "disclosure requirements Commercial Court"
+                category:
+                  type: string
+                  description: Optional document category filter
+                  enum:
+                    - "CPR"
+                    - "Practice Directions"
+                    - "Commercial Court"
+                    - "Kings Bench"
+                    - "Chancery"
+                top:
+                  type: integer
+                  description: Number of results to return
+                  default: 5
+                  maximum: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        content:
+                          type: string
+                        source:
+                          type: string
+                        relevance_score:
+                          type: number
+                  query:
+                    type: string
+```
+
+### ai-plugin.json
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
+  "schema_version": "v2.1",
+  "name_for_human": "Legal CPR Agent (Foundry)",
+  "name_for_model": "legalCPRFoundry",
+  "description_for_human": "AI-powered legal assistant for UK Civil Procedure Rules, powered by Azure AI Foundry",
+  "description_for_model": "Use this plugin when the user asks about UK legal procedures, Civil Procedure Rules (CPR), Practice Directions, or Court Guides. This plugin connects to an Azure AI Foundry agent with Azure AI Search for accurate, citation-backed answers.",
+  "logo_url": "https://your-domain.com/legal-icon.png",
+  "contact_email": "legal-support@your-org.com",
+  "legal_info_url": "https://your-domain.com/legal/terms",
+  "privacy_policy_url": "https://your-domain.com/legal/privacy",
+  "api": {
+    "type": "openapi",
+    "url": "https://your-foundry-wrapper.azurecontainerapps.io/openapi.yaml"
+  },
+  "auth": {
+    "type": "none"
+  },
+  "capabilities": {
+    "conversation_starters": [
+      {
+        "text": "What are the CPR Part 31 disclosure requirements?"
+      },
+      {
+        "text": "Explain the fast track allocation criteria"
+      },
+      {
+        "text": "What are the Commercial Court's case management procedures?"
+      }
+    ]
+  },
+  "runtimes": [
+    {
+      "type": "OpenApi",
+      "auth": {
+        "type": "None"
+      },
+      "spec": {
+        "url": "https://your-foundry-wrapper.azurecontainerapps.io/openapi.yaml"
+      },
+      "run_for_functions": ["askLegalQuestion", "searchLegalDocuments"]
+    }
+  ],
+  "functions": [
+    {
+      "name": "askLegalQuestion",
+      "description": "Ask a legal question about UK Civil Procedure Rules and get an answer with citations from CPR, Practice Directions, and Court Guides.",
+      "parameters": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "The legal question to ask"
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Optional session ID for follow-up questions"
+          }
+        }
+      }
+    },
+    {
+      "name": "searchLegalDocuments",
+      "description": "Search the legal knowledge base for specific documents or topics.",
+      "parameters": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          },
+          "category": {
+            "type": "string",
+            "description": "Document category filter"
+          },
+          "top": {
+            "type": "integer",
+            "description": "Number of results"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Declarative Agent Manifest for Foundry
+
+### declarativeAgent.json
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.2/schema.json",
+  "version": "v1.2",
+  "name": "Legal CPR Agent (Foundry-Powered)",
+  "description": "AI-powered legal assistant for UK Civil Procedure Rules, powered by Azure AI Foundry Agent Service",
+  "instructions": "You are a legal assistant powered by Azure AI Foundry. When users ask legal questions about UK Civil Procedure, use the askLegalQuestion function to get accurate answers with citations. For document searches, use searchLegalDocuments.\n\nALWAYS:\n- Use the Foundry agent functions for legal questions\n- Include citation references in your responses\n- Clarify when procedures are court-specific\n- Recommend consulting a solicitor for specific legal advice\n\nThe Foundry agent has access to:\n- Civil Procedure Rules (Parts 1-89)\n- Practice Directions\n- Commercial Court Guide\n- King's Bench Guide\n- Chancery Guide\n- Patents Court Guide\n- TCC Guide",
+  "conversation_starters": [
+    {
+      "title": "CPR Time Limits",
+      "text": "What are the time limits for filing a defence under CPR?"
+    },
+    {
+      "title": "Commercial Court",
+      "text": "What are the Commercial Court's disclosure requirements?"
+    },
+    {
+      "title": "Summary Judgment",
+      "text": "When can a party apply for summary judgment?"
+    },
+    {
+      "title": "Service Rules",
+      "text": "Explain the rules for service of documents under CPR Part 6"
+    }
+  ],
+  "actions": [
+    {
+      "id": "foundryLegalPlugin",
+      "file": "ai-plugin.json"
+    }
+  ]
+}
+```
+
+### Teams App Manifest (manifest.json)
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "{{APP_ID}}",
+  "packageName": "com.yourorg.legalcprfoundry",
+  "developer": {
+    "name": "Your Organization",
+    "websiteUrl": "https://your-domain.com",
+    "privacyUrl": "https://your-domain.com/privacy",
+    "termsOfUseUrl": "https://your-domain.com/terms"
+  },
+  "name": {
+    "short": "Legal CPR (Foundry)",
+    "full": "Legal CPR Agent - Powered by Azure AI Foundry"
+  },
+  "description": {
+    "short": "AI legal assistant powered by Foundry",
+    "full": "Get accurate answers to UK Civil Procedure questions with citations. Powered by Azure AI Foundry Agent Service with Azure AI Search integration."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#1a365d",
+  "copilotAgents": {
+    "declarativeAgents": [
+      {
+        "id": "legalCPRFoundryAgent",
+        "file": "declarativeAgent.json"
+      }
+    ]
+  },
+  "permissions": ["identity"],
+  "validDomains": [
+    "your-foundry-wrapper.azurecontainerapps.io"
+  ]
+}
+```
+
+---
+
+## Testing Foundry Agent in M365
+
+### Local Testing with Teams Toolkit
+
+1. **Install M365 Agents Toolkit** in VS Code
+2. **Open your project** with the manifest files
+3. **Press F5** to start debugging
+4. **Sign in** to your M365 developer tenant
+5. **Test in Teams** - the agent will appear in Copilot
+
+### Validation Checklist
+
+| Test Case | Expected Result |
+|-----------|-----------------|
+| Ask a simple CPR question | Answer with citations from Foundry |
+| Ask follow-up question | Context maintained via session_id |
+| Search for documents | Returns relevant document excerpts |
+| Ask about specific court | Court-specific information provided |
+| Invalid question | Graceful error handling |
+
+### Debugging
+
+```bash
+# Check API wrapper logs
+az containerapp logs show \
+  --name foundry-m365-wrapper \
+  --resource-group your-rg
+
+# Check Foundry agent traces in Azure AI Foundry Portal
+# Go to: ai.azure.com → Your Project → Traces
+```
+
+---
+
+## Comparison: Direct M365 vs Foundry-Backed M365
+
+| Aspect | Direct M365 Agent (Part 1) | Foundry-Backed M365 Agent |
+|--------|---------------------------|---------------------------|
+| **Architecture** | M365 Copilot → API Plugin → Backend | M365 Copilot → API Plugin → Foundry → Search |
+| **Tool execution** | Client-side (M365 orchestrator) | Server-side (Foundry orchestrator) |
+| **Observability** | Limited | Full tracing in Foundry |
+| **Multi-agent** | No | Yes (Foundry supports multi-agent) |
+| **Complexity** | Lower | Higher (extra API layer) |
+| **Latency** | Lower | Slightly higher (extra hop) |
+| **Best for** | Simple Q&A scenarios | Complex orchestration needs |
 
 ---
 
