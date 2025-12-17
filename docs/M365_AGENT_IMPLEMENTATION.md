@@ -1951,23 +1951,225 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 
 # Part 2.5: Converting Foundry Agent to M365 Agent
 
-This section shows how to **expose your Azure AI Foundry Agent as an M365 Copilot Declarative Agent**, giving you the best of both worlds: Foundry's powerful orchestration and M365's native Teams/Office integration.
+This section shows how to **expose your Azure AI Foundry Agent as an M365 Copilot Agent**, giving you the best of both worlds: Foundry's powerful orchestration and M365's native Teams/Office integration.
+
+> **🎯 Important**: Microsoft has **officially released native integration** between Azure AI Foundry Agents and Microsoft 365 Copilot/Teams. This is now a **first-class supported path**, not a workaround.
 
 ---
 
-## Foundry-to-M365 Integration Overview
+## Microsoft's Official Position on Foundry + M365
 
-### Why Convert Foundry Agent to M365?
+### Foundry Agents = Custom Engine Agents in M365
 
-| Benefit | Description |
-|---------|-------------|
-| **Best of both platforms** | Foundry's server-side tool execution + M365's native UI |
-| **Unified agent logic** | Single agent definition, multiple frontends |
-| **Advanced orchestration** | Use Foundry's multi-agent, tool chaining, and observability |
-| **Native M365 experience** | Users interact via Teams, Word, PowerPoint |
-| **Centralized management** | Manage agent in Foundry, expose to M365 |
+Microsoft defines two types of agents for M365 Copilot:
 
-### Architecture: Foundry Agent as M365 Backend
+| Agent Type | Description | Foundry Fit |
+|------------|-------------|-------------|
+| **Declarative Agents** | Use Copilot's orchestrator + models. Define via manifest. | ❌ No |
+| **Custom Engine Agents** | Bring your own orchestrator + models. | ✅ **YES** |
+
+**Foundry Agents are Custom Engine Agents** that can be published directly to M365.
+
+### Key Quote from Microsoft Documentation
+
+> *"Microsoft Foundry provides a platform for building, testing, and publishing intelligent agents using the Agent Framework SDK. These agents can be integrated into Microsoft 365 Copilot and Teams either via Foundry portal or the Microsoft 365 Agents Toolkit."*
+>
+> *"This approach is ideal for developers or organizations that already maintain AI logic and orchestration in Foundry and want to make those capabilities directly available in Microsoft 365."*
+
+### Microsoft's Example Scenario (Matches Your Use Case!)
+
+From the official docs:
+
+> **Legal case analysis**: *"A law firm creates a standalone AI agent using Foundry. The agent uses a custom-trained LLM for case law analysis and integrates with external legal databases. The agent should also be accessible within Microsoft 365 Copilot and have access to documents in SharePoint."*
+>
+> **Recommendation**: *"Use Foundry because it allows the firm to maintain custom AI logic and orchestration while making the agent accessible in Microsoft 365."*
+
+---
+
+## Two Official Integration Methods
+
+Microsoft provides **two officially supported methods** to publish Foundry Agents to M365:
+
+| Method | Description | Best For |
+|--------|-------------|----------|
+| **1. Foundry Portal Publish** | One-click publish from Foundry Portal directly to M365 Copilot & Teams | Rapid deployment, minimal code |
+| **2. M365 Agents Toolkit Proxy** | Pro-code integration via VS Code with full customization | M365 data grounding, SSO, custom logic |
+| **3. Custom API Wrapper** | Build your own OpenAPI wrapper, connect via Declarative Agent | Maximum flexibility, multi-client support |
+
+### Comprehensive Comparison
+
+| Feature | Method 1: Portal | Method 2: Toolkit | Method 3: API Wrapper |
+|---------|------------------|-------------------|----------------------|
+| **Setup Time** | Minutes | Hours | Days |
+| **Code Required** | None | TypeScript/C# | Python/Node.js |
+| **Auto Bot Service** | ✅ Yes | ✅ Yes | ❌ Manual |
+| **Auto Entra ID** | ✅ Yes | ✅ Yes | ❌ Manual |
+| **M365 Data Grounding** | ❌ No | ✅ Retrieval API | ❌ No (manual) |
+| **SSO Support** | Limited | ✅ Full | ❌ Manual |
+| **Custom Logic Layer** | ❌ No | ✅ Yes | ✅ Full control |
+| **Multi-Environment** | ❌ Basic | ✅ Dev/Stage/Prod | ✅ Custom |
+| **Expose to Non-M365** | ❌ No | ❌ No | ✅ Yes |
+| **Debugging** | Portal only | ✅ VS Code | ✅ Any IDE |
+| **Best For** | Quick demos, POCs | Production M365 apps | Complex integrations |
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    FOUNDRY → M365 INTEGRATION METHODS                                    │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  ┌─────────────────────────────┐ ┌─────────────────────────────┐ ┌─────────────────────┐│
+│  │   METHOD 1: PORTAL PUBLISH  │ │ METHOD 2: AGENTS TOOLKIT    │ │ METHOD 3: API WRAP  ││
+│  │       (Low-Code / Rapid)    │ │   (Pro-Code / Advanced)     │ │  (Full Control)     ││
+│  ├─────────────────────────────┤ ├─────────────────────────────┤ ├─────────────────────┤│
+│  │                             │ │                             │ │                     ││
+│  │  Foundry Portal             │ │  VS Code + Toolkit          │ │  Custom API Service ││
+│  │       │                     │ │       │                     │ │       │             ││
+│  │       ▼                     │ │       ▼                     │ │       ▼             ││
+│  │  One-Click Publish          │ │  Proxy App Template         │ │  OpenAPI Wrapper    ││
+│  │       │                     │ │       │                     │ │       │             ││
+│  │       ▼                     │ │       ▼                     │ │       ▼             ││
+│  │  Auto-provision:            │ │  Configure:                 │ │  Connect via:       ││
+│  │  • Bot Service              │ │  • Foundry connection       │ │  • Declarative Agent││
+│  │  • Entra ID                 │ │  • Retrieval API            │ │  • API Plugin       ││
+│  │  • App Package              │ │  • SSO                      │ │  • Manual Entra     ││
+│  │       │                     │ │       │                     │ │       │             ││
+│  │       ▼                     │ │       ▼                     │ │       ▼             ││
+│  │  M365 Copilot & Teams       │ │  M365 + M365 Data           │ │  M365 + Any Client  ││
+│  │                             │ │                             │ │                     ││
+│  │  ✅ Fastest                 │ │  ✅ M365 grounding          │ │  ✅ Max flexibility ││
+│  │  ✅ No code                 │ │  ✅ SSO built-in            │ │  ✅ Multi-client    ││
+│  │  ❌ Limited control         │ │  ❌ Toolkit required        │ │  ❌ Most work       ││
+│  └─────────────────────────────┘ └─────────────────────────────┘ └─────────────────────┘│
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Method 1: Native Foundry Portal Publish (Recommended for Quick Start)
+
+This is the **simplest path** - publish directly from the Foundry Portal with one click.
+
+### Step-by-Step Guide
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                    FOUNDRY PORTAL PUBLISH WORKFLOW                                       │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  STEP 1: Prepare Your Agent                                                              │
+│  ├── Test your Foundry agent in the playground                                          │
+│  ├── Verify Azure AI Search integration works                                           │
+│  └── Confirm citation formatting is correct                                             │
+│                                                                                          │
+│  STEP 2: Initiate Publish                                                                │
+│  ├── In Foundry Portal, select your agent version                                       │
+│  ├── Click "Publish" button                                                             │
+│  └── Select "Publish to Teams and Microsoft 365 Copilot"                               │
+│                                                                                          │
+│  STEP 3: Auto-Provisioning                                                               │
+│  ├── Azure Bot Service is automatically created                                         │
+│  ├── Entra ID application is provisioned                                                │
+│  └── Application ID and Tenant ID are generated                                         │
+│                                                                                          │
+│  STEP 4: Fill in Metadata                                                                │
+│  ├── Name: "Legal CPR Assistant"                                                        │
+│  ├── Description: "AI-powered legal assistant for UK Civil Procedure"                  │
+│  ├── Icons: Color (192x192) and Outline (32x32)                                        │
+│  ├── Publisher info                                                                     │
+│  ├── Privacy policy URL                                                                 │
+│  └── Terms of use URL                                                                   │
+│                                                                                          │
+│  STEP 5: Prepare Package                                                                 │
+│  ├── Click "Prepare Agent"                                                              │
+│  ├── Wait for M365 package generation                                                   │
+│  └── Download package for local testing (optional)                                      │
+│                                                                                          │
+│  STEP 6: Choose Publish Scope                                                            │
+│  ├── Shared Scope: Appears under "Your agents" (personal use)                          │
+│  └── Organization Scope: Appears under "Built by your org" (requires admin approval)   │
+│                                                                                          │
+│  STEP 7: Verify in M365                                                                  │
+│  ├── Open Microsoft 365 Copilot                                                         │
+│  ├── Go to agent store                                                                  │
+│  └── Find your agent and test                                                           │
+│                                                                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Prerequisites
+
+- Access to Microsoft Foundry portal
+- A tested Foundry agent (your Legal CPR Agent)
+- Azure subscription with permissions to create:
+  - Azure Bot Service
+  - Microsoft Entra ID applications
+- App metadata ready:
+  - Agent name and description
+  - Color icon (192x192 px) and outline icon (32x32 px)
+  - Privacy policy URL
+  - Terms of use URL
+
+### What Gets Auto-Provisioned
+
+When you publish via Foundry Portal, Microsoft automatically creates:
+
+| Resource | Purpose |
+|----------|---------|
+| **Azure Bot Service** | Handles M365 ↔ Foundry communication |
+| **Entra ID App Registration** | Authentication and identity |
+| **M365 App Package** | manifest.json + icons for Teams/Copilot |
+| **Bot Endpoint** | Routes messages to your Foundry agent |
+
+### Publish Scopes Explained
+
+| Scope | Visibility | Approval Required | Location in M365 |
+|-------|------------|-------------------|------------------|
+| **Shared** | Only you | No | "Your agents" section |
+| **Organization** | Everyone in org | Yes (Admin Center) | "Built by your org" section |
+
+### Reference Documentation
+
+- [Publish agents to Microsoft 365 Copilot and Microsoft Teams](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/publish-copilot)
+- [C# Sample for Programmatic Publishing](https://github.com/OfficeDev/microsoft-365-agents-toolkit-samples/tree/dev/ProxyAgent-CSharp)
+
+---
+
+## Method 2: M365 Agents Toolkit Proxy (Advanced)
+
+For scenarios requiring more control, use the Microsoft 365 Agents Toolkit to create a proxy app.
+
+### When to Use This Method
+
+- Need access to M365 data via **Retrieval API** (SharePoint, OneDrive grounding)
+- Require **SSO** (Single Sign-On) integration
+- Need **custom logic** between M365 and Foundry
+- Want **multi-environment deployment** (dev, staging, prod)
+- Need **debugging** and local development support
+
+### Reference Documentation
+
+- [Integrate your Foundry agent with Microsoft Agent Toolkit](https://aka.ms/aif2m365-procode)
+- [Microsoft 365 Agents Toolkit](https://aka.ms/M365AgentsToolkit)
+
+---
+
+---
+
+## Method 3: Custom API Wrapper (Full Control)
+
+For maximum flexibility, create a custom API wrapper around your Foundry Agent and connect it via a Declarative Agent with an API Plugin. This approach gives you complete control over the integration layer.
+
+### When to Use This Method
+
+- Need **custom response formatting** before sending to M365
+- Require **complex caching** or **session management**
+- Want to **aggregate multiple agents** behind a single endpoint
+- Need **custom authentication** flows
+- Require **logging/auditing** at the integration layer
+- Want to expose Foundry Agent to **non-M365 clients** simultaneously
+
+### Architecture: Custom API Wrapper
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
@@ -2024,13 +2226,7 @@ This section shows how to **expose your Azure AI Foundry Agent as an M365 Copilo
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## API Wrapper for Foundry Agent
-
-Create an API service that wraps your Foundry Agent, making it accessible to M365 Copilot via API Plugin.
-
-### Project Structure
+### Project Structure (API Wrapper)
 
 ```
 foundry-m365-wrapper/
