@@ -43,7 +43,7 @@ export const UploadFile: React.FC<Props> = ({ className, disabled }: Props) => {
             }
             listUploadedFiles(idToken);
         } catch (error) {
-            console.error(error);
+            console.error("Error getting token or listing files:", error);
             setIsLoading(false);
         }
     };

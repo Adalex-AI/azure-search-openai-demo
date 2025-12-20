@@ -43,7 +43,7 @@
         "placeholder": "Digite uma nova pergunta (por exemplo: Meu plano cobre exames oftalmológicos anuais?)"
     },
     "askTitle": "Pergunte aos seus dados",
-    "multimodalExamples": {
+    "gpt4vExamples": {
         "1": "Compare o impacto das taxas de juros e do PIB nos mercados financeiros.",
         "2": "Qual é a tendência esperada para o índice S&P 500 nos próximos cinco anos? Compare com o desempenho passado do S&P 500",
         "3": "Você pode identificar alguma correlação entre os preços do petróleo e as tendências do mercado de ações?",
@@ -83,12 +83,6 @@
         "minimumSearchScore": "Pontuação mínima de pesquisa",
         "minimumRerankerScore": "Pontuação mínima de reclassificação",
         "retrieveCount": "Recuperar esta quantidade de resultados de pesquisa:",
-        "agenticReasoningEffort": "Esforço de raciocínio na recuperação",
-        "agenticReasoningEffortOptions": {
-            "minimal": "Mínimo",
-            "low": "Baixo",
-            "medium": "Médio"
-        },
         "includeCategory": "Incluir categoria",
         "includeCategoryOptions": {
             "all": "Todos"
@@ -97,22 +91,22 @@
         "useSemanticRanker": "Usar rankeador semântico para recuperação",
         "useSemanticCaptions": "Usar legendas semânticas",
         "useSuggestFollowupQuestions": "Sugerir perguntas complementares",
-        "useAgenticKnowledgeBase": "Usar a recuperação agêntica",
-        "useWebSource": "Incluir pesquisa web",
-        "useSharePointSource": "Incluir fonte SharePoint",
+        "useAgenticRetrieval": "Usar a recuperação agêntica",
         "useQueryRewriting": "Utilize a reescrita de consultas para a recuperação",
         "reasoningEffort": "Esforço de raciocínio",
         "reasoningEffortOptions": {
-            "minimal": "Mínimo (apenas GPT-5)",
             "low": "Baixo",
             "medium": "Médio",
             "high": "Alto"
         },
-        "llmInputs": "Entradas para LLM",
-        "llmInputsOptions": {
-            "texts": "Textos",
-            "images": "Imagens",
-            "textAndImages": "Textos e Imagens"
+        "useGPT4V": "Usar modelo de visão GPT",
+        "gpt4VInput": {
+            "label": "Entradas do modelo de visão GPT",
+            "options": {
+                "textAndImages": "Imagens e texto",
+                "images": "Imagens",
+                "texts": "Texto"
+            }
         },
         "retrievalMode": {
             "label": "Modo de recuperação",
@@ -123,10 +117,11 @@
             }
         },
         "vector": {
-            "label": "Campos vetoriais incluídos",
+            "label": "Campos vetoriais (pesquisa vetorial de múltiplas consultas)",
             "options": {
                 "embedding": "Incorporações de texto (Embeddings)",
-                "imageEmbedding": "Incorporações de imagem"
+                "imageEmbedding": "Incorporações de imagem",
+                "both": "Incorporações de texto e imagem"
             }
         },
         "useOidSecurityFilter": "Usar filtro de segurança oid",
@@ -146,8 +141,6 @@
              "Define uma pontuação mínima para os resultados da pesquisa retornados pelo ranker semântico. A pontuação varia de 0 a 4. Quanto maior a pontuação, mais relevante é o resultado em relação à pergunta.",
         "retrieveNumber":
              "Define o número de resultados de pesquisa a serem recuperados na pesquisa do Azure AI. Mais resultados podem aumentar a chance de encontrar a resposta correta, mas podem fazer com que o modelo se 'perca'.",
-       "agenticReasoningEffort":
-            "Controla quanto raciocínio o agente aplica ao montar planos com várias consultas. Um esforço maior pode melhorar a cobertura, mas aumenta tokens e latência.",
         "includeCategory":
             "Especifica uma categoria para incluir nos resultados da pesquisa. Não há categorias usadas no conjunto de dados padrão.",
          "excludeCategory":
@@ -161,23 +154,16 @@
         "reasoningEffort":
              "Define o esforço de raciocínio para o LLM. Valores mais altos resultam em mais raciocínio, mas podem levar mais tempo para gerar uma resposta. O padrão é médio.",
         "suggestFollowupQuestions": "Solicita ao LLM que sugira perguntas de acompanhamento com base na consulta do usuário.",
-        "textEmbeddings": "Quando selecionado, a pesquisa usará incorporações do modelo de incorporações apenas de texto para os trechos de texto extraídos.",
-        "imageEmbeddings": "Quando selecionado, a pesquisa usará incorporações do modelo de incorporações multimodal para as imagens extraídas.",
-       "llmTextInputs": "Quando selecionado, o conteúdo de texto dos resultados de pesquisa é enviado ao LLM como contexto.",
-       "llmImageInputs": "Quando selecionado, as imagens dos resultados de pesquisa são enviadas ao LLM como contexto.",
-        "llmInputs":
+        "useGPT4Vision": "Usa GPT-4-Turbo com Visão para gerar respostas com base em imagens e texto do índice.",
+        "vectorFields":
+            "Especifica quais campos de incorporação (embeddings) no Índice de Pesquisa do Azure AI serão pesquisados: 'Imagens e texto', 'Imagens' ou 'Texto'.",
+        "gpt4VisionInputs":
             "Define o que será enviado ao modelo de visão. 'Imagens e texto' envia ambos, 'Imagens' envia apenas imagens e 'Texto' envia apenas texto.",
         "retrievalMode":
             "Define o modo de recuperação para a consulta do Azure AI Search. 'Vetores + Texto (Híbrido)' usa uma combinação de busca vetorial e de texto completo, 'Vetores' usa apenas a busca vetorial, e 'Texto' usa apenas a busca de texto completo. O híbrido geralmente é o ideal.",
         "streamChat": "Transmite continuamente a resposta para a interface do chat conforme é gerada.",
         "useOidSecurityFilter": "Filtra os resultados da pesquisa com base no OID do usuário autenticado.",
         "useGroupsSecurityFilter": "Filtra os resultados da pesquisa com base nos grupos do usuário autenticado.",
-        "useAgenticKnowledgeBase": "Use a recuperação agêntica do Azure AI Search para planejamento de múltiplas consultas. Sempre usa o rankeador semântico.",
-        "useWebSource": "Aumente a recuperação com resultados de pesquisa web junto com seu conjunto de dados indexado.",
-        "useSharePointSource": "Aumente a recuperação com conteúdo do SharePoint junto com seu conjunto de dados indexado."
-    },
-
-    "overallSettings": "Configurações gerais",
-    "searchSettings": "Configurações de pesquisa",
-    "llmSettings": "Configurações LLM"
+        "useAgenticRetrieval": "Use agentic retrieval from Azure AI Search for multi-query planning. Always uses semantic ranker."
+    }
 }

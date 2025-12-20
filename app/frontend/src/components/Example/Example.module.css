@@ -2,7 +2,7 @@
     list-style: none;
     padding-left: 1rem;
     padding-right: 1rem;
-    display: flex;
+    display: none; /* Hide the examples list completely */
     flex-wrap: wrap;
     gap: 0.625rem;
     flex: 1;

@@ -79,9 +79,14 @@ export async function getSpeechApi(text: string): Promise<string | null> {
 }
 
 export function getCitationFilePath(citation: string): string {
-    // If there are parentheses at end of citation, remove part in parentheses
-    const cleanedCitation = citation.replace(/\s*\(.*?\)\s*$/, "").trim();
-    return `${BACKEND_URI}/content/${cleanedCitation}`;
+    // If citation is already a URL (storageUrl), return it directly
+    if (citation.startsWith("http://") || citation.startsWith("https://")) {
+        return citation;
+    }
+
+    // For traditional citations, pass through to backend content endpoint
+    // The backend will handle redirection to storageUrl if available
+    return `/content/${encodeURIComponent(citation)}`;
 }
 
 export async function uploadFileApi(request: FormData, idToken: string): Promise<SimpleAPIResponse> {

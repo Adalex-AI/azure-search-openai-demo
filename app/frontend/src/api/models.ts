@@ -4,6 +4,18 @@ export const enum RetrievalMode {
     Text = "text"
 }
 
+export const enum GPT4VInput {
+    TextAndImages = "textAndImages",
+    Images = "images",
+    Texts = "texts"
+}
+
+export const enum VectorFields {
+    Embedding = "textEmbeddingOnly",
+    ImageEmbedding = "imageEmbeddingOnly",
+    TextAndImageEmbeddings = "textAndImageEmbeddings"
+}
+
 export type ChatAppRequestOverrides = {
     retrieval_mode?: RetrievalMode;
     semantic_ranker?: boolean;
@@ -14,7 +26,8 @@ export type ChatAppRequestOverrides = {
     exclude_category?: string;
     seed?: number;
     top?: number;
-    retrieval_reasoning_effort?: string;
+    max_subqueries?: number;
+    results_merge_strategy?: string;
     temperature?: number;
     minimum_search_score?: number;
     minimum_reranker_score?: number;
@@ -22,14 +35,13 @@ export type ChatAppRequestOverrides = {
     prompt_template_prefix?: string;
     prompt_template_suffix?: string;
     suggest_followup_questions?: boolean;
-    send_text_sources: boolean;
-    send_image_sources: boolean;
-    search_text_embeddings: boolean;
-    search_image_embeddings: boolean;
+    use_oid_security_filter?: boolean;
+    use_groups_security_filter?: boolean;
+    use_gpt4v?: boolean;
+    gpt4v_input?: GPT4VInput;
+    vector_fields: VectorFields;
     language: string;
-    use_agentic_knowledgebase: boolean;
-    use_web_source?: boolean;
-    use_sharepoint_source?: boolean;
+    use_agentic_retrieval: boolean;
 };
 
 export type ResponseMessage = {
@@ -43,44 +55,10 @@ export type Thoughts = {
     props?: { [key: string]: any };
 };
 
-export type ActivityDetail = {
-    id?: number;
-    number?: number;
-    type?: string;
-    label?: string;
-    source?: string;
-    query?: string;
-};
-
-export type ExternalResultMetadata = {
-    id?: string;
-    title?: string;
-    url?: string;
-    snippet?: string;
-    activity?: ActivityDetail;
-};
-
-export type CitationActivityDetail = {
-    id?: string;
-    number?: number;
-    type?: string;
-    source?: string;
-    query?: string;
-};
-
-export type DataPoints = {
-    text: string[];
-    images: string[];
-    citations: string[];
-    citation_activity_details?: Record<string, CitationActivityDetail>;
-    external_results_metadata?: ExternalResultMetadata[];
-};
-
 export type ResponseContext = {
-    data_points: DataPoints;
+    data_points: string[] | any[]; // Can be array of strings or array of objects with storageUrl
     followup_questions: string[] | null;
     thoughts: Thoughts[];
-    answer?: string;
 };
 
 export type ChatAppResponseOrError = {
@@ -110,8 +88,7 @@ export type ChatAppRequest = {
 
 export type Config = {
     defaultReasoningEffort: string;
-    defaultRetrievalReasoningEffort: string;
-    showMultimodalOptions: boolean;
+    showGPT4VOptions: boolean;
     showSemanticRankerOption: boolean;
     showQueryRewritingOption: boolean;
     showReasoningEffortOption: boolean;
@@ -125,12 +102,6 @@ export type Config = {
     showChatHistoryBrowser: boolean;
     showChatHistoryCosmos: boolean;
     showAgenticRetrievalOption: boolean;
-    ragSearchTextEmbeddings: boolean;
-    ragSearchImageEmbeddings: boolean;
-    ragSendTextSources: boolean;
-    ragSendImageSources: boolean;
-    webSourceEnabled: boolean;
-    sharepointSourceEnabled: boolean;
 };
 
 export type SimpleAPIResponse = {
@@ -159,4 +130,17 @@ export type HistoryApiResponse = {
     id: string;
     entra_oid: string;
     answers: any;
+};
+
+export type Citation = {
+    content: string;
+    id: string;
+    title: string | null;
+    filepath: string | null;
+    url: string | null;
+    metadata: string | null;
+    chunk_id: string | null;
+    reindex_id: string | null;
+    sourcepage?: string;
+    source?: string;
 };

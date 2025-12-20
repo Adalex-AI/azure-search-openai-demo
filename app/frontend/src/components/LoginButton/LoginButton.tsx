@@ -10,17 +10,21 @@ import { LoginContext } from "../../loginContext";
 export const LoginButton = () => {
     const { instance } = useMsal();
     const { loggedIn, setLoggedIn } = useContext(LoginContext);
-    const activeAccount = instance.getActiveAccount();
     const [username, setUsername] = useState("");
     const { t } = useTranslation();
 
     useEffect(() => {
         const fetchUsername = async () => {
-            setUsername((await getUsername(instance)) ?? "");
+            try {
+                setUsername((await getUsername(instance)) ?? "");
+            } catch (error) {
+                console.error("Error fetching username:", error);
+                setUsername("");
+            }
         };
 
         fetchUsername();
-    }, []);
+    }, [instance]);
 
     const handleLoginPopup = () => {
         /**
@@ -35,26 +39,42 @@ export const LoginButton = () => {
             })
             .catch(error => console.log(error))
             .then(async () => {
-                setLoggedIn(await checkLoggedIn(instance));
-                setUsername((await getUsername(instance)) ?? "");
-            });
-    };
-    const handleLogoutPopup = () => {
-        if (activeAccount) {
-            instance
-                .logoutPopup({
-                    mainWindowRedirectUri: "/", // redirects the top level app after logout
-                    account: instance.getActiveAccount()
-                })
-                .catch(error => console.log(error))
-                .then(async () => {
+                try {
                     setLoggedIn(await checkLoggedIn(instance));
                     setUsername((await getUsername(instance)) ?? "");
-                });
-        } else {
+                } catch (error) {
+                    console.error("Error updating login state:", error);
+                }
+            });
+    };
+
+    const handleLogoutPopup = () => {
+        try {
+            const activeAccount = instance.getActiveAccount();
+            if (activeAccount) {
+                instance
+                    .logoutPopup({
+                        mainWindowRedirectUri: "/", // redirects the top level app after logout
+                        account: instance.getActiveAccount()
+                    })
+                    .catch(error => console.log(error))
+                    .then(async () => {
+                        try {
+                            setLoggedIn(await checkLoggedIn(instance));
+                            setUsername((await getUsername(instance)) ?? "");
+                        } catch (error) {
+                            console.error("Error updating logout state:", error);
+                        }
+                    });
+            } else {
+                appServicesLogout();
+            }
+        } catch (error) {
+            console.error("Error during logout:", error);
             appServicesLogout();
         }
     };
+
     return (
         <DefaultButton
             text={loggedIn ? `${t("logout")}\n${username}` : `${t("login")}`}

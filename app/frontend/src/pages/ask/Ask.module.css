@@ -69,6 +69,24 @@
     margin-bottom: 1.25rem;
 }
 
+.categoryWarning {
+    color: #d83b01;
+    background-color: #fef6f6;
+    border: 1px solid #f7dada;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.categoryWarning::before {
+    content: "⚠️";
+    font-size: 16px;
+}
+
 @media (min-width: 992px) {
     .askTitle {
         font-size: 4rem;

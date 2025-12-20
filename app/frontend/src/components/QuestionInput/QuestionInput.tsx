@@ -16,9 +16,10 @@ interface Props {
     placeholder?: string;
     clearOnSend?: boolean;
     showSpeechInput?: boolean;
+    leftOfSend?: React.ReactNode;
 }
 
-export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, initQuestion, showSpeechInput }: Props) => {
+export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, initQuestion, showSpeechInput, leftOfSend }: Props) => {
     const [question, setQuestion] = useState<string>("");
     const { loggedIn } = useContext(LoginContext);
     const { t } = useTranslation();
@@ -30,11 +31,13 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
 
     const sendQuestion = () => {
         if (disabled || !question.trim()) {
-            return;
+            return; // Don't send if disabled or no question
         }
 
         onSend(question);
 
+        // Only clear if clearOnSend is true - let parent handle clearing on success
+        // This prevents clearing the question when validation fails
         if (clearOnSend) {
             setQuestion("");
         }
@@ -69,10 +72,13 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
 
     if (disableRequiredAccessControl) {
         placeholder = "Please login to continue...";
+    } else if (disabled && placeholder?.includes("category")) {
+        // Keep the category-related placeholder if that's why it's disabled
+        // placeholder already set by parent component
     }
 
     return (
-        <Stack horizontal className={styles.questionInputContainer}>
+        <Stack horizontal className={styles.questionInputContainer} tokens={{ childrenGap: 8 }}>
             <TextField
                 className={styles.questionInputTextArea}
                 disabled={disableRequiredAccessControl}
@@ -85,8 +91,19 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
                 onKeyDown={onEnterPress}
                 onCompositionStart={handleCompositionStart}
                 onCompositionEnd={handleCompositionEnd}
+                styles={{
+                    root: { flex: 1, minWidth: 0 },
+                    fieldGroup: { minHeight: 44 },
+                    field: {
+                        minHeight: 44,
+                        maxHeight: 120,
+                        overflowY: "auto",
+                        overflowX: "hidden"
+                    }
+                }}
             />
             <div className={styles.questionInputButtonsContainer}>
+                {leftOfSend && <div style={{ marginRight: 8 }}>{leftOfSend}</div>}
                 <Tooltip content={t("tooltips.submitQuestion")} relationship="label">
                     <Button size="large" icon={<Send28Filled primaryFill="rgba(115, 118, 225, 1)" />} disabled={sendQuestionDisabled} onClick={sendQuestion} />
                 </Tooltip>

@@ -43,6 +43,7 @@ const Layout = () => {
                     </Link>
                     <nav>
                         <ul className={`${styles.headerNavList} ${menuOpen ? styles.show : ""}`}>
+                            {/* Temporarily disabled navigation tabs
                             <li>
                                 <NavLink
                                     to="/"
@@ -61,6 +62,7 @@ const Layout = () => {
                                     {t("qa")}
                                 </NavLink>
                             </li>
+                            */}
                         </ul>
                     </nav>
                     <div className={styles.loginMenuContainer}>
@@ -75,9 +77,7 @@ const Layout = () => {
                 </div>
             </header>
 
-            <main className={styles.main} id="main-content">
-                <Outlet />
-            </main>
+            <Outlet />
         </div>
     );
 };
