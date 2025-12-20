@@ -5,6 +5,16 @@ This file contains instructions for developers working on the Azure Search and O
 Always keep this file up to date with any changes to the codebase or development process.
 If necessary, edit this file to ensure it accurately reflects the current state of the project.
 
+## Custom Features (This Fork)
+
+This fork includes customizations for legal document RAG. See [CUSTOMIZATIONS_README.md](CUSTOMIZATIONS_README.md) for details.
+
+Key custom folders:
+* app/backend/customizations/: Backend feature flags and custom API routes
+* app/frontend/src/customizations/: Frontend utilities and components
+
+These folders are designed to be merge-safe when updating from upstream.
+
 ## Overall code layout
 
 * app: Contains the main application code, including frontend and backend.
@@ -13,10 +23,13 @@ If necessary, edit this file to ensure it accurately reflects the current state 
       * app/backend/approaches/approach.py: Base class for all approaches
       * app/backend/approaches/retrievethenread.py: Ask approach, just searches and answers
       * app/backend/approaches/chatreadretrieveread.py: Chat approach, includes query rewriting step first
-      * app/backend/approaches/prompts/ask_answer_question.prompty: Prompt used by the Ask approach to answer the question based off sources
-      * app/backend/approaches/prompts/chat_query_rewrite.prompty: Prompt used to rewrite the query based off search history into a better search query
+      * app/backend/approaches/prompts/ask_answer_question.prompty: Prompt used by the Ask approach to answer the question based off sources (CUSTOMIZED for legal domain)
+      * app/backend/approaches/prompts/chat_query_rewrite.prompty: Prompt used to rewrite the query based off search history into a better search query (CUSTOMIZED for legal domain)
       * app/backend/approaches/prompts/chat_query_rewrite_tools.json: Tools used by the query rewriting prompt
-      * app/backend/approaches/prompts/chat_answer_question.prompty: Prompt used by the Chat approach to actually answer the question based off sources
+      * app/backend/approaches/prompts/chat_answer_question.prompty: Prompt used by the Chat approach to actually answer the question based off sources (CUSTOMIZED for legal domain)
+    * app/backend/customizations/: Custom features isolated for merge-safety
+      * app/backend/customizations/config.py: Feature flags
+      * app/backend/customizations/routes/categories.py: Dynamic categories API endpoint
     * app/backend/prepdocslib: Contains the document ingestion library used by both local and cloud ingestion
       * app/backend/prepdocslib/blobmanager.py: Manages uploads to Azure Blob Storage
       * app/backend/prepdocslib/cloudingestionstrategy.py: Builds the Azure AI Search indexer and skillset for the cloud ingestion pipeline
@@ -55,6 +68,10 @@ If necessary, edit this file to ensure it accurately reflects the current state 
       * app/frontend/src/locales/ptBR/translation.json: Portuguese translations
       * app/frontend/src/locales/tr/translation.json: Turkish translations
     * app/frontend/src/pages: Contains the main pages of the application
+    * app/frontend/src/customizations/: Custom features isolated for merge-safety
+      * app/frontend/src/customizations/citationSanitizer.ts: Fixes malformed citation formats
+      * app/frontend/src/customizations/useCategories.ts: Hook for dynamic category fetching
+      * app/frontend/src/customizations/config.ts: Frontend feature flags
 * infra: Contains the Bicep templates for provisioning Azure resources.
 * tests: Contains the test code, including e2e tests, app integration tests, and unit tests.
 

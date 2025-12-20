@@ -3,6 +3,18 @@
 Consult the main [README](../README.md) for general information about the project.
 These are advanced topics that are not necessary for a basic deployment.
 
+## Custom Features (This Fork)
+
+See [CUSTOMIZATIONS_README.md](../CUSTOMIZATIONS_README.md) for documentation on:
+- Citation sanitization for legal documents
+- Dynamic category filtering
+- Legal domain prompts
+- Merge-safe architecture
+
+Historical development notes are archived in [docs/archive/development-history/](archive/development-history/README.md).
+
+## Upstream Documentation
+
 - Deploying:
   - [Troubleshooting deployment](docs/deploy_troubleshooting.md)
     - [Debugging the app on App Service](appservice.md)
