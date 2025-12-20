@@ -1,13 +1,24 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton } from "@fluentui/react";
+import { Panel, DefaultButton, Dropdown, IDropdownOption } from "@fluentui/react";
 import readNDJSONStream from "ndjson-readablestream";
 
 import appLogo from "../../assets/applogo.svg";
 import styles from "./Chat.module.css";
 
-import { chatApi, configApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage, SpeechConfig } from "../../api";
+import {
+    chatApi,
+    configApi,
+    RetrievalMode,
+    ChatAppResponse,
+    ChatAppResponseOrError,
+    ChatAppRequest,
+    ResponseMessage,
+    VectorFields,
+    GPT4VInput,
+    SpeechConfig
+} from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
@@ -25,6 +36,8 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
+// CUSTOM: Import from customizations folder for merge-safe architecture
+import { useCategories } from "../../customizations";
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -32,26 +45,29 @@ const Chat = () => {
     const [promptTemplate, setPromptTemplate] = useState<string>("");
     const [temperature, setTemperature] = useState<number>(0.3);
     const [seed, setSeed] = useState<number | null>(null);
-    const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(1.9);
+    const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(0);
     const [minimumSearchScore, setMinimumSearchScore] = useState<number>(0);
-    const [retrieveCount, setRetrieveCount] = useState<number>(3);
-    const [agenticReasoningEffort, setRetrievalReasoningEffort] = useState<string>("minimal");
+    const [retrieveCount, setRetrieveCount] = useState<number>(5);
+    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(5);
+    const [resultsMergeStrategy, setResultsMergeStrategy] = useState<string>("interleaved");
     const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Hybrid);
     const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(true);
     const [useQueryRewriting, setUseQueryRewriting] = useState<boolean>(false);
-    const [reasoningEffort, setReasoningEffort] = useState<string>("");
+    const [reasoningEffort, setReasoningEffort] = useState<string>("low");
     const [streamingEnabled, setStreamingEnabled] = useState<boolean>(true);
     const [shouldStream, setShouldStream] = useState<boolean>(true);
-    const previousShouldStreamRef = useRef<boolean>(true);
-    const forcedStreamingRef = useRef<boolean>(false);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [includeCategory, setIncludeCategory] = useState<string>("");
     const [excludeCategory, setExcludeCategory] = useState<string>("");
     const [useSuggestFollowupQuestions, setUseSuggestFollowupQuestions] = useState<boolean>(false);
-    const [searchTextEmbeddings, setSearchTextEmbeddings] = useState<boolean>(true);
-    const [searchImageEmbeddings, setSearchImageEmbeddings] = useState<boolean>(false);
-    const [sendTextSources, setSendTextSources] = useState<boolean>(true);
-    const [sendImageSources, setSendImageSources] = useState<boolean>(false);
+    const [vectorFields, setVectorFields] = useState<VectorFields>(VectorFields.TextAndImageEmbeddings);
+    const [useOidSecurityFilter, setUseOidSecurityFilter] = useState<boolean>(false);
+    const [useGroupsSecurityFilter, setUseGroupsSecurityFilter] = useState<boolean>(false);
+    const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
+    const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
+    const [userHasInteracted, setUserHasInteracted] = useState<boolean>(false);
+    const [userTriedToSearch, setUserTriedToSearch] = useState<boolean>(false);
+    const [allCategoriesSelected, setAllCategoriesSelected] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
@@ -61,14 +77,18 @@ const Chat = () => {
     const [error, setError] = useState<unknown>();
 
     const [activeCitation, setActiveCitation] = useState<string>();
+    const [activeCitationContent, setActiveCitationContent] = useState<string>();
     const [activeAnalysisPanelTab, setActiveAnalysisPanelTab] = useState<AnalysisPanelTabs | undefined>(undefined);
+
+    // Add this new state for the citation label
+    const [activeCitationLabel, setActiveCitationLabel] = useState<string>();
 
     const [selectedAnswer, setSelectedAnswer] = useState<number>(0);
     const [answers, setAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
     const [streamedAnswers, setStreamedAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
     const [speechUrls, setSpeechUrls] = useState<(string | null)[]>([]);
 
-    const [showMultimodalOptions, setShowMultimodalOptions] = useState<boolean>(false);
+    const [showGPT4VOptions, setShowGPT4VOptions] = useState<boolean>(false);
     const [showSemanticRankerOption, setShowSemanticRankerOption] = useState<boolean>(false);
     const [showQueryRewritingOption, setShowQueryRewritingOption] = useState<boolean>(false);
     const [showReasoningEffortOption, setShowReasoningEffortOption] = useState<boolean>(false);
@@ -81,13 +101,8 @@ const Chat = () => {
     const [showChatHistoryBrowser, setShowChatHistoryBrowser] = useState<boolean>(false);
     const [showChatHistoryCosmos, setShowChatHistoryCosmos] = useState<boolean>(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [webSourceSupported, setWebSourceSupported] = useState<boolean>(false);
-    const [webSourceEnabled, setWebSourceEnabled] = useState<boolean>(false);
-    const [sharePointSourceSupported, setSharePointSourceSupported] = useState<boolean>(false);
-    const [sharePointSourceEnabled, setSharePointSourceEnabled] = useState<boolean>(false);
-    const [useAgenticKnowledgeBase, setUseAgenticRetrieval] = useState<boolean>(false);
-    const [hideMinimalRetrievalReasoningOption, setHideMinimalRetrievalReasoningOption] = useState<boolean>(false);
-    const streamingDisabledByOverrides = useAgenticKnowledgeBase && webSourceEnabled;
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
+    const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const audio = useRef(new Audio()).current;
     const [isPlaying, setIsPlaying] = useState(false);
@@ -101,14 +116,10 @@ const Chat = () => {
     };
 
     const getConfig = async () => {
-        configApi().then(config => {
-            setShowMultimodalOptions(config.showMultimodalOptions);
-            if (config.showMultimodalOptions) {
-                // Initialize from server config so defaults match deployment settings
-                setSendTextSources(config.ragSendTextSources !== undefined ? config.ragSendTextSources : true);
-                setSendImageSources(config.ragSendImageSources);
-                setSearchTextEmbeddings(config.ragSearchTextEmbeddings);
-                setSearchImageEmbeddings(config.ragSearchImageEmbeddings);
+        configApi().then((config: any) => {
+            setShowGPT4VOptions(config.showGPT4VOptions);
+            if (config.showGPT4VOptions) {
+                setUseGPT4V(true);
             }
             setUseSemanticRanker(config.showSemanticRankerOption);
             setShowSemanticRankerOption(config.showSemanticRankerOption);
@@ -116,7 +127,10 @@ const Chat = () => {
             setShowQueryRewritingOption(config.showQueryRewritingOption);
             setShowReasoningEffortOption(config.showReasoningEffortOption);
             setStreamingEnabled(config.streamingEnabled);
-            if (config.showReasoningEffortOption) {
+            if (!config.streamingEnabled) {
+                setShouldStream(false);
+            }
+            if (config.showReasoningEffortOption && config.defaultReasoningEffort) {
                 setReasoningEffort(config.defaultReasoningEffort);
             }
             setShowVectorOption(config.showVectorOption);
@@ -131,17 +145,7 @@ const Chat = () => {
             setShowChatHistoryBrowser(config.showChatHistoryBrowser);
             setShowChatHistoryCosmos(config.showChatHistoryCosmos);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
-            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
-            setWebSourceSupported(config.webSourceEnabled);
-            setWebSourceEnabled(config.webSourceEnabled);
-            setSharePointSourceSupported(config.sharepointSourceEnabled);
-            setSharePointSourceEnabled(config.sharepointSourceEnabled);
-            if (config.showAgenticRetrievalOption) {
-                setRetrieveCount(10);
-            }
-            const defaultRetrievalEffort = config.defaultRetrievalReasoningEffort ?? "minimal";
-            setHideMinimalRetrievalReasoningOption(config.webSourceEnabled);
-            setRetrievalReasoningEffort(defaultRetrievalEffort);
+            setShowCategoryFilter(!!config.showCategoryFilter);
         });
     };
 
@@ -198,37 +202,14 @@ const Chat = () => {
     })();
     const historyManager = useHistoryManager(historyProvider);
 
-    const updateStreamingPreference = (isStreamingEnabledOverride: boolean, disablesStreamingOverride: boolean) => {
-        if (!isStreamingEnabledOverride) {
-            setShouldStream(current => {
-                if (!forcedStreamingRef.current) {
-                    previousShouldStreamRef.current = current;
-                }
-                forcedStreamingRef.current = true;
-                return current ? false : current;
-            });
-            return;
-        }
-
-        if (disablesStreamingOverride) {
-            setShouldStream(current => {
-                if (!forcedStreamingRef.current) {
-                    previousShouldStreamRef.current = current;
-                }
-                forcedStreamingRef.current = true;
-                return current ? false : current;
-            });
-            return;
-        }
-
-        forcedStreamingRef.current = false;
-        setShouldStream(current => {
-            const desiredShouldStream = previousShouldStreamRef.current;
-            return current === desiredShouldStream ? current : desiredShouldStream;
-        });
-    };
-
     const makeApiRequest = async (question: string) => {
+        // Block search if no category is selected and "All" isn't ticked
+        if (showCategoryFilter && includeCategory.trim() === "" && !allCategoriesSelected) {
+            setUserTriedToSearch(true);
+            return;
+        }
+        setUserTriedToSearch(false);
+
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -252,7 +233,8 @@ const Chat = () => {
                         include_category: includeCategory.length === 0 ? undefined : includeCategory,
                         exclude_category: excludeCategory.length === 0 ? undefined : excludeCategory,
                         top: retrieveCount,
-                        ...(useAgenticKnowledgeBase ? { retrieval_reasoning_effort: agenticReasoningEffort } : {}),
+                        max_subqueries: maxSubqueryCount,
+                        results_merge_strategy: resultsMergeStrategy,
                         temperature: temperature,
                         minimum_reranker_score: minimumRerankerScore,
                         minimum_search_score: minimumSearchScore,
@@ -262,14 +244,13 @@ const Chat = () => {
                         query_rewriting: useQueryRewriting,
                         reasoning_effort: reasoningEffort,
                         suggest_followup_questions: useSuggestFollowupQuestions,
-                        search_text_embeddings: searchTextEmbeddings,
-                        search_image_embeddings: searchImageEmbeddings,
-                        send_text_sources: sendTextSources,
-                        send_image_sources: sendImageSources,
+                        use_oid_security_filter: useOidSecurityFilter,
+                        use_groups_security_filter: useGroupsSecurityFilter,
+                        vector_fields: vectorFields,
+                        use_gpt4v: useGPT4V,
+                        gpt4v_input: gpt4vInput,
                         language: i18n.language,
-                        use_agentic_knowledgebase: useAgenticKnowledgeBase,
-                        use_web_source: webSourceSupported ? webSourceEnabled : false,
-                        use_sharepoint_source: sharePointSourceSupported ? sharePointSourceEnabled : false,
+                        use_agentic_retrieval: useAgenticRetrieval,
                         ...(seed !== null ? { seed: seed } : {})
                     }
                 },
@@ -328,11 +309,6 @@ const Chat = () => {
         getConfig();
     }, []);
 
-    // Preserve streaming preference when agentic retrieval forces streaming off.
-    useEffect(() => {
-        updateStreamingPreference(streamingEnabled, streamingDisabledByOverrides);
-    }, [streamingDisabledByOverrides, streamingEnabled]);
-
     const handleSettingsChange = (field: string, value: any) => {
         switch (field) {
             case "promptTemplate":
@@ -353,17 +329,12 @@ const Chat = () => {
             case "retrieveCount":
                 setRetrieveCount(value);
                 break;
-            case "agenticReasoningEffort": {
-                setRetrievalReasoningEffort(value);
-                // If selecting minimal while web source is enabled, disable web source
-                if (value === "minimal" && webSourceEnabled) {
-                    setWebSourceEnabled(false);
-                    setHideMinimalRetrievalReasoningOption(false);
-                    // Web source was disabled, so restore streaming
-                    updateStreamingPreference(streamingEnabled, false);
-                }
+            case "maxSubqueryCount":
+                setMaxSubqueryCount(value);
                 break;
-            }
+            case "resultsMergeStrategy":
+                setResultsMergeStrategy(value);
+                break;
             case "useSemanticRanker":
                 setUseSemanticRanker(value);
                 break;
@@ -381,70 +352,35 @@ const Chat = () => {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                setUserHasInteracted(true); // Mark that user has interacted
+                setUserTriedToSearch(false); // Clear any previous warning
+                break;
+            case "useOidSecurityFilter":
+                setUseOidSecurityFilter(value);
+                break;
+            case "useGroupsSecurityFilter":
+                setUseGroupsSecurityFilter(value);
                 break;
             case "shouldStream":
-                {
-                    const normalizedShouldStream = !!value;
-                    forcedStreamingRef.current = false;
-                    previousShouldStreamRef.current = normalizedShouldStream;
-                    setShouldStream(normalizedShouldStream);
-                }
+                setShouldStream(value);
                 break;
             case "useSuggestFollowupQuestions":
                 setUseSuggestFollowupQuestions(value);
                 break;
-            case "llmInputs":
+            case "useGPT4V":
+                setUseGPT4V(value);
                 break;
-            case "sendTextSources":
-                setSendTextSources(value);
+            case "gpt4vInput":
+                setGPT4VInput(value);
                 break;
-            case "sendImageSources":
-                setSendImageSources(value);
-                break;
-            case "searchTextEmbeddings":
-                setSearchTextEmbeddings(value);
-                break;
-            case "searchImageEmbeddings":
-                setSearchImageEmbeddings(value);
+            case "vectorFields":
+                setVectorFields(value);
                 break;
             case "retrievalMode":
                 setRetrievalMode(value);
                 break;
-            case "useAgenticKnowledgeBase": {
+            case "useAgenticRetrieval":
                 setUseAgenticRetrieval(value);
-                let effectiveWebSource = webSourceEnabled;
-                if (!value && webSourceEnabled) {
-                    effectiveWebSource = false;
-                    setWebSourceEnabled(false);
-                    setHideMinimalRetrievalReasoningOption(false);
-                }
-                // Only web source disables streaming
-                const shouldDisableStreaming = !!value && effectiveWebSource;
-                updateStreamingPreference(streamingEnabled, shouldDisableStreaming);
-                break;
-            }
-            case "useWebSource":
-                if (!webSourceSupported) {
-                    setWebSourceEnabled(false);
-                    return;
-                }
-                const normalizedWebSource = !!value;
-                setWebSourceEnabled(normalizedWebSource);
-                setHideMinimalRetrievalReasoningOption(normalizedWebSource);
-                // When enabling web source, disable follow-up questions and streaming
-                if (normalizedWebSource) {
-                    setUseSuggestFollowupQuestions(false);
-                }
-                const shouldDisableStreaming = useAgenticKnowledgeBase && normalizedWebSource;
-                updateStreamingPreference(streamingEnabled, shouldDisableStreaming);
-                break;
-            case "useSharePointSource":
-                if (!sharePointSourceSupported) {
-                    setSharePointSourceEnabled(false);
-                    return;
-                }
-                setSharePointSourceEnabled(!!value);
-                break;
         }
     };
 
@@ -452,14 +388,22 @@ const Chat = () => {
         makeApiRequest(example);
     };
 
-    const onShowCitation = (citation: string, index: number) => {
-        if (activeCitation === citation && activeAnalysisPanelTab === AnalysisPanelTabs.CitationTab && selectedAnswer === index) {
-            setActiveAnalysisPanelTab(undefined);
-        } else {
-            setActiveCitation(citation);
-            setActiveAnalysisPanelTab(AnalysisPanelTabs.CitationTab);
-        }
+    const [enableCitationTab, setEnableCitationTab] = useState(false);
 
+    const onShowCitation = (citation: string, index: number, citationContent?: string) => {
+        // Prevent rapid clicking by adding a small debounce
+        if (isLoading || isStreaming) return;
+
+        console.log("onShowCitation called with:", { citation, citationContent: citationContent ? "content provided" : "no content" });
+
+        // Use the citation directly as received
+        setActiveCitation(citation);
+
+        // If citationContent is provided, use it; otherwise it will be found in SupportingContent
+        setActiveCitationContent(citationContent || "");
+        setActiveCitationLabel(citation); // Use the citation directly
+        setActiveAnalysisPanelTab(AnalysisPanelTabs.SupportingContentTab);
+        setEnableCitationTab(false);
         setSelectedAnswer(index);
     };
 
@@ -467,6 +411,10 @@ const Chat = () => {
         if (activeAnalysisPanelTab === tab && selectedAnswer === index) {
             setActiveAnalysisPanelTab(undefined);
         } else {
+            // Enable citation tab when explicitly requested
+            if (tab === AnalysisPanelTabs.CitationTab) {
+                setEnableCitationTab(true);
+            }
             setActiveAnalysisPanelTab(tab);
         }
 
@@ -474,6 +422,57 @@ const Chat = () => {
     };
 
     const { t, i18n } = useTranslation();
+
+    // Load categories for dropdown (ensure options are strings, not objects)
+    const { categories = [], loading: categoriesLoading } = useCategories();
+
+    const categoryOptions: IDropdownOption[] = [
+        { key: "", text: "All Categories" },
+        // Ensure each option is a simple { key: string, text: string }
+        ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
+    ];
+
+    // Selected keys from CSV
+    const includeKeys = includeCategory
+        ? includeCategory
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
+        : [];
+
+    const onIncludeCategoryChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+        if (!option) return;
+        const key = String(option.key || "");
+
+        // Selecting "All" toggles the checkmark and clears specific selections
+        if (key === "") {
+            setAllCategoriesSelected(!!option.selected);
+            setIncludeCategory(""); // keep backend filter as "no filter"
+            setUserHasInteracted(true);
+            setUserTriedToSearch(false);
+            return;
+        }
+
+        // Selecting any specific category clears "All"
+        setAllCategoriesSelected(false);
+
+        let next = includeKeys.slice();
+        if (option.selected) {
+            if (!next.includes(key)) next.push(key);
+        } else {
+            next = next.filter(k => k !== key);
+        }
+
+        const newValue = next.join(",");
+        setIncludeCategory(newValue);
+        setUserHasInteracted(true);
+        setUserTriedToSearch(false);
+
+        // If user deselects all categories (empty selection), require new interaction
+        if (newValue === "" && !allCategoriesSelected) {
+            setUserHasInteracted(false);
+        }
+    };
 
     return (
         <div className={styles.container}>
@@ -503,7 +502,7 @@ const Chat = () => {
                             <h2 className={styles.chatEmptyStateSubtitle}>{t("chatEmptyStateSubtitle")}</h2>
                             {showLanguagePicker && <LanguagePicker onLanguageChange={newLang => i18n.changeLanguage(newLang)} />}
 
-                            <ExampleList onExampleClicked={onExampleClicked} useMultimodalAnswering={showMultimodalOptions} />
+                            <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />
                         </div>
                     ) : (
                         <div className={styles.chatMessageStream}>
@@ -519,7 +518,7 @@ const Chat = () => {
                                                 index={index}
                                                 speechConfig={speechConfig}
                                                 isSelected={false}
-                                                onCitationClicked={c => onShowCitation(c, index)}
+                                                onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
                                                 onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
@@ -542,7 +541,7 @@ const Chat = () => {
                                                 index={index}
                                                 speechConfig={speechConfig}
                                                 isSelected={selectedAnswer === index && activeAnalysisPanelTab !== undefined}
-                                                onCitationClicked={c => onShowCitation(c, index)}
+                                                onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
                                                 onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
@@ -575,12 +574,41 @@ const Chat = () => {
 
                     <div className={styles.chatInput}>
                         <QuestionInput
-                            clearOnSend
+                            clearOnSend={false}
                             placeholder={t("defaultExamples.placeholder")}
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                             showSpeechInput={showSpeechInput}
+                            leftOfSend={
+                                showCategoryFilter ? (
+                                    <Dropdown
+                                        multiSelect
+                                        styles={{
+                                            dropdown: { minWidth: 220, maxWidth: 280 },
+                                            callout: { minWidth: 350, maxWidth: 500 },
+                                            dropdownItem: { whiteSpace: "normal", padding: "8px 12px", minHeight: 36 },
+                                            dropdownOptionText: { whiteSpace: "normal", lineHeight: 1.4 }
+                                        }}
+                                        options={categoryOptions}
+                                        selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                        onChange={onIncludeCategoryChange}
+                                        onRenderTitle={(items?: IDropdownOption[]) => {
+                                            if (!items || items.length === 0) return <span>Select categories</span>;
+                                            if (items.some(i => i.key === "")) return <span>All Categories</span>;
+                                            if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
+                                            return <span title={items.map(i => i.text).join(", ")}>{items.length} categories</span>;
+                                        }}
+                                        disabled={isLoading || categoriesLoading}
+                                        placeholder="Select categories or All"
+                                    />
+                                ) : undefined
+                            }
                         />
+                        {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
+                            <div className={styles.categoryWarning}>
+                                Please select a category before searching. Choose "All Categories" to search all documents.
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -589,10 +617,16 @@ const Chat = () => {
                         className={styles.chatAnalysisPanel}
                         activeCitation={activeCitation}
                         onActiveTabChanged={x => onToggleTab(x, selectedAnswer)}
-                        citationHeight="810px"
+                        citationHeight="600px"
                         answer={answers[selectedAnswer][1]}
                         activeTab={activeAnalysisPanelTab}
-                        onCitationClicked={c => onShowCitation(c, selectedAnswer)}
+                        activeCitationLabel={activeCitationLabel}
+                        activeCitationContent={activeCitationContent}
+                        enableCitationTab={enableCitationTab}
+                        onCitationChanged={citation => {
+                            setActiveCitation(citation);
+                            setEnableCitationTab(true);
+                        }}
                     />
                 )}
 
@@ -623,7 +657,8 @@ const Chat = () => {
                         promptTemplate={promptTemplate}
                         temperature={temperature}
                         retrieveCount={retrieveCount}
-                        agenticReasoningEffort={agenticReasoningEffort}
+                        maxSubqueryCount={maxSubqueryCount}
+                        resultsMergeStrategy={resultsMergeStrategy}
                         seed={seed}
                         minimumSearchScore={minimumSearchScore}
                         minimumRerankerScore={minimumRerankerScore}
@@ -634,28 +669,25 @@ const Chat = () => {
                         excludeCategory={excludeCategory}
                         includeCategory={includeCategory}
                         retrievalMode={retrievalMode}
-                        showMultimodalOptions={showMultimodalOptions}
-                        sendTextSources={sendTextSources}
-                        sendImageSources={sendImageSources}
-                        searchTextEmbeddings={searchTextEmbeddings}
-                        searchImageEmbeddings={searchImageEmbeddings}
+                        useGPT4V={useGPT4V}
+                        gpt4vInput={gpt4vInput}
+                        vectorFields={vectorFields}
                         showSemanticRankerOption={showSemanticRankerOption}
                         showQueryRewritingOption={showQueryRewritingOption}
                         showReasoningEffortOption={showReasoningEffortOption}
+                        showGPT4VOptions={showGPT4VOptions}
                         showVectorOption={showVectorOption}
+                        useOidSecurityFilter={useOidSecurityFilter}
+                        useGroupsSecurityFilter={useGroupsSecurityFilter}
                         useLogin={!!useLogin}
                         loggedIn={loggedIn}
                         requireAccessControl={requireAccessControl}
                         shouldStream={shouldStream}
                         streamingEnabled={streamingEnabled}
                         useSuggestFollowupQuestions={useSuggestFollowupQuestions}
+                        showSuggestFollowupQuestions={true}
                         showAgenticRetrievalOption={showAgenticRetrievalOption}
-                        useAgenticKnowledgeBase={useAgenticKnowledgeBase}
-                        useWebSource={webSourceEnabled}
-                        showWebSourceOption={webSourceSupported}
-                        useSharePointSource={sharePointSourceEnabled}
-                        showSharePointSourceOption={sharePointSourceSupported}
-                        hideMinimalRetrievalReasoningOption={hideMinimalRetrievalReasoningOption}
+                        useAgenticRetrieval={useAgenticRetrieval}
                         onChange={handleSettingsChange}
                     />
                     {useLogin && <TokenClaimsDisplay />}

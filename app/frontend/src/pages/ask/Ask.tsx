@@ -1,11 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton, Spinner } from "@fluentui/react";
+import { Panel, DefaultButton, Spinner, Dropdown, IDropdownOption } from "@fluentui/react";
 
 import styles from "./Ask.module.css";
 
-import { askApi, configApi, ChatAppResponse, ChatAppRequest, RetrievalMode, SpeechConfig } from "../../api";
+import { askApi, configApi, ChatAppResponse, ChatAppRequest, RetrievalMode, VectorFields, GPT4VInput, SpeechConfig } from "../../api";
 import { Answer, AnswerError } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
@@ -18,6 +18,8 @@ import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
+// CUSTOM: Import from customizations folder for merge-safe architecture
+import { useCategories } from "../../customizations";
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -26,24 +28,25 @@ export function Component(): JSX.Element {
     const [promptTemplateSuffix, setPromptTemplateSuffix] = useState<string>("");
     const [temperature, setTemperature] = useState<number>(0.3);
     const [seed, setSeed] = useState<number | null>(null);
-    const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(1.9);
+    const [minimumRerankerScore, setMinimumRerankerScore] = useState<number>(0);
     const [minimumSearchScore, setMinimumSearchScore] = useState<number>(0);
     const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Hybrid);
-    const [retrieveCount, setRetrieveCount] = useState<number>(3);
-    const [agenticReasoningEffort, setRetrievalReasoningEffort] = useState<string>("minimal");
+    const [retrieveCount, setRetrieveCount] = useState<number>(5);
+    const [maxSubqueryCount, setMaxSubqueryCount] = useState<number>(5);
+    const [resultsMergeStrategy, setResultsMergeStrategy] = useState<string>("interleaved");
     const [useSemanticRanker, setUseSemanticRanker] = useState<boolean>(true);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [useQueryRewriting, setUseQueryRewriting] = useState<boolean>(false);
-    const [reasoningEffort, setReasoningEffort] = useState<string>("");
-    const [sendTextSources, setSendTextSources] = useState<boolean>(true);
-    const [sendImageSources, setSendImageSources] = useState<boolean>(false);
+    const [reasoningEffort, setReasoningEffort] = useState<string>("low");
+    const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
+    const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [includeCategory, setIncludeCategory] = useState<string>("");
-
     const [excludeCategory, setExcludeCategory] = useState<string>("");
     const [question, setQuestion] = useState<string>("");
-    const [searchTextEmbeddings, setSearchTextEmbeddings] = useState<boolean>(true);
-    const [searchImageEmbeddings, setSearchImageEmbeddings] = useState<boolean>(false);
-    const [showMultimodalOptions, setShowMultimodalOptions] = useState<boolean>(false);
+    const [vectorFields, setVectorFields] = useState<VectorFields>(VectorFields.TextAndImageEmbeddings);
+    const [useOidSecurityFilter, setUseOidSecurityFilter] = useState<boolean>(false);
+    const [useGroupsSecurityFilter, setUseGroupsSecurityFilter] = useState<boolean>(false);
+    const [showGPT4VOptions, setShowGPT4VOptions] = useState<boolean>(false);
     const [showSemanticRankerOption, setShowSemanticRankerOption] = useState<boolean>(false);
     const [showQueryRewritingOption, setShowQueryRewritingOption] = useState<boolean>(false);
     const [showReasoningEffortOption, setShowReasoningEffortOption] = useState<boolean>(false);
@@ -56,12 +59,8 @@ export function Component(): JSX.Element {
     const audio = useRef(new Audio()).current;
     const [isPlaying, setIsPlaying] = useState(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [webSourceSupported, setWebSourceSupported] = useState<boolean>(false);
-    const [webSourceEnabled, setWebSourceEnabled] = useState<boolean>(false);
-    const [sharePointSourceSupported, setSharePointSourceSupported] = useState<boolean>(false);
-    const [sharePointSourceEnabled, setSharePointSourceEnabled] = useState<boolean>(false);
-    const [useAgenticKnowledgeBase, setUseAgenticRetrieval] = useState<boolean>(false);
-    const [hideMinimalRetrievalReasoningOption, setHideMinimalRetrievalReasoningOption] = useState<boolean>(false);
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
+    const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
 
@@ -80,27 +79,22 @@ export function Component(): JSX.Element {
     };
 
     const [activeCitation, setActiveCitation] = useState<string>();
+    const [activeCitationContent, setActiveCitationContent] = useState<string>(); // New state
     const [activeAnalysisPanelTab, setActiveAnalysisPanelTab] = useState<AnalysisPanelTabs | undefined>(undefined);
+    const [enableCitationTab, setEnableCitationTab] = useState(false);
 
     const client = useLogin ? useMsal().instance : undefined;
     const { loggedIn } = useContext(LoginContext);
 
     const getConfig = async () => {
         configApi().then(config => {
-            setShowMultimodalOptions(config.showMultimodalOptions);
-            if (config.showMultimodalOptions) {
-                // Initialize from server config so defaults follow deployment settings
-                setSendTextSources(config.ragSendTextSources !== undefined ? config.ragSendTextSources : true);
-                setSendImageSources(config.ragSendImageSources);
-                setSearchTextEmbeddings(config.ragSearchTextEmbeddings);
-                setSearchImageEmbeddings(config.ragSearchImageEmbeddings);
-            }
+            setShowGPT4VOptions(config.showGPT4VOptions);
             setUseSemanticRanker(config.showSemanticRankerOption);
             setShowSemanticRankerOption(config.showSemanticRankerOption);
             setUseQueryRewriting(config.showQueryRewritingOption);
             setShowQueryRewritingOption(config.showQueryRewritingOption);
             setShowReasoningEffortOption(config.showReasoningEffortOption);
-            if (config.showReasoningEffortOption) {
+            if (config.showReasoningEffortOption && config.defaultReasoningEffort) {
                 setReasoningEffort(config.defaultReasoningEffort);
             }
             setShowVectorOption(config.showVectorOption);
@@ -113,17 +107,8 @@ export function Component(): JSX.Element {
             setShowSpeechOutputBrowser(config.showSpeechOutputBrowser);
             setShowSpeechOutputAzure(config.showSpeechOutputAzure);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
-            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
-            setWebSourceSupported(config.webSourceEnabled);
-            setWebSourceEnabled(config.webSourceEnabled);
-            setSharePointSourceSupported(config.sharepointSourceEnabled);
-            setSharePointSourceEnabled(config.sharepointSourceEnabled);
-            if (config.showAgenticRetrievalOption) {
-                setRetrieveCount(10);
-            }
-            const defaultRetrievalEffort = config.defaultRetrievalReasoningEffort ?? "minimal";
-            setHideMinimalRetrievalReasoningOption(config.webSourceEnabled);
-            setRetrievalReasoningEffort(defaultRetrievalEffort);
+            // 'showCategoryFilter' may not exist on older/alternate Config types — cast to any to safely read optional field
+            setShowCategoryFilter(!!(config as any).showCategoryFilter);
         });
     };
 
@@ -131,7 +116,78 @@ export function Component(): JSX.Element {
         getConfig();
     }, []);
 
+    // Add state for category confirmation and user interaction tracking
+    const [categoryConfirmed, setCategoryConfirmed] = useState<boolean>(true); // Start as true
+    const [userTriedToSearch, setUserTriedToSearch] = useState<boolean>(false); // Track search attempts
+    const [userHasInteracted, setUserHasInteracted] = useState<boolean>(false); // Track if user interacted with the category dropdown
+    const [allCategoriesSelected, setAllCategoriesSelected] = useState<boolean>(false);
+
+    // Load categories
+    const { categories, loading: categoriesLoading } = useCategories();
+    const categoryOptions: IDropdownOption[] = [
+        { key: "", text: "All Categories" },
+        ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
+    ];
+
+    const includeKeys = includeCategory
+        ? includeCategory
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
+        : [];
+
+    const onIncludeCategoryChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => {
+        if (!option) return;
+
+        const key = String(option.key || "");
+        if (key === "") {
+            // Toggle All tick
+            setAllCategoriesSelected(!!option.selected);
+            setUserHasInteracted(true);
+            setUserTriedToSearch(false);
+            handleSettingsChange("includeCategory", "");
+            return;
+        }
+
+        // Selecting specific category clears "All"
+        setAllCategoriesSelected(false);
+
+        let next = includeKeys.slice();
+        if (option.selected) {
+            if (!next.includes(key)) next.push(key);
+        } else {
+            next = next.filter(k => k !== key);
+        }
+
+        const newValue = next.join(",");
+        setUserHasInteracted(true);
+        setUserTriedToSearch(false);
+        handleSettingsChange("includeCategory", newValue);
+
+        // If user deselects all categories (empty selection), require new interaction
+        if (newValue === "" && !allCategoriesSelected) {
+            setUserHasInteracted(false);
+        }
+    };
+
+    // Add useEffect to handle category confirmation properly
+    useEffect(() => {
+        if (showCategoryFilter) {
+            // Category is confirmed if user has selected anything (including empty string for "All")
+            setCategoryConfirmed(true); // Always confirmed when category filter is shown
+        } else {
+            setCategoryConfirmed(true);
+        }
+    }, [includeCategory, showCategoryFilter]);
+
     const makeApiRequest = async (question: string) => {
+        // Block search if no category is selected and "All" isn't ticked
+        if (showCategoryFilter && includeCategory.trim() === "" && !allCategoriesSelected) {
+            setUserTriedToSearch(true);
+            return; // Don't proceed with search
+        }
+
+        setUserTriedToSearch(false);
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -157,7 +213,8 @@ export function Component(): JSX.Element {
                         include_category: includeCategory.length === 0 ? undefined : includeCategory,
                         exclude_category: excludeCategory.length === 0 ? undefined : excludeCategory,
                         top: retrieveCount,
-                        ...(useAgenticKnowledgeBase ? { retrieval_reasoning_effort: agenticReasoningEffort } : {}),
+                        max_subqueries: maxSubqueryCount,
+                        results_merge_strategy: resultsMergeStrategy,
                         temperature: temperature,
                         minimum_reranker_score: minimumRerankerScore,
                         minimum_search_score: minimumSearchScore,
@@ -166,14 +223,13 @@ export function Component(): JSX.Element {
                         semantic_captions: useSemanticCaptions,
                         query_rewriting: useQueryRewriting,
                         reasoning_effort: reasoningEffort,
-                        search_text_embeddings: searchTextEmbeddings,
-                        search_image_embeddings: searchImageEmbeddings,
-                        send_text_sources: sendTextSources,
-                        send_image_sources: sendImageSources,
+                        use_oid_security_filter: useOidSecurityFilter,
+                        use_groups_security_filter: useGroupsSecurityFilter,
+                        vector_fields: vectorFields,
+                        use_gpt4v: useGPT4V,
+                        gpt4v_input: gpt4vInput,
                         language: i18n.language,
-                        use_agentic_knowledgebase: useAgenticKnowledgeBase,
-                        use_web_source: webSourceSupported ? webSourceEnabled : false,
-                        use_sharepoint_source: sharePointSourceSupported ? sharePointSourceEnabled : false,
+                        use_agentic_retrieval: useAgenticRetrieval,
                         ...(seed !== null ? { seed: seed } : {})
                     }
                 },
@@ -184,6 +240,7 @@ export function Component(): JSX.Element {
             setAnswer(result);
             setSpeechUrls([null]);
         } catch (e) {
+            console.error("API request failed:", e);
             setError(e);
         } finally {
             setIsLoading(false);
@@ -216,12 +273,11 @@ export function Component(): JSX.Element {
             case "retrieveCount":
                 setRetrieveCount(value);
                 break;
-            case "agenticReasoningEffort":
-                setRetrievalReasoningEffort(value);
-                if (value === "minimal" && webSourceEnabled) {
-                    setWebSourceEnabled(false);
-                    setHideMinimalRetrievalReasoningOption(false);
-                }
+            case "maxSubqueryCount":
+                setMaxSubqueryCount(value);
+                break;
+            case "resultsMergeStrategy":
+                setResultsMergeStrategy(value);
                 break;
             case "useSemanticRanker":
                 setUseSemanticRanker(value);
@@ -240,42 +296,29 @@ export function Component(): JSX.Element {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                setUserHasInteracted(true); // Mark that user has interacted
+                setUserTriedToSearch(false); // Clear any previous warning
                 break;
-            case "llmInputs":
+            case "useOidSecurityFilter":
+                setUseOidSecurityFilter(value);
                 break;
-            case "sendTextSources":
-                setSendTextSources(value);
+            case "useGroupsSecurityFilter":
+                setUseGroupsSecurityFilter(value);
                 break;
-            case "sendImageSources":
-                setSendImageSources(value);
+            case "useGPT4V":
+                setUseGPT4V(value);
                 break;
-            case "searchTextEmbeddings":
-                setSearchTextEmbeddings(value);
+            case "gpt4vInput":
+                setGPT4VInput(value);
                 break;
-            case "searchImageEmbeddings":
-                setSearchImageEmbeddings(value);
+            case "vectorFields":
+                setVectorFields(value);
                 break;
             case "retrievalMode":
                 setRetrievalMode(value);
                 break;
-            case "useAgenticKnowledgeBase":
+            case "useAgenticRetrieval":
                 setUseAgenticRetrieval(value);
-                break;
-            case "useWebSource":
-                if (!webSourceSupported) {
-                    setWebSourceEnabled(false);
-                    return;
-                }
-                setWebSourceEnabled(value);
-                setHideMinimalRetrievalReasoningOption(value);
-                break;
-            case "useSharePointSource":
-                if (!sharePointSourceSupported) {
-                    setSharePointSourceEnabled(false);
-                    return;
-                }
-                setSharePointSourceEnabled(value);
-                break;
         }
     };
 
@@ -284,24 +327,42 @@ export function Component(): JSX.Element {
         setQuestion(example);
     };
 
-    const onShowCitation = (citation: string) => {
-        if (activeCitation === citation && activeAnalysisPanelTab === AnalysisPanelTabs.CitationTab) {
-            setActiveAnalysisPanelTab(undefined);
-        } else {
-            setActiveCitation(citation);
-            setActiveAnalysisPanelTab(AnalysisPanelTabs.CitationTab);
-        }
+    const onShowCitation = (citation: string, citationContent?: string) => {
+        console.log("onShowCitation called with:", { citation, citationContent: citationContent ? "content provided" : "no content" });
+
+        // Always show supporting content tab when citation is clicked
+        setActiveCitation(citation);
+
+        // Store the full citation content, not just a preview
+        setActiveCitationContent(citationContent || "");
+        setActiveAnalysisPanelTab(AnalysisPanelTabs.SupportingContentTab);
+        setEnableCitationTab(false); // Disable citation tab by default
     };
 
     const onToggleTab = (tab: AnalysisPanelTabs) => {
         if (activeAnalysisPanelTab === tab) {
             setActiveAnalysisPanelTab(undefined);
         } else {
+            // Enable citation tab when explicitly requested
+            if (tab === AnalysisPanelTabs.CitationTab) {
+                setEnableCitationTab(true);
+            }
             setActiveAnalysisPanelTab(tab);
         }
     };
 
+    const onUseOidSecurityFilterChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
+        setUseOidSecurityFilter(!!checked);
+    };
+
+    const onUseGroupsSecurityFilterChange = (_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, checked?: boolean) => {
+        setUseGroupsSecurityFilter(!!checked);
+    };
+
     const { t, i18n } = useTranslation();
+
+    // Disable submit if category not confirmed
+    const isSubmitDisabled = isLoading || !categoryConfirmed;
 
     return (
         <div className={styles.askContainer}>
@@ -317,12 +378,68 @@ export function Component(): JSX.Element {
                 <h1 className={styles.askTitle}>{t("askTitle")}</h1>
                 <div className={styles.askQuestionInput}>
                     <QuestionInput
-                        placeholder={t("multimodalExamples.placeholder")}
+                        placeholder={t("gpt4vExamples.placeholder")}
                         disabled={isLoading}
                         initQuestion={question}
                         onSend={question => makeApiRequest(question)}
                         showSpeechInput={showSpeechInput}
+                        leftOfSend={
+                            showCategoryFilter ? (
+                                <Dropdown
+                                    multiSelect
+                                    styles={{
+                                        dropdown: {
+                                            minWidth: 220,
+                                            minHeight: 48
+                                        },
+                                        title: {
+                                            minHeight: 48,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            paddingTop: 10,
+                                            paddingBottom: 10,
+                                            fontSize: 14
+                                        },
+                                        caretDownWrapper: {
+                                            height: 48,
+                                            display: "flex",
+                                            alignItems: "center"
+                                        },
+                                        callout: {
+                                            minWidth: 350,
+                                            maxWidth: 500,
+                                            width: "auto"
+                                        },
+                                        dropdownItem: {
+                                            whiteSpace: "normal",
+                                            overflow: "visible",
+                                            textOverflow: "initial",
+                                            padding: "8px 12px",
+                                            wordWrap: "break-word",
+                                            minHeight: 36
+                                        },
+                                        dropdownOptionText: {
+                                            whiteSpace: "normal",
+                                            overflow: "visible",
+                                            textOverflow: "initial",
+                                            wordWrap: "break-word",
+                                            lineHeight: 1.4
+                                        }
+                                    }}
+                                    options={categoryOptions}
+                                    selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                    onChange={onIncludeCategoryChange}
+                                    disabled={isLoading || categoriesLoading}
+                                    placeholder="Select categories or All"
+                                />
+                            ) : undefined
+                        }
                     />
+                    {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
+                        <div className={styles.categoryWarning}>
+                            Please select a category before searching. Choose "All Categories" to search all documents.
+                        </div>
+                    )}
                 </div>
             </div>
             <div className={styles.askBottomSection}>
@@ -330,7 +447,7 @@ export function Component(): JSX.Element {
                 {!lastQuestionRef.current && (
                     <div className={styles.askTopSection}>
                         {showLanguagePicker && <LanguagePicker onLanguageChange={newLang => i18n.changeLanguage(newLang)} />}
-                        <ExampleList onExampleClicked={onExampleClicked} useMultimodalAnswering={showMultimodalOptions} />
+                        <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />
                     </div>
                 )}
                 {!isLoading && answer && !error && (
@@ -340,7 +457,7 @@ export function Component(): JSX.Element {
                             index={0}
                             speechConfig={speechConfig}
                             isStreaming={false}
-                            onCitationClicked={x => onShowCitation(x)}
+                            onCitationClicked={onShowCitation}
                             onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab)}
                             onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab)}
                             showSpeechOutputAzure={showSpeechOutputAzure}
@@ -361,7 +478,9 @@ export function Component(): JSX.Element {
                         citationHeight="600px"
                         answer={answer}
                         activeTab={activeAnalysisPanelTab}
-                        onCitationClicked={onShowCitation}
+                        activeCitationContent={activeCitationContent}
+                        enableCitationTab={enableCitationTab}
+                        onCitationChanged={setActiveCitation}
                     />
                 )}
             </div>
@@ -381,7 +500,8 @@ export function Component(): JSX.Element {
                     promptTemplateSuffix={promptTemplateSuffix}
                     temperature={temperature}
                     retrieveCount={retrieveCount}
-                    agenticReasoningEffort={agenticReasoningEffort}
+                    maxSubqueryCount={maxSubqueryCount}
+                    resultsMergeStrategy={resultsMergeStrategy}
                     seed={seed}
                     minimumSearchScore={minimumSearchScore}
                     minimumRerankerScore={minimumRerankerScore}
@@ -392,25 +512,21 @@ export function Component(): JSX.Element {
                     excludeCategory={excludeCategory}
                     includeCategory={includeCategory}
                     retrievalMode={retrievalMode}
-                    sendTextSources={sendTextSources}
-                    sendImageSources={sendImageSources}
-                    searchTextEmbeddings={searchTextEmbeddings}
-                    searchImageEmbeddings={searchImageEmbeddings}
+                    useGPT4V={useGPT4V}
+                    gpt4vInput={gpt4vInput}
+                    vectorFields={vectorFields}
                     showSemanticRankerOption={showSemanticRankerOption}
                     showQueryRewritingOption={showQueryRewritingOption}
                     showReasoningEffortOption={showReasoningEffortOption}
-                    showMultimodalOptions={showMultimodalOptions}
+                    showGPT4VOptions={showGPT4VOptions}
                     showVectorOption={showVectorOption}
+                    useOidSecurityFilter={useOidSecurityFilter}
+                    useGroupsSecurityFilter={useGroupsSecurityFilter}
                     useLogin={!!useLogin}
                     loggedIn={loggedIn}
                     requireAccessControl={requireAccessControl}
                     showAgenticRetrievalOption={showAgenticRetrievalOption}
-                    useAgenticKnowledgeBase={useAgenticKnowledgeBase}
-                    useWebSource={webSourceEnabled}
-                    showWebSourceOption={webSourceSupported}
-                    useSharePointSource={sharePointSourceEnabled}
-                    showSharePointSourceOption={sharePointSourceSupported}
-                    hideMinimalRetrievalReasoningOption={hideMinimalRetrievalReasoningOption}
+                    useAgenticRetrieval={useAgenticRetrieval}
                     onChange={handleSettingsChange}
                 />
                 {useLogin && <TokenClaimsDisplay />}
@@ -419,4 +535,5 @@ export function Component(): JSX.Element {
     );
 }
 
+Component.displayName = "Ask";
 Component.displayName = "Ask";

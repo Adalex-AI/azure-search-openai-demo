@@ -202,19 +202,19 @@ import { sanitizeCitations } from "../../customizations";
 const sanitizedAnswer = sanitizeCitations(answer);
 ```
 
-### Frontend (`app/frontend/src/components/Settings/Settings.tsx`)
+### Frontend (`app/frontend/src/pages/chat/Chat.tsx` and `ask/Ask.tsx`)
 ```typescript
-// Import hook and config
-import { useCategories, CUSTOM_FEATURES } from "../../customizations";
+// CUSTOM: Import from customizations folder for merge-safe architecture
+import { useCategories } from "../../customizations";
 
 // Use dynamic categories
-const { categories: dynamicCategories } = useCategories();
+const { categories, loading: categoriesLoading } = useCategories();
 ```
 
 ### Vite Config (`app/frontend/vite.config.ts`)
 ```typescript
-// Add proxy for categories endpoint
-"/api/": "http://localhost:50505"
+// CUSTOM: Category filter API route
+"/api/categories": "http://localhost:50505"
 ```
 
 ---
