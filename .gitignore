@@ -154,3 +154,4 @@ app/functions/*/requirements.txt
 data/**/*.md5
 
 .DS_Store
+evals/results/
