@@ -38,7 +38,9 @@ export default defineConfig({
             "/upload": "http://localhost:50505",
             "/delete_uploaded": "http://localhost:50505",
             "/list_uploaded": "http://localhost:50505",
-            "/chat_history": "http://localhost:50505"
+            "/chat_history": "http://localhost:50505",
+            // CUSTOM: Category filter API route
+            "/api/categories": "http://localhost:50505"
         }
     }
 });
