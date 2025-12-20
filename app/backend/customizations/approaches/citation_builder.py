@@ -265,10 +265,19 @@ class CitationBuilder:
         """
         Generate a sort key for ordering subsections naturally.
         
+        All returned tuples have a consistent structure: (type_order: int, prefix: str, major: int, minor: int)
+        This ensures Python can compare all tuples without type errors.
+        
+        Type order:
+            0 = numeric only (1.1)
+            1 = alphanumeric (A4.1)
+            2 = rule format (Rule 31.1)
+            3 = fallback
+        
         Examples:
-            "1.1" -> (1, 1)
-            "A4.1" -> ('A', 4, 1)
-            "Rule 31.1" -> ('Rule', 31, 1)
+            "1.1" -> (0, '', 1, 1)
+            "A4.1" -> (1, 'A', 4, 1)
+            "Rule 31.1" -> (2, 'RULE', 31, 1)
         """
         subsection_id = subsection_id.strip()
         
@@ -277,7 +286,7 @@ class CitationBuilder:
         if rule_match:
             major = int(rule_match.group(1))
             minor = int(rule_match.group(2)) if rule_match.group(2) else 0
-            return ('Rule', major, minor)
+            return (2, 'RULE', major, minor)
         
         # Handle "A4.1" format (letter + number.number)
         alpha_match = re.match(r'([A-Za-z]+)(\d+)(?:\.(\d+))?', subsection_id)
@@ -285,17 +294,17 @@ class CitationBuilder:
             prefix = alpha_match.group(1).upper()
             major = int(alpha_match.group(2))
             minor = int(alpha_match.group(3)) if alpha_match.group(3) else 0
-            return (prefix, major, minor)
+            return (1, prefix, major, minor)
         
         # Handle "1.1" format (number.number)
         num_match = re.match(r'(\d+)(?:\.(\d+))?', subsection_id)
         if num_match:
             major = int(num_match.group(1))
             minor = int(num_match.group(2)) if num_match.group(2) else 0
-            return (major, minor)
+            return (0, '', major, minor)
         
-        # Fallback
-        return (subsection_id,)
+        # Fallback - use string sorting within fallback category
+        return (3, subsection_id, 0, 0)
 
 
 # Singleton instance for convenience
