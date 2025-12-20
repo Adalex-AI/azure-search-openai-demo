@@ -1,5 +1,8 @@
 import json
 import pathlib
+import asyncio
+import openai
+from quart import abort
 
 import prompty
 from openai.types.chat import ChatCompletionMessageParam
@@ -16,6 +19,10 @@ class PromptManager:
     def render_prompt(self, prompt, data) -> list[ChatCompletionMessageParam]:
         raise NotImplementedError
 
+    def messages_to_readable(self, messages: list[ChatCompletionMessageParam]) -> str:
+        """Convert messages to human-readable format for UI display"""
+        raise NotImplementedError
+
 
 class PromptyManager(PromptManager):
 
@@ -29,3 +36,50 @@ class PromptyManager(PromptManager):
 
     def render_prompt(self, prompt, data) -> list[ChatCompletionMessageParam]:
         return prompty.prepare(prompt, data)
+
+    def messages_to_readable(self, messages: list[ChatCompletionMessageParam]) -> str:
+        """Convert messages to human-readable format for UI display"""
+        if not messages:
+            return "No messages"
+        
+        readable_parts = []
+        for msg in messages:
+            if isinstance(msg, dict):
+                role = msg.get("role", "unknown")
+                content = msg.get("content", "")
+            else:
+                role = getattr(msg, "role", "unknown")
+                content = getattr(msg, "content", "")
+            
+            # Format content nicely
+            if isinstance(content, str):
+                formatted_content = content
+            elif isinstance(content, list):
+                # Handle content arrays (multimodal messages)
+                formatted_content = json.dumps(content, indent=2)
+            else:
+                formatted_content = str(content)
+            
+            readable_parts.append(f"{role.upper()}:\n{formatted_content}")
+        
+        return "\n\n".join(readable_parts)
+
+    async def execute_with_timeout(self, client, model, messages, temperature=0.2, **kwargs):
+        """Execute OpenAI call with timeout and error handling."""
+        try:
+            response = await asyncio.wait_for(
+                client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    **kwargs
+                ),
+                timeout=60
+            )
+            return response
+        except asyncio.TimeoutError:
+            abort(504, description="Upstream model timeout")
+        except openai.APIError as e:
+            abort(502, description=f"OpenAI API error: {e}")
+        except Exception as e:
+            abort(500, description=f"Generation failed: {e}")
