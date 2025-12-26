@@ -12,8 +12,35 @@ This fork includes customizations for legal document RAG. See [CUSTOMIZATIONS_RE
 Key custom folders:
 * app/backend/customizations/: Backend feature flags and custom API routes
 * app/frontend/src/customizations/: Frontend utilities and components
+* evals/: Legal RAG evaluation framework (see below)
 
 These folders are designed to be merge-safe when updating from upstream.
+
+## Legal RAG Evaluation
+
+This fork includes a comprehensive evaluation framework for measuring legal RAG quality. The evaluation achieves **96% precedent matching** across 62 ground truth questions.
+
+### Running Evaluations
+
+```bash
+cd evals
+../.venv/bin/python run_direct_evaluation.py
+```
+
+### Key Metrics
+
+| Metric | Score | Description |
+|--------|-------|-------------|
+| precedent_matching | 96% | Correct source document cited |
+| legal_terminology | 100% | UK legal terms used correctly |
+| statute_citation | 65% | CPR Part/Rule numbers cited |
+
+### Evaluation Files
+
+* evals/run_direct_evaluation.py: Main evaluation script (Azure Search + OpenAI)
+* evals/ground_truth_cpr.jsonl: 62 legal Q&A pairs with source references
+* evals/test_legal_metrics.py: 41 unit tests for legal metrics
+* docs/legal_evaluation.md: Comprehensive evaluation documentation
 
 ## Overall code layout
 

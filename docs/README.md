@@ -11,6 +11,14 @@ See [CUSTOMIZATIONS_README.md](../CUSTOMIZATIONS_README.md) for documentation on
 - Legal domain prompts
 - Merge-safe architecture
 
+### Legal Domain Evaluation
+
+See [Legal Domain Evaluation](legal_evaluation.md) for comprehensive documentation on:
+- Legal-specific evaluation metrics (statute citations, case law, terminology)
+- Ground truth creation for UK CPR questions
+- Azure Search index testing tools
+- Running and interpreting legal evaluations
+
 Historical development notes are archived in [docs/archive/development-history/](archive/development-history/README.md).
 
 ## Upstream Documentation

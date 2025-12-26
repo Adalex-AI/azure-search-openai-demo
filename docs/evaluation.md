@@ -124,3 +124,27 @@ To run the evaluation on the changes in a PR, a repository member can post a `/e
 The repository also includes an `evaluate_config_multimodal.json` file specifically for evaluating multimodal RAG answers. This configuration uses a different ground truth file, `ground_truth_multimodal.jsonl`, which includes questions based off the sample data that require both text and image sources to answer.
 
 Note that the "groundedness" evaluator is not reliable for multimodal RAG, since it does not currently incorporate the image sources. We still include it in the metrics, but the more reliable metrics are "relevance" and "citations matched".
+
+## Evaluate legal domain RAG answers
+
+For legal domain applications (e.g., UK Civil Procedure Rules), this repository includes a comprehensive legal evaluation framework with domain-specific metrics.
+
+See **[Legal Domain Evaluation](legal_evaluation.md)** for detailed documentation covering:
+
+- **Legal-specific metrics**: Statute citation accuracy, case law citations, legal terminology, citation format compliance, and precedent matching
+- **Ground truth creation**: Tools and templates for UK CPR questions
+- **Azure Search index testing**: Direct index access for validation
+- **Configuration options**: Optimized settings for legal RAG
+
+Quick start:
+
+```bash
+# Run legal evaluation
+python evals/evaluate.py --config evaluate_config_legal.json
+
+# Run legal metric tests
+python -m pytest evals/test_legal_metrics.py -v
+
+# Test Azure Search index
+python evals/test_search_index.py --action test
+```
