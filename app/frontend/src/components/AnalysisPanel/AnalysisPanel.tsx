@@ -317,8 +317,6 @@ export const AnalysisPanel = ({
         }
     };
 
-    const isBlocked = activeCitation ? isIframeBlocked(activeCitation) : false;
-
     return (
         <Pivot
             className={className}
