@@ -39,6 +39,8 @@ import { Settings } from "../../components/Settings/Settings";
 // CUSTOM: Import from customizations folder for merge-safe architecture
 import { useCategories } from "../../customizations";
 
+import { isIframeBlocked } from "../../customizations";
+
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
@@ -396,6 +398,12 @@ const Chat = () => {
 
         console.log("onShowCitation called with:", { citation, citationContent: citationContent ? "content provided" : "no content" });
 
+        // CUSTOM: Check if citation is blocked from iframe embedding
+        if (isIframeBlocked(citation)) {
+            window.open(citation, "_blank", "noopener,noreferrer");
+            return;
+        }
+
         // Use the citation directly as received
         setActiveCitation(citation);
 
@@ -585,9 +593,10 @@ const Chat = () => {
                                         multiSelect
                                         styles={{
                                             dropdown: { minWidth: 220, maxWidth: 280 },
+                                            title: { fontSize: "16px", height: "40px", lineHeight: "38px" },
                                             callout: { minWidth: 350, maxWidth: 500 },
-                                            dropdownItem: { whiteSpace: "normal", padding: "8px 12px", minHeight: 36 },
-                                            dropdownOptionText: { whiteSpace: "normal", lineHeight: 1.4 }
+                                            dropdownItem: { minHeight: "auto", height: "auto", padding: "12px 12px" },
+                                            dropdownOptionText: { whiteSpace: "normal", fontSize: "16px", lineHeight: "24px" }
                                         }}
                                         options={categoryOptions}
                                         selectedKeys={allCategoriesSelected ? [""] : includeKeys}

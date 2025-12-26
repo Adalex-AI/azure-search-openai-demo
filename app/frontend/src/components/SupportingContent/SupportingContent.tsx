@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { parseSupportingContentItem, extractSubsectionContent, parseSubsectionFromCitation } from "./SupportingContentParser";
 import styles from "./SupportingContent.module.css";
 
+// CUSTOM: Import external source handler
+import { isIframeBlocked } from "../../customizations";
+
 interface SupportingContentProps {
     supportingContent: any[];
     activeCitationReference?: string;
@@ -395,6 +398,7 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                 const parsedAny = parsedItem as any;
                 const documentUrl = parsedAny.storageurl || parsedAny.storageUrl || parsedAny.storage_url || parsedAny.url;
                 const hasDocumentUrl = Boolean(documentUrl);
+                const isBlocked = documentUrl ? isIframeBlocked(documentUrl) : false;
 
                 // Create a stable key per document (match dedup logic)
                 const docUrl = normalizeUrl(
@@ -431,20 +435,24 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                         <div className={styles.supportingContentActions} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {hasDocumentUrl && (
                                 <>
-                                    <button
-                                        className={styles.viewSourceButton}
-                                        onClick={() => handleViewSourceDocument(parsedItem)}
-                                        title="View Source Document"
-                                    >
-                                        View Source
-                                    </button>
-                                    <button
-                                        className={styles.viewSourceButton}
-                                        onClick={() => handleViewSourceDocumentNewTab(parsedItem)}
-                                        title="View Source Document in New Tab"
-                                    >
-                                        View Source in New Tab
-                                    </button>
+                                    {!isBlocked && (
+                                        <button
+                                            className={styles.viewSourceButton}
+                                            onClick={() => handleViewSourceDocument(parsedItem)}
+                                            title="View Source Document"
+                                        >
+                                            View Source
+                                        </button>
+                                    )}
+                                    {isBlocked && (
+                                        <button
+                                            className={styles.viewSourceButton}
+                                            onClick={() => handleViewSourceDocumentNewTab(parsedItem)}
+                                            title="View Source Document in New Tab"
+                                        >
+                                            View Source in New Tab
+                                        </button>
+                                    )}
                                 </>
                             )}
                         </div>

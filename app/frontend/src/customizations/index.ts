@@ -18,3 +18,6 @@ export { sanitizeCitations, fixMalformedCitations, collapseAdjacentCitations } f
 // Category filtering
 export { useCategories } from "./useCategories";
 export type { Category } from "./useCategories";
+
+// External source handling
+export { isIframeBlocked } from "./externalSourceHandler";

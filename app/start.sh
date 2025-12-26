@@ -6,7 +6,11 @@ cd "${0%/*}" || exit 1
 
 cd ../
 echo 'Creating python virtual environment ".venv"'
-python3 -m venv .venv
+if command -v python3.11 >/dev/null 2>&1; then
+    python3.11 -m venv .venv
+else
+    python3 -m venv .venv
+fi
 
 echo ""
 echo "Restoring backend python packages"

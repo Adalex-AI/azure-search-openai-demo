@@ -12,6 +12,9 @@ import { getHeaders } from "../../api";
 import { useLogin, getToken } from "../../authConfig";
 import { useState, useEffect } from "react";
 
+// CUSTOM: Import external source handler
+import { isIframeBlocked } from "../../customizations";
+
 interface Props {
     className: string;
     activeTab: AnalysisPanelTabs;
@@ -138,7 +141,9 @@ export const AnalysisPanel = ({
 
     const isDisabledThoughtProcessTab: boolean = !answer.context.thoughts;
     const isDisabledSupportingContentTab: boolean = supportingContentItems.length === 0;
-    const isDisabledCitationTab: boolean = !activeCitation || !enableCitationTab; // Modified condition
+    // CUSTOM: Hide citation tab if the active citation is blocked from iframe embedding
+    const isBlocked = activeCitation ? isIframeBlocked(activeCitation) : false;
+    const isDisabledCitationTab: boolean = !activeCitation || !enableCitationTab || isBlocked;
     const [citation, setCitation] = useState("");
 
     const client = useLogin ? useMsal().instance : undefined;
@@ -243,6 +248,17 @@ export const AnalysisPanel = ({
 
             // For external URLs, use iframe directly
             if (activeCitation.startsWith("http://") || activeCitation.startsWith("https://")) {
+                // CUSTOM: Check if URL is blocked from iframe embedding
+                if (isIframeBlocked(activeCitation)) {
+                    return (
+                        <div style={{ padding: "20px", textAlign: "center" }}>
+                            <p>This content cannot be displayed in this frame.</p>
+                            <a href={activeCitation} target="_blank" rel="noopener noreferrer" style={{ color: "#0078d4", textDecoration: "underline" }}>
+                                Open {activeCitation} in a new tab
+                            </a>
+                        </div>
+                    );
+                }
                 console.log("Rendering iframe for URL:", activeCitation);
                 return <iframe title="Citation" src={activeCitation} width="100%" height={citationHeight} key={activeCitation} />;
             }
@@ -301,6 +317,8 @@ export const AnalysisPanel = ({
         }
     };
 
+    const isBlocked = activeCitation ? isIframeBlocked(activeCitation) : false;
+
     return (
         <Pivot
             className={className}
@@ -326,13 +344,15 @@ export const AnalysisPanel = ({
                     onViewSourceDocument={handleViewSourceDocument}
                 />
             </PivotItem>
-            <PivotItem
-                itemKey={AnalysisPanelTabs.CitationTab}
-                headerText={t("headerTexts.citation")}
-                headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
-            >
-                {renderFileViewer()}
-            </PivotItem>
+            {!isBlocked && (
+                <PivotItem
+                    itemKey={AnalysisPanelTabs.CitationTab}
+                    headerText={t("headerTexts.citation")}
+                    headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
+                >
+                    {renderFileViewer()}
+                </PivotItem>
+            )}
         </Pivot>
     );
 };

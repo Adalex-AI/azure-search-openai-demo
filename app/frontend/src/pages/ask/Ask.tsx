@@ -19,7 +19,7 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories } from "../../customizations";
+import { useCategories, isIframeBlocked } from "../../customizations";
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -330,6 +330,12 @@ export function Component(): JSX.Element {
     const onShowCitation = (citation: string, citationContent?: string) => {
         console.log("onShowCitation called with:", { citation, citationContent: citationContent ? "content provided" : "no content" });
 
+        // CUSTOM: Check if citation is blocked from iframe embedding
+        if (isIframeBlocked(citation)) {
+            window.open(citation, "_blank", "noopener,noreferrer");
+            return;
+        }
+
         // Always show supporting content tab when citation is clicked
         setActiveCitation(citation);
 
@@ -398,7 +404,7 @@ export function Component(): JSX.Element {
                                             alignItems: "center",
                                             paddingTop: 10,
                                             paddingBottom: 10,
-                                            fontSize: 14
+                                            fontSize: 16
                                         },
                                         caretDownWrapper: {
                                             height: 48,
@@ -411,19 +417,21 @@ export function Component(): JSX.Element {
                                             width: "auto"
                                         },
                                         dropdownItem: {
+                                            minHeight: "auto",
+                                            height: "auto",
+                                            padding: "12px 12px",
                                             whiteSpace: "normal",
                                             overflow: "visible",
                                             textOverflow: "initial",
-                                            padding: "8px 12px",
-                                            wordWrap: "break-word",
-                                            minHeight: 36
+                                            wordWrap: "break-word"
                                         },
                                         dropdownOptionText: {
                                             whiteSpace: "normal",
                                             overflow: "visible",
                                             textOverflow: "initial",
                                             wordWrap: "break-word",
-                                            lineHeight: 1.4
+                                            lineHeight: "24px",
+                                            fontSize: 16
                                         }
                                     }}
                                     options={categoryOptions}
