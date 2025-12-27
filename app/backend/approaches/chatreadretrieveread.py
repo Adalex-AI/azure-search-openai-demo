@@ -4,7 +4,7 @@ import re
 import logging
 import json
 
-from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
+from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import VectorQuery, VectorizedQuery
 from approaches.approach import DataPoints, ExtraInfo, ThoughtStep, Document, TokenUsageProps
@@ -43,7 +43,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         search_index_name: str,
         agent_model: Optional[str],
         agent_deployment: Optional[str],
-        agent_client: KnowledgeAgentRetrievalClient,
+        agent_client: KnowledgeBaseRetrievalClient,
         auth_helper: AuthenticationHelper,
         openai_client: AsyncOpenAI,
         chatgpt_model: str,

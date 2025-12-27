@@ -7,15 +7,15 @@ from urllib.parse import urljoin
 import re
 
 import aiohttp
-from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
-from azure.search.documents.agent.models import (
-    KnowledgeAgentAzureSearchDocReference,
-    KnowledgeAgentIndexParams,
-    KnowledgeAgentMessage,
-    KnowledgeAgentMessageTextContent,
-    KnowledgeAgentRetrievalRequest,
-    KnowledgeAgentRetrievalResponse,
-    KnowledgeAgentSearchActivityRecord,
+from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
+from azure.search.documents.knowledgebases.models import (
+    KnowledgeBaseSearchIndexReference,
+    SearchIndexKnowledgeSourceParams,
+    KnowledgeBaseMessage,
+    KnowledgeBaseMessageTextContent,
+    KnowledgeBaseRetrievalRequest,
+    KnowledgeBaseRetrievalResponse,
+    KnowledgeBaseSearchIndexActivityRecord,
 )
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import (
@@ -359,29 +359,28 @@ class Approach(ABC):
     async def run_agentic_retrieval(
         self,
         messages: list[ChatCompletionMessageParam],
-        agent_client: KnowledgeAgentRetrievalClient,
+        agent_client: KnowledgeBaseRetrievalClient,
         search_index_name: str,
         top: Optional[int] = None,
         filter_add_on: Optional[str] = None,
         minimum_reranker_score: Optional[float] = None,
         max_docs_for_reranker: Optional[int] = None,
         results_merge_strategy: Optional[str] = None,
-    ) -> tuple[KnowledgeAgentRetrievalResponse, list[Document]]:
+    ) -> tuple[KnowledgeBaseRetrievalResponse, list[Document]]:
         # STEP 1: Invoke agentic retrieval
         response = await agent_client.retrieve(
-            retrieval_request=KnowledgeAgentRetrievalRequest(
+            retrieval_request=KnowledgeBaseRetrievalRequest(
                 messages=[
-                    KnowledgeAgentMessage(
-                        role=str(msg["role"]), content=[KnowledgeAgentMessageTextContent(text=str(msg["content"]))]
+                    KnowledgeBaseMessage(
+                        role=str(msg["role"]), content=[KnowledgeBaseMessageTextContent(text=str(msg["content"]))]
                     )
                     for msg in messages
                     if msg["role"] != "system"
                 ],
-                target_index_params=[
-                    KnowledgeAgentIndexParams(
-                        index_name=search_index_name,
+                knowledge_source_params=[
+                    SearchIndexKnowledgeSourceParams(
+                        knowledge_source_name=search_index_name,
                         reranker_threshold=minimum_reranker_score,
-                        max_docs_for_reranker=max_docs_for_reranker,
                         filter_add_on=filter_add_on,
                         include_reference_source_data=True,
                     )
@@ -393,9 +392,9 @@ class Approach(ABC):
         activities = response.activity
         activity_mapping = (
             {
-                activity.id: activity.query.search if activity.query else ""
+                activity.id: activity.search_index_arguments.search if activity.search_index_arguments else ""
                 for activity in activities
-                if isinstance(activity, KnowledgeAgentSearchActivityRecord)
+                if isinstance(activity, KnowledgeBaseSearchIndexActivityRecord)
             }
             if activities
             else {}
@@ -410,13 +409,13 @@ class Approach(ABC):
                 # Default to descending strategy
                 references = response.references
             for reference in references:
-                if isinstance(reference, KnowledgeAgentAzureSearchDocReference) and reference.source_data:
+                if isinstance(reference, KnowledgeBaseSearchIndexReference) and reference.source_data:
                     results.append(
                         Document(
                             id=reference.doc_key,
-                            content=reference.source_data["content"],
-                            sourcepage=reference.source_data["sourcepage"],
-                            search_agent_query=activity_mapping[reference.activity_source],
+                            content=reference.source_data.get("content"),
+                            sourcepage=reference.source_data.get("sourcepage"),
+                            search_agent_query=activity_mapping.get(reference.activity_source, ""),
                         )
                     )
                 if top and len(results) == top:

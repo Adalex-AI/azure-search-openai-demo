@@ -9,10 +9,12 @@ from azure.search.documents.indexes.models import (
     BinaryQuantizationCompression,
     HnswAlgorithmConfiguration,
     HnswParameters,
-    KnowledgeAgent,
-    KnowledgeAgentAzureOpenAIModel,
-    KnowledgeAgentRequestLimits,
-    KnowledgeAgentTargetIndex,
+    KnowledgeBase,
+    KnowledgeBaseAzureOpenAIModel,
+    KnowledgeSourceReference,
+    SearchIndexKnowledgeSource,
+    SearchIndexKnowledgeSourceParameters,
+    SearchIndexFieldReference,
     RescoringOptions,
     SearchableField,
     SearchField,
@@ -378,23 +380,38 @@ class SearchManager:
                             self.search_info,
                         )
         if self.search_info.use_agentic_retrieval and self.search_info.agent_name:
-            await self.create_agent()
+            await self.create_knowledge_base()
 
-    async def create_agent(self):
+    async def create_knowledge_base(self):
+        """Creates a Knowledge Base (formerly called agent) in the search index."""
         if self.search_info.agent_name:
-            logger.info(f"Creating search agent named {self.search_info.agent_name}")
+            logger.info(f"Creating knowledge base named {self.search_info.agent_name}")
+
+            # Build field references for source data
+            field_names = ["id", "sourcepage", "sourcefile", "content", "category"]
+            source_data_fields = [SearchIndexFieldReference(name=field) for field in field_names]
 
             async with self.search_info.create_search_index_client() as search_index_client:
-                await search_index_client.create_or_update_agent(
-                    agent=KnowledgeAgent(
+                # Create the search index knowledge source
+                search_index_knowledge_source = SearchIndexKnowledgeSource(
+                    name=self.search_info.index_name,
+                    description="Knowledge source using the main search index",
+                    search_index_parameters=SearchIndexKnowledgeSourceParameters(
+                        search_index_name=self.search_info.index_name,
+                        source_data_fields=source_data_fields,
+                    ),
+                )
+                await search_index_client.create_or_update_knowledge_source(
+                    knowledge_source=search_index_knowledge_source
+                )
+
+                # Create the knowledge base
+                await search_index_client.create_or_update_knowledge_base(
+                    knowledge_base=KnowledgeBase(
                         name=self.search_info.agent_name,
-                        target_indexes=[
-                            KnowledgeAgentTargetIndex(
-                                index_name=self.search_info.index_name, default_include_reference_source_data=True
-                            )
-                        ],
+                        knowledge_sources=[KnowledgeSourceReference(name=search_index_knowledge_source.name)],
                         models=[
-                            KnowledgeAgentAzureOpenAIModel(
+                            KnowledgeBaseAzureOpenAIModel(
                                 azure_open_ai_parameters=AzureOpenAIVectorizerParameters(
                                     resource_url=self.search_info.azure_openai_endpoint,
                                     deployment_name=self.search_info.azure_openai_searchagent_deployment,
@@ -402,13 +419,10 @@ class SearchManager:
                                 )
                             )
                         ],
-                        request_limits=KnowledgeAgentRequestLimits(
-                            max_output_size=self.search_info.agent_max_output_tokens
-                        ),
                     )
                 )
 
-            logger.info("Agent %s created successfully", self.search_info.agent_name)
+            logger.info("Knowledge base %s created successfully", self.search_info.agent_name)
 
     async def update_content(
         self, sections: list[Section], image_embeddings: Optional[list[list[float]]] = None, url: Optional[str] = None

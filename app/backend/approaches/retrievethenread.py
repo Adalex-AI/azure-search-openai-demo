@@ -5,7 +5,7 @@ import re
 
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import VectorQuery
-from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
+from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
@@ -46,7 +46,7 @@ class RetrieveThenReadApproach(Approach):
         search_index_name: Optional[str] = None,
         agent_model: Optional[str] = None,
         agent_deployment: Optional[str] = None,
-        agent_client: Optional[KnowledgeAgentRetrievalClient] = None,
+        agent_client: Optional[KnowledgeBaseRetrievalClient] = None,
     ):
         super().__init__(
             search_client=search_client,

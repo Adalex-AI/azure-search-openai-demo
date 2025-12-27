@@ -23,7 +23,7 @@ from azure.identity.aio import (
     get_bearer_token_provider,
 )
 from azure.monitor.opentelemetry import configure_azure_monitor
-from azure.search.documents.agent.aio import KnowledgeAgentRetrievalClient
+from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.storage.blob.aio import ContainerClient
@@ -706,8 +706,8 @@ async def setup_clients():
         index_name=AZURE_SEARCH_INDEX,
         credential=azure_credential,
     )
-    agent_client = KnowledgeAgentRetrievalClient(
-        endpoint=AZURE_SEARCH_ENDPOINT, agent_name=AZURE_SEARCH_AGENT, credential=azure_credential
+    agent_client = KnowledgeBaseRetrievalClient(
+        endpoint=AZURE_SEARCH_ENDPOINT, knowledge_base_name=AZURE_SEARCH_AGENT, credential=azure_credential
     )
 
     blob_container_client = ContainerClient(
