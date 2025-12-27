@@ -1,3 +1,4 @@
+setuptools
 azure-identity
 quart
 quart-cors
