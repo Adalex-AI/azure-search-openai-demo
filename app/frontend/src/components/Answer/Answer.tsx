@@ -374,6 +374,14 @@ export const Answer = ({
                 />
             </Stack.Item>
 
+            {/* CUSTOM: Microsoft AI disclaimer for legal compliance */}
+            <Stack.Item>
+                <div className={styles.aiDisclaimer}>
+                    <span className={styles.disclaimerIcon}>ℹ️</span>
+                    AI-generated content may be incorrect. Always verify with the primary source documents cited above.
+                </div>
+            </Stack.Item>
+
             {!!parsedAnswer.citations.length && showCitations && (
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
