@@ -144,8 +144,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 stored in Azure.
                             </Text>
                             <Text block>
-                                <strong>3. Azure OpenAI generates a response</strong> based on the retrieved passages. The model (GPT-4.1-mini) processes your query and the
-                                context, then returns an answer with citations.
+                                <strong>3. Azure OpenAI generates a response</strong> based on the retrieved passages. The model (GPT-5-nano) processes your
+                                query and the context, then returns an answer with citations.
                             </Text>
                             <Text block>
                                 <strong>4. The model immediately forgets</strong> your query after processing—it is stateless and does not retain any memory of
@@ -259,7 +259,10 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             <Text block>• All data is processed within Microsoft Azure infrastructure</Text>
                             <Text block>• Data transmission is encrypted using TLS 1.2 or higher</Text>
                             <Text block>• Data at rest is encrypted using AES-256 encryption</Text>
-                            <Text block>• Azure region: <strong>East US</strong> (Note: This is a test environment. Production deployments can be configured for UK South or West Europe)</Text>
+                            <Text block>
+                                • Azure region: <strong>East US 2</strong> (Note: This is a test environment. Production deployments can be configured for UK
+                                South or West Europe)
+                            </Text>
                         </Stack>
                     </section>
 
@@ -271,27 +274,27 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                         </Text>
                         <Stack tokens={{ childrenGap: 8 }}>
                             <Link
-                                href="https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/data-privacy"
+                                href="https://learn.microsoft.com/en-gb/azure/ai-services/openai/concepts/data-privacy"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 Azure OpenAI Data, Privacy, and Security →
                             </Link>
                             <Link
-                                href="https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/abuse-monitoring"
+                                href="https://learn.microsoft.com/en-gb/azure/ai-services/openai/concepts/abuse-monitoring"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 Azure OpenAI Abuse Monitoring →
                             </Link>
                             <Link
-                                href="https://learn.microsoft.com/en-us/azure/ai-services/openai/faq#data-and-privacy"
+                                href="https://learn.microsoft.com/en-gb/azure/ai-services/openai/faq#data-and-privacy"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 Azure OpenAI FAQ: Data and Privacy →
                             </Link>
-                            <Link href="https://www.microsoft.com/trust-center" target="_blank" rel="noopener noreferrer">
+                            <Link href="https://www.microsoft.com/en-gb/trust-center" target="_blank" rel="noopener noreferrer">
                                 Microsoft Trust Center →
                             </Link>
                         </Stack>
