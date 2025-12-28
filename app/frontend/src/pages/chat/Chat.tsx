@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton, Dropdown, IDropdownOption } from "@fluentui/react";
+import { Panel, DefaultButton, Dropdown, IDropdownOption, TooltipHost, IconButton, DirectionalHint } from "@fluentui/react";
 import readNDJSONStream from "ndjson-readablestream";
 
 import appLogo from "../../assets/applogo.svg";
@@ -37,7 +37,7 @@ import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories } from "../../customizations";
+import { useCategories, DataPrivacyNotice } from "../../customizations";
 
 import { isIframeBlocked } from "../../customizations";
 
@@ -515,51 +515,69 @@ const Chat = () => {
                     ) : (
                         <div className={styles.chatMessageStream}>
                             {isStreaming &&
-                                streamedAnswers.map((streamedAnswer, index) => (
-                                    <div key={index}>
-                                        <UserChatMessage message={streamedAnswer[0]} />
-                                        <div className={styles.chatMessageGpt}>
-                                            <Answer
-                                                isStreaming={true}
-                                                key={index}
-                                                answer={streamedAnswer[1]}
-                                                index={index}
-                                                speechConfig={speechConfig}
-                                                isSelected={false}
-                                                onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
-                                                onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
-                                                onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
-                                                onFollowupQuestionClicked={q => makeApiRequest(q)}
-                                                showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
-                                                showSpeechOutputAzure={showSpeechOutputAzure}
-                                                showSpeechOutputBrowser={showSpeechOutputBrowser}
-                                            />
+                                streamedAnswers.map((streamedAnswer, index) => {
+                                    // Build conversation history up to this point for feedback
+                                    const conversationHistory = streamedAnswers.slice(0, index + 1).flatMap(([q, a]) => [
+                                        { role: "user" as const, content: q },
+                                        { role: "assistant" as const, content: a.message?.content || "" }
+                                    ]);
+                                    return (
+                                        <div key={index}>
+                                            <UserChatMessage message={streamedAnswer[0]} />
+                                            <div className={styles.chatMessageGpt}>
+                                                <Answer
+                                                    isStreaming={true}
+                                                    key={index}
+                                                    answer={streamedAnswer[1]}
+                                                    index={index}
+                                                    speechConfig={speechConfig}
+                                                    isSelected={false}
+                                                    onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
+                                                    onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
+                                                    onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
+                                                    onFollowupQuestionClicked={q => makeApiRequest(q)}
+                                                    showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                    showSpeechOutputAzure={showSpeechOutputAzure}
+                                                    showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                    userPrompt={streamedAnswer[0]}
+                                                    conversationHistory={conversationHistory}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             {!isStreaming &&
-                                answers.map((answer, index) => (
-                                    <div key={index}>
-                                        <UserChatMessage message={answer[0]} />
-                                        <div className={styles.chatMessageGpt}>
-                                            <Answer
-                                                isStreaming={false}
-                                                key={index}
-                                                answer={answer[1]}
-                                                index={index}
-                                                speechConfig={speechConfig}
-                                                isSelected={selectedAnswer === index && activeAnalysisPanelTab !== undefined}
-                                                onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
-                                                onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
-                                                onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
-                                                onFollowupQuestionClicked={q => makeApiRequest(q)}
-                                                showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
-                                                showSpeechOutputAzure={showSpeechOutputAzure}
-                                                showSpeechOutputBrowser={showSpeechOutputBrowser}
-                                            />
+                                answers.map((answer, index) => {
+                                    // Build conversation history up to this point for feedback
+                                    const conversationHistory = answers.slice(0, index + 1).flatMap(([q, a]) => [
+                                        { role: "user" as const, content: q },
+                                        { role: "assistant" as const, content: a.message?.content || "" }
+                                    ]);
+                                    return (
+                                        <div key={index}>
+                                            <UserChatMessage message={answer[0]} />
+                                            <div className={styles.chatMessageGpt}>
+                                                <Answer
+                                                    isStreaming={false}
+                                                    key={index}
+                                                    answer={answer[1]}
+                                                    index={index}
+                                                    speechConfig={speechConfig}
+                                                    isSelected={selectedAnswer === index && activeAnalysisPanelTab !== undefined}
+                                                    onCitationClicked={(c, citationContent) => onShowCitation(c, index, citationContent)}
+                                                    onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
+                                                    onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
+                                                    onFollowupQuestionClicked={q => makeApiRequest(q)}
+                                                    showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                    showSpeechOutputAzure={showSpeechOutputAzure}
+                                                    showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                    userPrompt={answer[0]}
+                                                    conversationHistory={conversationHistory}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             {isLoading && (
                                 <>
                                     <UserChatMessage message={lastQuestionRef.current} />
@@ -588,28 +606,99 @@ const Chat = () => {
                             onSend={question => makeApiRequest(question)}
                             showSpeechInput={showSpeechInput}
                             leftOfSend={
-                                showCategoryFilter ? (
-                                    <Dropdown
-                                        multiSelect
-                                        styles={{
-                                            dropdown: { minWidth: 220, maxWidth: 280 },
-                                            title: { fontSize: "16px", height: "40px", lineHeight: "38px" },
-                                            callout: { minWidth: 350, maxWidth: 500 },
-                                            dropdownItem: { minHeight: "auto", height: "auto", padding: "12px 12px" },
-                                            dropdownOptionText: { whiteSpace: "normal", fontSize: "16px", lineHeight: "24px" }
-                                        }}
-                                        options={categoryOptions}
-                                        selectedKeys={allCategoriesSelected ? [""] : includeKeys}
-                                        onChange={onIncludeCategoryChange}
-                                        onRenderTitle={(items?: IDropdownOption[]) => {
-                                            if (!items || items.length === 0) return <span>Select categories</span>;
-                                            if (items.some(i => i.key === "")) return <span>All Categories</span>;
-                                            if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
-                                            return <span title={items.map(i => i.text).join(", ")}>{items.length} categories</span>;
-                                        }}
-                                        disabled={isLoading || categoriesLoading}
-                                        placeholder="Select categories or All"
-                                    />
+                                showCategoryFilter || (showAgenticRetrievalOption && useAgenticRetrieval) ? (
+                                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                        {showCategoryFilter && (
+                                            <Dropdown
+                                                multiSelect
+                                                styles={{
+                                                    dropdown: { minWidth: 220, maxWidth: 280 },
+                                                    title: { fontSize: "16px", height: "40px", lineHeight: "38px" },
+                                                    callout: { minWidth: 350, maxWidth: 500 },
+                                                    dropdownItem: { minHeight: "auto", height: "auto", padding: "12px 12px" },
+                                                    dropdownOptionText: { whiteSpace: "normal", fontSize: "16px", lineHeight: "24px" }
+                                                }}
+                                                options={categoryOptions}
+                                                selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                                onChange={onIncludeCategoryChange}
+                                                onRenderTitle={(items?: IDropdownOption[]) => {
+                                                    if (!items || items.length === 0) return <span>Select categories</span>;
+                                                    if (items.some(i => i.key === "")) return <span>All Categories</span>;
+                                                    if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
+                                                    return <span title={items.map(i => i.text).join(", ")}>{items.length} categories</span>;
+                                                }}
+                                                disabled={isLoading || categoriesLoading}
+                                                placeholder="Select categories or All"
+                                            />
+                                        )}
+                                        {/* CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort.
+                                            This allows users to control how thoroughly the system plans search queries.
+                                            Integration point - re-add after upstream merges. */}
+                                        {showAgenticRetrievalOption && useAgenticRetrieval && (
+                                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                <Dropdown
+                                                    styles={{
+                                                        dropdown: { minWidth: 140, maxWidth: 180 },
+                                                        title: { fontSize: "16px", height: "40px", lineHeight: "38px" }
+                                                    }}
+                                                    options={[
+                                                        {
+                                                            key: "minimal",
+                                                            text: t("labels.agenticReasoningEffortOptions.minimal"),
+                                                            title: "Single search query - fastest, best for simple lookups"
+                                                        },
+                                                        {
+                                                            key: "low",
+                                                            text: t("labels.agenticReasoningEffortOptions.low"),
+                                                            title: "Expanded queries - good for most legal questions"
+                                                        },
+                                                        {
+                                                            key: "medium",
+                                                            text: t("labels.agenticReasoningEffortOptions.medium"),
+                                                            title: "Thorough multi-query - best for complex comparative questions"
+                                                        }
+                                                    ]}
+                                                    selectedKey={reasoningEffort}
+                                                    onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
+                                                    onRenderTitle={(items?: IDropdownOption[]) => {
+                                                        if (!items || items.length === 0) return <span>Search depth</span>;
+                                                        return <span title={items[0].title}>{items[0].text}</span>;
+                                                    }}
+                                                    disabled={isLoading}
+                                                    placeholder="Search depth"
+                                                />
+                                                <TooltipHost
+                                                    content={
+                                                        <div style={{ padding: "8px", maxWidth: "300px" }}>
+                                                            <strong>Search Depth</strong>
+                                                            <ul style={{ margin: "8px 0 0 0", paddingLeft: "16px" }}>
+                                                                <li>
+                                                                    <strong>Minimal:</strong> Single search query. Fastest and cheapest. Best for simple lookups
+                                                                    like "What is CPR Part 31?"
+                                                                </li>
+                                                                <li>
+                                                                    <strong>Low (Recommended):</strong> Expands and refines queries. Good for most legal
+                                                                    questions.
+                                                                </li>
+                                                                <li>
+                                                                    <strong>Medium:</strong> Most thorough multi-query planning. Best for complex questions
+                                                                    comparing courts, rules, or applying facts to law.
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    }
+                                                    directionalHint={DirectionalHint.topCenter}
+                                                >
+                                                    <IconButton
+                                                        iconProps={{ iconName: "Info" }}
+                                                        title="Learn about search depth options"
+                                                        ariaLabel="Learn about search depth options"
+                                                        styles={{ root: { height: "32px", width: "32px" } }}
+                                                    />
+                                                </TooltipHost>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : undefined
                             }
                         />
@@ -701,6 +790,9 @@ const Chat = () => {
                     />
                     {useLogin && <TokenClaimsDisplay />}
                 </Panel>
+
+                {/* CUSTOM: Data Privacy Notice for lawyers testing the system */}
+                <DataPrivacyNotice showBanner={true} />
             </div>
         </div>
     );

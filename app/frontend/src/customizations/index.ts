@@ -7,6 +7,7 @@
 // - config.ts: Feature flags
 // - citationSanitizer.ts: Citation formatting fixes
 // - useCategories.ts: Hook for fetching categories
+// - DataPrivacyNotice.tsx: Data privacy information panel for users
 // - __tests__/: Tests for customizations
 
 // Feature configuration
@@ -24,3 +25,6 @@ export { LegalFeedback } from "./LegalFeedback";
 
 // External source handling
 export { isIframeBlocked } from "./externalSourceHandler";
+
+// Data Privacy Notice
+export { DataPrivacyNotice } from "./DataPrivacyNotice";

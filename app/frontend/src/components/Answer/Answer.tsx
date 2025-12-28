@@ -18,6 +18,11 @@ const AnswerIcon = () => (
     </span>
 );
 
+interface ConversationMessage {
+    role: "user" | "assistant";
+    content: string;
+}
+
 interface Props {
     answer: ChatAppResponse;
     index: number;
@@ -31,6 +36,10 @@ interface Props {
     showFollowupQuestions?: boolean;
     showSpeechOutputBrowser?: boolean;
     showSpeechOutputAzure?: boolean;
+    /** The user's prompt that generated this response */
+    userPrompt?: string;
+    /** Full conversation history for feedback context */
+    conversationHistory?: ConversationMessage[];
 }
 
 export const Answer = ({
@@ -45,7 +54,9 @@ export const Answer = ({
     onFollowupQuestionClicked,
     showFollowupQuestions,
     showSpeechOutputAzure,
-    showSpeechOutputBrowser
+    showSpeechOutputBrowser,
+    userPrompt,
+    conversationHistory
 }: Props) => {
     const followupQuestions = answer.context?.followup_questions;
     const parsedAnswer = useMemo(() => parseAnswerToHtml(answer, isStreaming), [answer, isStreaming]);
@@ -354,7 +365,13 @@ export const Answer = ({
             </Stack.Item>
 
             <Stack.Item>
-                <LegalFeedback messageId={`msg-${index}`} />
+                <LegalFeedback
+                    messageId={`msg-${index}`}
+                    userPrompt={userPrompt}
+                    aiResponse={answer.message?.content}
+                    conversationHistory={conversationHistory}
+                    thoughts={answer.context?.thoughts}
+                />
             </Stack.Item>
 
             {!!parsedAnswer.citations.length && showCitations && (

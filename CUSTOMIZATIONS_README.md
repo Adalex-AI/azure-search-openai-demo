@@ -149,7 +149,31 @@ import { useCategories } from "../customizations";
 const { categories, loading, error } = useCategories();
 ```
 
-### 3. Legal Domain Prompts
+### 3. Search Depth Dropdown (Agentic Retrieval Reasoning Effort)
+**Files:** `Chat.tsx` (inline integration)
+
+Adds a user-facing dropdown next to the category filter to control agentic retrieval reasoning effort. This allows users to choose how thoroughly the system searches for relevant documents.
+
+**Options:**
+| Option | Label | Description |
+|--------|-------|-------------|
+| `minimal` | Minimal | Single search query - fastest, cheapest, best for simple lookups |
+| `low` | Low (Recommended) | Expands queries for better coverage - good for most legal questions |
+| `medium` | Medium | Thorough multi-query planning - best for complex comparative questions |
+
+**UI Location:** Chat input area, to the right of the category dropdown, with an info icon (ℹ️) that shows a tooltip explaining each option.
+
+**Visibility Conditions:**
+- Only shows when `showAgenticRetrievalOption` is true (configured in backend)
+- Only shows when `useAgenticRetrieval` is true (agentic retrieval is enabled)
+
+**Merge Notes:**
+- This is an inline change in `Chat.tsx` (not in `/customizations/`)
+- Look for `// CUSTOM: Search Depth dropdown` comment
+- Uses existing `reasoningEffort` state variable
+- Translations added to `en/translation.json` under `labels.agenticReasoningEffortOptions`
+
+### 4. Legal Domain Prompts
 **Files:** `*.prompty` files in `/approaches/prompts/`
 
 Customized system prompts for:
@@ -237,6 +261,11 @@ import { useCategories } from "../../customizations";
 
 // Use dynamic categories
 const { categories, loading: categoriesLoading } = useCategories();
+
+// CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort
+// Located in leftOfSend area of QuestionInput, after category dropdown
+// Uses TooltipHost, IconButton, DirectionalHint from @fluentui/react
+// Look for comment: "CUSTOM: Search Depth dropdown..."
 ```
 
 ### Vite Config (`app/frontend/vite.config.ts`)
@@ -260,6 +289,8 @@ When pulling updates from `Azure-Samples/azure-search-openai-demo`:
    - `AnswerParser.tsx` - Re-add sanitizeCitations import and usage
    - `Settings.tsx` - Re-add useCategories hook usage
    - `vite.config.ts` - Re-add `/api/` proxy
+   - `Chat.tsx` - Re-add Search Depth dropdown (look for `// CUSTOM: Search Depth dropdown` comment)
+   - `en/translation.json` - Re-add `agenticReasoningEffortOptions` labels if overwritten
 
 3. **Approaches file (`chatreadretrieveread.py`):**
    - The main approach file imports from `customizations.approaches`

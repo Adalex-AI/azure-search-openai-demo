@@ -56,6 +56,10 @@ app.register_blueprint(categories_bp)
 ```typescript
 // CUSTOM: Import from customizations folder for merge-safe architecture
 import { useCategories } from "../../customizations";
+
+// CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort
+// Located in leftOfSend area of QuestionInput, after category dropdown
+// Uses TooltipHost, IconButton, DirectionalHint from @fluentui/react
 ```
 
 ### Answer Parser (`app/frontend/src/components/Answer/AnswerParser.tsx`)

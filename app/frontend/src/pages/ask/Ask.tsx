@@ -19,7 +19,7 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, isIframeBlocked } from "../../customizations";
+import { useCategories, isIframeBlocked, DataPrivacyNotice } from "../../customizations";
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -470,6 +470,11 @@ export function Component(): JSX.Element {
                             onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab)}
                             showSpeechOutputAzure={showSpeechOutputAzure}
                             showSpeechOutputBrowser={showSpeechOutputBrowser}
+                            userPrompt={lastQuestionRef.current}
+                            conversationHistory={[
+                                { role: "user", content: lastQuestionRef.current },
+                                { role: "assistant", content: answer.message?.content || "" }
+                            ]}
                         />
                     </div>
                 )}
@@ -539,9 +544,11 @@ export function Component(): JSX.Element {
                 />
                 {useLogin && <TokenClaimsDisplay />}
             </Panel>
+
+            {/* CUSTOM: Data Privacy Notice for lawyers testing the system */}
+            <DataPrivacyNotice showBanner={true} />
         </div>
     );
 }
 
-Component.displayName = "Ask";
 Component.displayName = "Ask";
