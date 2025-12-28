@@ -19,5 +19,8 @@ export { sanitizeCitations, fixMalformedCitations, collapseAdjacentCitations } f
 export { useCategories } from "./useCategories";
 export type { Category } from "./useCategories";
 
+// Legal Feedback
+export { LegalFeedback } from "./LegalFeedback";
+
 // External source handling
 export { isIframeBlocked } from "./externalSourceHandler";

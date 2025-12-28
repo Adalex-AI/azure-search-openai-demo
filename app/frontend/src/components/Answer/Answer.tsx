@@ -9,6 +9,7 @@ import rehypeRaw from "rehype-raw";
 import styles from "./Answer.module.css";
 import { ChatAppResponse, SpeechConfig } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
+import { LegalFeedback } from "../../customizations";
 
 // Simple AnswerIcon component (replace with your actual icon as needed)
 const AnswerIcon = () => (
@@ -350,6 +351,10 @@ export const Answer = ({
                 <div className={styles.answerText}>
                     <ReactMarkdown children={processedAnswerHtml} rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]} />
                 </div>
+            </Stack.Item>
+
+            <Stack.Item>
+                <LegalFeedback messageId={`msg-${index}`} />
             </Stack.Item>
 
             {!!parsedAnswer.citations.length && showCitations && (

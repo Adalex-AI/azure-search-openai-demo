@@ -60,6 +60,7 @@ from chat_history.cosmosdb import chat_history_cosmosdb_bp
 
 # CUSTOM: Import categories blueprint for dynamic category filtering
 from customizations.routes import categories_bp
+from customizations.routes.feedback import feedback_bp
 
 from config import (
     CONFIG_AGENT_CLIENT,
@@ -988,6 +989,8 @@ def create_app():
     app.register_blueprint(chat_history_cosmosdb_bp)
     # CUSTOM: Register categories blueprint for /api/categories endpoint
     app.register_blueprint(categories_bp)
+    # CUSTOM: Register feedback blueprint
+    app.register_blueprint(feedback_bp)
 
     if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
         app.logger.info("APPLICATIONINSIGHTS_CONNECTION_STRING is set, enabling Azure Monitor")
