@@ -607,82 +607,83 @@ const Chat = () => {
                             showSpeechInput={showSpeechInput}
                             leftOfSend={
                                 showCategoryFilter || (showAgenticRetrievalOption && useAgenticRetrieval) ? (
-                                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                    <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                                         {showCategoryFilter && (
                                             <Dropdown
                                                 multiSelect
                                                 styles={{
-                                                    dropdown: { minWidth: 220, maxWidth: 280 },
-                                                    title: { fontSize: "16px", height: "40px", lineHeight: "38px" },
-                                                    callout: { minWidth: 350, maxWidth: 500 },
-                                                    dropdownItem: { minHeight: "auto", height: "auto", padding: "12px 12px" },
-                                                    dropdownOptionText: { whiteSpace: "normal", fontSize: "16px", lineHeight: "24px" }
+                                                    dropdown: { minWidth: 140, maxWidth: 180 },
+                                                    title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 28px 0 8px" },
+                                                    caretDownWrapper: { height: "32px", lineHeight: "30px" },
+                                                    callout: { minWidth: 300, maxWidth: 400 },
+                                                    dropdownItem: { minHeight: "32px", height: "auto", padding: "6px 8px", fontSize: "13px" },
+                                                    dropdownOptionText: { whiteSpace: "normal", fontSize: "13px", lineHeight: "18px" }
                                                 }}
                                                 options={categoryOptions}
                                                 selectedKeys={allCategoriesSelected ? [""] : includeKeys}
                                                 onChange={onIncludeCategoryChange}
                                                 onRenderTitle={(items?: IDropdownOption[]) => {
-                                                    if (!items || items.length === 0) return <span>Select categories</span>;
-                                                    if (items.some(i => i.key === "")) return <span>All Categories</span>;
+                                                    if (!items || items.length === 0) return <span>Category</span>;
+                                                    if (items.some(i => i.key === "")) return <span>All</span>;
                                                     if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
-                                                    return <span title={items.map(i => i.text).join(", ")}>{items.length} categories</span>;
+                                                    return <span title={items.map(i => i.text).join(", ")}>{items.length} selected</span>;
                                                 }}
                                                 disabled={isLoading || categoriesLoading}
-                                                placeholder="Select categories or All"
+                                                placeholder="Category"
                                             />
                                         )}
                                         {/* CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort.
                                             This allows users to control how thoroughly the system plans search queries.
                                             Integration point - re-add after upstream merges. */}
                                         {showAgenticRetrievalOption && useAgenticRetrieval && (
-                                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                                                 <Dropdown
                                                     styles={{
-                                                        dropdown: { minWidth: 140, maxWidth: 180 },
-                                                        title: { fontSize: "16px", height: "40px", lineHeight: "38px" }
+                                                        dropdown: { minWidth: 90, maxWidth: 110 },
+                                                        title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 24px 0 8px" },
+                                                        caretDownWrapper: { height: "32px", lineHeight: "30px" }
                                                     }}
                                                     options={[
                                                         {
                                                             key: "minimal",
                                                             text: t("labels.agenticReasoningEffortOptions.minimal"),
-                                                            title: "Single search query - fastest, best for simple lookups"
+                                                            title: "Quick single search - best for simple lookups"
                                                         },
                                                         {
                                                             key: "low",
                                                             text: t("labels.agenticReasoningEffortOptions.low"),
-                                                            title: "Expanded queries - good for most legal questions"
+                                                            title: "Standard search - recommended for most questions"
                                                         },
                                                         {
                                                             key: "medium",
                                                             text: t("labels.agenticReasoningEffortOptions.medium"),
-                                                            title: "Thorough multi-query - best for complex comparative questions"
+                                                            title: "Thorough search - best for complex legal analysis"
                                                         }
                                                     ]}
                                                     selectedKey={reasoningEffort}
                                                     onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
                                                     onRenderTitle={(items?: IDropdownOption[]) => {
-                                                        if (!items || items.length === 0) return <span>Search depth</span>;
+                                                        if (!items || items.length === 0) return <span>Depth</span>;
                                                         return <span title={items[0].title}>{items[0].text}</span>;
                                                     }}
                                                     disabled={isLoading}
-                                                    placeholder="Search depth"
+                                                    placeholder="Depth"
                                                 />
                                                 <TooltipHost
                                                     content={
-                                                        <div style={{ padding: "8px", maxWidth: "300px" }}>
+                                                        <div style={{ padding: "8px", maxWidth: "280px" }}>
                                                             <strong>Search Depth</strong>
-                                                            <ul style={{ margin: "8px 0 0 0", paddingLeft: "16px" }}>
-                                                                <li>
-                                                                    <strong>Minimal:</strong> Single search query. Fastest and cheapest. Best for simple lookups
-                                                                    like "What is CPR Part 31?"
+                                                            <p style={{ margin: "6px 0 0 0", fontSize: "13px" }}>Controls how extensively the system searches for relevant documents.</p>
+                                                            <ul style={{ margin: "8px 0 0 0", paddingLeft: "16px", fontSize: "13px" }}>
+                                                                <li style={{ marginBottom: "4px" }}>
+                                                                    <strong>Quick:</strong> Fast single search. Best for straightforward questions.
+                                                                </li>
+                                                                <li style={{ marginBottom: "4px" }}>
+                                                                    <strong>Standard:</strong> Balanced search depth. Recommended for most legal questions.
                                                                 </li>
                                                                 <li>
-                                                                    <strong>Low (Recommended):</strong> Expands and refines queries. Good for most legal
-                                                                    questions.
-                                                                </li>
-                                                                <li>
-                                                                    <strong>Medium:</strong> Most thorough multi-query planning. Best for complex questions
-                                                                    comparing courts, rules, or applying facts to law.
+                                                                    <strong>Thorough:</strong> Comprehensive multi-source search. Best for complex analysis
+                                                                    or questions spanning multiple rules.
                                                                 </li>
                                                             </ul>
                                                         </div>
@@ -691,9 +692,9 @@ const Chat = () => {
                                                 >
                                                     <IconButton
                                                         iconProps={{ iconName: "Info" }}
-                                                        title="Learn about search depth options"
-                                                        ariaLabel="Learn about search depth options"
-                                                        styles={{ root: { height: "32px", width: "32px" } }}
+                                                        title="About search depth"
+                                                        ariaLabel="About search depth"
+                                                        styles={{ root: { height: "28px", width: "28px" }, icon: { fontSize: "12px" } }}
                                                     />
                                                 </TooltipHost>
                                             </div>

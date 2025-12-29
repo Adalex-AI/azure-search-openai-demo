@@ -103,11 +103,11 @@
             "medium": "Medium",
             "high": "High"
         },
-        "agenticReasoningEffort": "Retrieval reasoning effort",
+        "agenticReasoningEffort": "Search depth",
         "agenticReasoningEffortOptions": {
-            "minimal": "Minimal",
-            "low": "Low (Recommended)",
-            "medium": "Medium"
+            "minimal": "Quick",
+            "low": "Standard",
+            "medium": "Thorough"
         },
         "useSuggestFollowupQuestions": "Suggest follow-up questions",
         "useAgenticRetrieval": "Use agentic retrieval",
