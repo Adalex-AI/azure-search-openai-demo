@@ -46,9 +46,10 @@ export function collapseAdjacentCitations(text: string): string {
 export function fixMalformedCitations(text: string): string {
     let result = text;
 
-    // 0. Fix bracketed duplicates: "[N].[N]" or "[N][N]" → "[N]"
-    // e.g., "[1].[1]" → "[1]", "[1][1]" → "[1]"
-    const bracketedDuplicatePattern = /\[(\d{1,3})\]\.?\[(\1)\]/g;
+    // 0. Fix bracketed duplicates: "[N].[N]", "[N] [N]", "[N]. [N]" or "[N][N]" → "[N]"
+    // e.g., "[1].[1]" → "[1]", "[1][1]" → "[1]", "[1]. [1]" → "[1]"
+    // Allow optional period and optional spaces between duplicates
+    const bracketedDuplicatePattern = /\[(\d{1,3})\]\.?\s*\[\1\]/g;
     result = result.replace(bracketedDuplicatePattern, (_, num) => {
         return `[${num}]`;
     });

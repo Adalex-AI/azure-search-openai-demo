@@ -33,6 +33,14 @@ describe("fixMalformedCitations", () => {
         expect(fixMalformedCitations("The result [1][1]")).toBe("The result [1]");
     });
 
+    it("fixes bracketed duplicates with space like '[1]. [1]' → '[1]'", () => {
+        expect(fixMalformedCitations("The result [1]. [1]")).toBe("The result [1]");
+    });
+
+    it("fixes bracketed duplicates with just space like '[1] [1]' → '[1]'", () => {
+        expect(fixMalformedCitations("The result [1] [1]")).toBe("The result [1]");
+    });
+
     it("fixes multiple duplicated patterns in same text", () => {
         expect(fixMalformedCitations("First point 1. 1 and second point 2. 2")).toBe("First point [1] and second point [2]");
     });
