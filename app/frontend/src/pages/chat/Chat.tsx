@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Panel, DefaultButton, Dropdown, IDropdownOption, TooltipHost, IconButton, DirectionalHint } from "@fluentui/react";
+import { Panel, DefaultButton, Dropdown, IDropdownOption, TooltipHost, IconButton, DirectionalHint, Icon } from "@fluentui/react";
 import readNDJSONStream from "ndjson-readablestream";
 
 import appLogo from "../../assets/applogo.svg";
@@ -679,13 +679,14 @@ const Chat = () => {
                                                 onRenderOption={(option?: IDropdownOption) => {
                                                     if (!option) return null;
                                                     return (
-                                                        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", width: "100%" }}>
-                                                            <div style={{ flex: 1 }}>
-                                                                <div style={{ fontWeight: 600, fontSize: "13px" }}>{option.text}</div>
-                                                                <div style={{ fontSize: "11px", color: "#666", marginTop: "2px", lineHeight: "1.3" }}>
-                                                                    {option.data?.description}
-                                                                </div>
-                                                            </div>
+                                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                                                            <span style={{ fontSize: "13px" }}>{option.text}</span>
+                                                            <TooltipHost content={option.data?.description} calloutProps={{ gapSpace: 0 }}>
+                                                                <Icon
+                                                                    iconName="Info"
+                                                                    style={{ fontSize: "12px", color: "#0078d4", cursor: "help", marginLeft: "8px" }}
+                                                                />
+                                                            </TooltipHost>
                                                         </div>
                                                     );
                                                 }}
