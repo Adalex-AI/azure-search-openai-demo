@@ -74,9 +74,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             About This Legal Research Tool
                         </Text>
                         <Text block>
-                            Civil Procedure Copilot helps lawyers and legal professionals search and query the{" "}
-                            <strong>Civil Procedure Rules (CPR)</strong>, Practice Directions, and Court Guides for England and Wales using intelligent
-                            search.
+                            Civil Procedure Copilot helps lawyers and legal professionals search and query the <strong>Civil Procedure Rules (CPR)</strong>,
+                            Practice Directions, and Court Guides for England and Wales using intelligent search.
                         </Text>
                         <Stack tokens={{ childrenGap: 4 }} style={{ marginTop: 8 }}>
                             <Text block>
@@ -190,8 +189,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 <strong>Authentication:</strong> Your Microsoft Entra ID sign-in session is managed securely.
                             </Text>
                             <Text block style={{ marginTop: 8, fontStyle: "italic" }}>
-                                <strong>Your queries are NOT stored:</strong> The system does not store or retain your queries. Your questions are processed
-                                and immediately discarded—nothing is saved (unless you choose to share them in a feedback report).
+                                <strong>Your queries are NOT stored:</strong> The system does not store or retain your queries. Your questions are processed and
+                                immediately discarded—nothing is saved (unless you choose to share them in a feedback report).
                             </Text>
                         </Stack>
                     </section>
@@ -203,8 +202,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             Content Safety
                         </Text>
                         <Text block>
-                            The system includes content safety measures to prevent misuse. For legitimate legal research queries about CPR and court
-                            procedures, this typically has no impact.
+                            The system includes content safety measures to prevent misuse. For legitimate legal research queries about CPR and court procedures,
+                            this typically has no impact.
                         </Text>
                     </section>
 
@@ -239,9 +238,7 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             <Text block>• All data is processed within secure Microsoft data centres</Text>
                             <Text block>• Data transmission is encrypted using industry-standard protocols</Text>
                             <Text block>• Data at rest is encrypted</Text>
-                            <Text block>
-                                • Note: This is a test environment. Production deployments can be configured for UK data centres if required.
-                            </Text>
+                            <Text block>• Note: This is a test environment. Production deployments can be configured for UK data centres if required.</Text>
                         </Stack>
                     </section>
 
@@ -270,8 +267,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                         <Text variant="small" block>
                             <strong>Disclaimer:</strong> This summary is provided for informational purposes to help you understand how your data is handled
                             when using Civil Procedure Copilot. For complete and authoritative information about Microsoft's data handling practices, please
-                            refer to the official Microsoft documentation linked above. Responses should always be verified against source documents and are
-                            not a substitute for professional legal judgement.
+                            refer to the official Microsoft documentation linked above. Responses should always be verified against source documents and are not
+                            a substitute for professional legal judgement.
                         </Text>
                     </section>
                 </Stack>

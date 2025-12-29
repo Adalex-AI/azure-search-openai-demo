@@ -352,17 +352,14 @@ export const Answer = ({
                                 disabled={!answer.context?.thoughts?.length || isStreaming}
                             />
                         )}
-                        {/* CUSTOM: Only show supporting content button in admin mode (add ?admin=true to URL) */}
-                        {adminMode && (
-                            <IconButton
-                                style={{ color: "black" }}
-                                iconProps={{ iconName: "ClipboardList" }}
-                                title={t("tooltips.showSupportingContent")}
-                                ariaLabel={t("tooltips.showSupportingContent")}
-                                onClick={() => onSupportingContentClicked()}
-                                disabled={!hasDataPoints || isStreaming}
-                            />
-                        )}
+                        <IconButton
+                            style={{ color: "black" }}
+                            iconProps={{ iconName: "ClipboardList" }}
+                            title={t("tooltips.showSupportingContent")}
+                            ariaLabel={t("tooltips.showSupportingContent")}
+                            onClick={() => onSupportingContentClicked()}
+                            disabled={!hasDataPoints || isStreaming}
+                        />
                     </div>
                 </Stack>
             </Stack.Item>
@@ -391,7 +388,8 @@ export const Answer = ({
                 </div>
             </Stack.Item>
 
-            {!!parsedAnswer.citations.length && showCitations && (
+            {/* CUSTOM: Only show citations list in admin mode */}
+            {adminMode && !!parsedAnswer.citations.length && showCitations && (
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>{t("citationWithColon")}</span>
