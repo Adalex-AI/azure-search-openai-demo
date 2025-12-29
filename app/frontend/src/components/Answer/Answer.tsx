@@ -9,7 +9,10 @@ import rehypeRaw from "rehype-raw";
 import styles from "./Answer.module.css";
 import { ChatAppResponse, SpeechConfig } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
-import { LegalFeedback } from "../../customizations";
+import { LegalFeedback, isAdminMode } from "../../customizations";
+
+// CUSTOM: Check if admin mode is enabled (via config or ?admin=true URL parameter)
+const adminMode = isAdminMode();
 
 // Simple AnswerIcon component (replace with your actual icon as needed)
 const AnswerIcon = () => (
@@ -338,22 +341,28 @@ export const Answer = ({
                             ariaLabel={copied ? t("tooltips.copied") : t("tooltips.copy")}
                             onClick={handleCopy}
                         />
-                        <IconButton
-                            style={{ color: "black" }}
-                            iconProps={{ iconName: "Lightbulb" }}
-                            title={t("tooltips.showThoughtProcess")}
-                            ariaLabel={t("tooltips.showThoughtProcess")}
-                            onClick={() => onThoughtProcessClicked()}
-                            disabled={!answer.context?.thoughts?.length || isStreaming}
-                        />
-                        <IconButton
-                            style={{ color: "black" }}
-                            iconProps={{ iconName: "ClipboardList" }}
-                            title={t("tooltips.showSupportingContent")}
-                            ariaLabel={t("tooltips.showSupportingContent")}
-                            onClick={() => onSupportingContentClicked()}
-                            disabled={!hasDataPoints || isStreaming}
-                        />
+                        {/* CUSTOM: Only show thought process button in admin mode (add ?admin=true to URL) */}
+                        {adminMode && (
+                            <IconButton
+                                style={{ color: "black" }}
+                                iconProps={{ iconName: "Lightbulb" }}
+                                title={t("tooltips.showThoughtProcess")}
+                                ariaLabel={t("tooltips.showThoughtProcess")}
+                                onClick={() => onThoughtProcessClicked()}
+                                disabled={!answer.context?.thoughts?.length || isStreaming}
+                            />
+                        )}
+                        {/* CUSTOM: Only show supporting content button in admin mode (add ?admin=true to URL) */}
+                        {adminMode && (
+                            <IconButton
+                                style={{ color: "black" }}
+                                iconProps={{ iconName: "ClipboardList" }}
+                                title={t("tooltips.showSupportingContent")}
+                                ariaLabel={t("tooltips.showSupportingContent")}
+                                onClick={() => onSupportingContentClicked()}
+                                disabled={!hasDataPoints || isStreaming}
+                            />
+                        )}
                     </div>
                 </Stack>
             </Stack.Item>

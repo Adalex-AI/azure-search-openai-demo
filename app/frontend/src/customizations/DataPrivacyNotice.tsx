@@ -1,7 +1,7 @@
 // Data Privacy Notice Component
 // ==============================
 // Displays important data privacy and security information to users
-// about Azure OpenAI data handling policies for the Legal CPR Research Assistant.
+// about Azure OpenAI data handling policies for the Civil Procedure Copilot.
 
 import React, { useState } from "react";
 import { Panel, PanelType, IconButton, Text, Stack, MessageBar, MessageBarType, Link, Icon } from "@fluentui/react";
@@ -44,7 +44,7 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                         }
                     >
                         <Icon iconName="Shield" style={{ marginRight: 8 }} />
-                        <strong>Data Privacy:</strong> Your CPR queries are not used to train AI models and are not shared with OpenAI or other customers.
+                        <strong>Data Privacy:</strong> Your queries are not used to train AI models and are not shared with third parties.
                     </MessageBar>
                 </div>
             )}
@@ -63,7 +63,7 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                 isOpen={isPanelOpen}
                 onDismiss={dismissPanel}
                 type={PanelType.medium}
-                headerText="Legal CPR Assistant: Data Privacy & Security"
+                headerText="Civil Procedure Copilot: Data Privacy & Security"
                 closeButtonAriaLabel="Close"
             >
                 <Stack tokens={{ childrenGap: 20 }} className={styles.panelContent}>
@@ -74,8 +74,9 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             About This Legal Research Tool
                         </Text>
                         <Text block>
-                            This application helps lawyers and legal professionals search and query the <strong>Civil Procedure Rules (CPR)</strong>, Practice
-                            Directions, and Court Guides for England and Wales using AI-powered search.
+                            Civil Procedure Copilot helps lawyers and legal professionals search and query the{" "}
+                            <strong>Civil Procedure Rules (CPR)</strong>, Practice Directions, and Court Guides for England and Wales using intelligent
+                            search.
                         </Text>
                         <Stack tokens={{ childrenGap: 4 }} style={{ marginTop: 8 }}>
                             <Text block>
@@ -102,28 +103,28 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 <Icon iconName="CheckMark" className={styles.checkIcon} />
                                 <Text>
                                     <strong>Your queries are NOT used for AI training:</strong> Questions you ask about CPR, Practice Directions, or Court
-                                    procedures are NOT used to train, retrain, or improve any AI models. Microsoft contractually prohibits this.
+                                    procedures are NOT used to train or improve any AI models. Microsoft contractually prohibits this.
                                 </Text>
                             </div>
                             <div className={styles.assuranceItem}>
                                 <Icon iconName="CheckMark" className={styles.checkIcon} />
                                 <Text>
-                                    <strong>NOT shared with anyone:</strong> Your queries are processed only within your session. Other testers, other Azure
-                                    customers, and third parties cannot access your queries. No chat history is retained after your session.
+                                    <strong>NOT shared with anyone:</strong> Your queries are processed only within your session. Other users, other customers,
+                                    and third parties cannot access your queries. No conversation history is retained after your session.
                                 </Text>
                             </div>
                             <div className={styles.assuranceItem}>
                                 <Icon iconName="CheckMark" className={styles.checkIcon} />
                                 <Text>
-                                    <strong>NOT sent to OpenAI (ChatGPT):</strong> This uses <strong>Azure OpenAI</strong>, which is a separate enterprise
-                                    service hosted entirely within Microsoft Azure. Your queries never go to OpenAI's public ChatGPT or OpenAI API services.
+                                    <strong>Enterprise-grade security:</strong> This uses a private, enterprise deployment—your queries never go to public AI
+                                    services. All data remains within secure Microsoft data centres.
                                 </Text>
                             </div>
                             <div className={styles.assuranceItem}>
                                 <Icon iconName="CheckMark" className={styles.checkIcon} />
                                 <Text>
-                                    <strong>AI models are stateless:</strong> The GPT model does not "remember" your previous questions. Each query is processed
-                                    independently with no persistent memory in the model itself.
+                                    <strong>No memory between sessions:</strong> The system does not "remember" your previous questions. Each query is processed
+                                    independently with no persistent memory.
                                 </Text>
                             </div>
                         </Stack>
@@ -140,16 +141,13 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 <strong>1. You ask a question</strong> about CPR rules, court procedures, or practice directions.
                             </Text>
                             <Text block>
-                                <strong>2. Azure AI Search retrieves relevant passages</strong> from the indexed legal documents (CPR, Court Guides, etc.)
-                                stored in Azure.
+                                <strong>2. Intelligent search retrieves relevant passages</strong> from the indexed legal documents (CPR, Court Guides, etc.).
                             </Text>
                             <Text block>
-                                <strong>3. Azure OpenAI generates a response</strong> based on the retrieved passages. The model (GPT-5-nano) processes your
-                                query and the context, then returns an answer with citations.
+                                <strong>3. A response is generated</strong> based on the retrieved passages, with citations back to source documents.
                             </Text>
                             <Text block>
-                                <strong>4. The model immediately forgets</strong> your query after processing—it is stateless and does not retain any memory of
-                                your question.
+                                <strong>4. Your query is immediately discarded</strong> after processing—nothing is stored or retained.
                             </Text>
                         </Stack>
                     </section>
@@ -162,16 +160,16 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                         </Text>
                         <Stack tokens={{ childrenGap: 8 }}>
                             <Text block>
-                                <strong>Legal document content:</strong> The CPR, Practice Directions, and Court Guides are stored in Azure AI Search and Azure
-                                Blob Storage. These are publicly available legal documents.
+                                <strong>Legal document content:</strong> The CPR, Practice Directions, and Court Guides are stored securely. These are publicly
+                                available legal documents.
                             </Text>
                             <Text block>
-                                <strong>Chat history:</strong> Chat history storage is <strong>not enabled</strong> for this test environment. Your queries are
-                                not saved after your browser session ends.
+                                <strong>Conversation history:</strong> Conversation history storage is <strong>not enabled</strong> for this environment. Your
+                                queries are not saved after your browser session ends.
                             </Text>
                             <Text block>
-                                <strong>Feedback reports:</strong> If you submit feedback using the thumbs up/down buttons, the following is logged to Azure
-                                Application Insights for quality improvement purposes:
+                                <strong>Feedback reports:</strong> If you submit feedback using the thumbs up/down buttons, the following is logged for quality
+                                improvement purposes:
                             </Text>
                             <Stack tokens={{ childrenGap: 4 }} style={{ marginLeft: 16 }}>
                                 <Text block>• Your rating (helpful/unhelpful)</Text>
@@ -179,20 +177,20 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 <Text block>• Any comments you provide</Text>
                                 <Text block>• A message ID (anonymous identifier for the response)</Text>
                                 <Text block>
-                                    • <strong>Optionally:</strong> If you choose to share your prompt and search details when reporting an issue, your question,
-                                    conversation history, and search/thought process data will also be included. You will be shown exactly what will be shared
-                                    and must explicitly consent before this data is included.
+                                    • <strong>Optionally:</strong> If you choose to share your query and search details when reporting an issue, your question
+                                    and conversation history will also be included. You will be shown exactly what will be shared and must explicitly consent
+                                    before this data is included.
                                 </Text>
                             </Stack>
                             <Text block style={{ fontStyle: "italic" }}>
-                                Note: Feedback is voluntary and anonymous. Your name and email are not attached to feedback reports. Sharing your prompt is
+                                Note: Feedback is voluntary and anonymous. Your name and email are not attached to feedback reports. Sharing your query is
                                 optional and requires explicit consent.
                             </Text>
                             <Text block>
-                                <strong>Authentication:</strong> Your Microsoft Entra ID login session is managed by Azure Active Directory.
+                                <strong>Authentication:</strong> Your Microsoft Entra ID sign-in session is managed securely.
                             </Text>
                             <Text block style={{ marginTop: 8, fontStyle: "italic" }}>
-                                <strong>Your queries are NOT stored:</strong> The AI model does not store or retain your queries. Your questions are processed
+                                <strong>Your queries are NOT stored:</strong> The system does not store or retain your queries. Your questions are processed
                                 and immediately discarded—nothing is saved (unless you choose to share them in a feedback report).
                             </Text>
                         </Stack>
@@ -202,30 +200,12 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                     <section>
                         <Text variant="large" block className={styles.sectionTitle}>
                             <Icon iconName="Info" className={styles.sectionIcon} />
-                            Content Safety & Abuse Monitoring
+                            Content Safety
                         </Text>
                         <Text block>
-                            Azure OpenAI includes content safety systems to prevent misuse. For legal research queries about CPR and court procedures, this
-                            typically has no impact. However, you should be aware:
+                            The system includes content safety measures to prevent misuse. For legitimate legal research queries about CPR and court
+                            procedures, this typically has no impact.
                         </Text>
-                        <Stack tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
-                            <Text block>
-                                • <strong>Automated filtering:</strong> AI classifiers check for harmful content in real-time. This filtering does not store
-                                your queries.
-                            </Text>
-                            <Text block>
-                                • <strong>Automated abuse detection:</strong> If content is flagged as potentially problematic, AI systems may review it. No
-                                data is stored during automated review.
-                            </Text>
-                            <Text block>
-                                • <strong>Human review (rare):</strong> In exceptional cases of suspected severe misuse, authorized Microsoft employees may
-                                review flagged content using secure access controls. This is extremely unlikely for legitimate CPR research.
-                            </Text>
-                            <Text block>
-                                • <strong>Enterprise option:</strong> Organizations can apply to Microsoft to disable human review for highly sensitive
-                                workloads if required.
-                            </Text>
-                        </Stack>
                     </section>
 
                     {/* Best Practices for Lawyers */}
@@ -244,8 +224,8 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             </Text>
                             <Text block>• Avoid including real client names or case-specific identifiers when possible</Text>
                             <Text block>• Use generic placeholders for sensitive details (e.g., "the claimant" rather than specific names)</Text>
-                            <Text block>• Always verify AI-generated citations against the source documents</Text>
-                            <Text block>• Remember that AI responses are assistive, not authoritative legal advice</Text>
+                            <Text block>• Always verify citations against the source documents</Text>
+                            <Text block>• Remember that responses are assistive, not authoritative legal advice</Text>
                         </Stack>
                     </section>
 
@@ -256,12 +236,11 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                             Data Residency & Encryption
                         </Text>
                         <Stack tokens={{ childrenGap: 8 }}>
-                            <Text block>• All data is processed within Microsoft Azure infrastructure</Text>
-                            <Text block>• Data transmission is encrypted using TLS 1.2 or higher</Text>
-                            <Text block>• Data at rest is encrypted using AES-256 encryption</Text>
+                            <Text block>• All data is processed within secure Microsoft data centres</Text>
+                            <Text block>• Data transmission is encrypted using industry-standard protocols</Text>
+                            <Text block>• Data at rest is encrypted</Text>
                             <Text block>
-                                • Azure region: <strong>East US 2</strong> (Note: This is a test environment. Production deployments can be configured for UK
-                                South or West Europe)
+                                • Note: This is a test environment. Production deployments can be configured for UK data centres if required.
                             </Text>
                         </Stack>
                     </section>
@@ -270,7 +249,7 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                     <section>
                         <Text variant="large" block className={styles.sectionTitle}>
                             <Icon iconName="BookAnswers" className={styles.sectionIcon} />
-                            Official Microsoft Documentation
+                            Further Information
                         </Text>
                         <Stack tokens={{ childrenGap: 8 }}>
                             <Link
@@ -278,24 +257,10 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                Azure OpenAI Data, Privacy, and Security →
-                            </Link>
-                            <Link
-                                href="https://learn.microsoft.com/en-gb/azure/ai-services/openai/concepts/abuse-monitoring"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Azure OpenAI Abuse Monitoring →
-                            </Link>
-                            <Link
-                                href="https://learn.microsoft.com/en-gb/azure/ai-services/openai/faq#data-and-privacy"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Azure OpenAI FAQ: Data and Privacy →
+                                Microsoft Data Privacy & Security Documentation →
                             </Link>
                             <Link href="https://www.microsoft.com/en-gb/trust-center" target="_blank" rel="noopener noreferrer">
-                                Microsoft Trust Center →
+                                Microsoft Trust Centre →
                             </Link>
                         </Stack>
                     </section>
@@ -304,9 +269,9 @@ export const DataPrivacyNotice: React.FC<DataPrivacyNoticeProps> = ({ showBanner
                     <section className={styles.disclaimer}>
                         <Text variant="small" block>
                             <strong>Disclaimer:</strong> This summary is provided for informational purposes to help you understand how your data is handled
-                            when using this Legal CPR Research Assistant. For complete and authoritative information about Microsoft's data handling practices,
-                            please refer to the official Microsoft documentation linked above. AI-generated responses should always be verified against source
-                            documents and are not a substitute for professional legal judgment.
+                            when using Civil Procedure Copilot. For complete and authoritative information about Microsoft's data handling practices, please
+                            refer to the official Microsoft documentation linked above. Responses should always be verified against source documents and are
+                            not a substitute for professional legal judgement.
                         </Text>
                     </section>
                 </Stack>

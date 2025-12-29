@@ -1,10 +1,10 @@
 {
-    "pageTitle": "",
-    "headerTitle": "",
+    "pageTitle": "Civil Procedure Copilot",
+    "headerTitle": "Civil Procedure Copilot",
     "chat": "Chat",
     "qa": "Ask a question",
-    "login": "Login",
-    "logout": "Logout",
+    "login": "Sign in",
+    "logout": "Sign out",
     "clearChat": "Clear chat",
     "history": {
         "chatHistory": "Chat history",
@@ -26,7 +26,7 @@
         "loading": "Loading...",
         "manageFileUploads": "Manage file uploads",
         "uploadingFiles": "Uploading files...",
-        "uploadedFileError": "Error uploading file - please try again or contact admin.",
+        "uploadedFileError": "Error uploading file - please try again or contact support.",
         "deleteFile": "Delete file",
         "deletingFile": "Deleting file...",
         "errorDeleting": "Error deleting.",
@@ -34,20 +34,20 @@
     },
     "developerSettings": "Developer settings",
 
-    "chatEmptyStateTitle": "CPR Chatbot",
-    "chatEmptyStateSubtitle": "Research tool for Civil Procedure Rules, Practice Directions, and Court Guides",
+    "chatEmptyStateTitle": "Civil Procedure Copilot",
+    "chatEmptyStateSubtitle": "Your AI assistant for Civil Procedure Rules, Practice Directions, and Court Guides",
     "defaultExamples": {
-        "1": "What documents are required in a CMC in the Circuit Commercial Court?",
+        "1": "What documents are required for a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
-        "3": "In one sentence what is the overriding objective?",
-        "placeholder": "Search here"
+        "3": "In one sentence, what is the overriding objective?",
+        "placeholder": "Ask a question about CPR, Practice Directions, or Court Guides..."
     },
-    "askTitle": "CPR Chatbot",
+    "askTitle": "Civil Procedure Copilot",
     "gpt4vExamples": {
-        "1": "What documents are required in a CMC in the Circuit Commercial Court?",
+        "1": "What documents are required for a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "What are the rules of service?",
-        "placeholder": "Search here"
+        "placeholder": "Ask a question about CPR, Practice Directions, or Court Guides..."
     },
     "generatingAnswer": "Generating answer",
     "citationWithColon": "Citation:",

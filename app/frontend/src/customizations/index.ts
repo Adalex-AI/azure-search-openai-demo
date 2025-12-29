@@ -11,7 +11,7 @@
 // - __tests__/: Tests for customizations
 
 // Feature configuration
-export { CUSTOM_FEATURES, isFeatureEnabled } from "./config";
+export { CUSTOM_FEATURES, isFeatureEnabled, isAdminMode } from "./config";
 
 // Citation sanitization
 export { sanitizeCitations, fixMalformedCitations, collapseAdjacentCitations } from "./citationSanitizer";

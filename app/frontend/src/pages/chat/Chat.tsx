@@ -37,9 +37,12 @@ import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, DataPrivacyNotice } from "../../customizations";
+import { useCategories, DataPrivacyNotice, isAdminMode } from "../../customizations";
 
 import { isIframeBlocked } from "../../customizations";
+
+// CUSTOM: Check if admin mode is enabled (via config or ?admin=true URL parameter)
+const adminMode = isAdminMode();
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -497,7 +500,8 @@ const Chat = () => {
                 <div className={styles.commandsContainer}>
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
                     {showUserUpload && <UploadFile className={styles.commandButton} disabled={!loggedIn} />}
-                    <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
+                    {/* CUSTOM: Only show developer settings in admin mode (add ?admin=true to URL) */}
+                    {adminMode && <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />}
                 </div>
             </div>
             <div className={styles.chatRoot} style={{ marginLeft: isHistoryPanelOpen ? "300px" : "0" }}>
@@ -648,7 +652,9 @@ const Chat = () => {
                                                     {
                                                         key: "minimal",
                                                         text: t("labels.agenticReasoningEffortOptions.minimal"),
-                                                        data: { description: "Fast single search. Best for straightforward questions like 'What is CPR Part 31?'" }
+                                                        data: {
+                                                            description: "Fast single search. Best for straightforward questions like 'What is CPR Part 31?'"
+                                                        }
                                                     },
                                                     {
                                                         key: "low",
@@ -658,7 +664,10 @@ const Chat = () => {
                                                     {
                                                         key: "medium",
                                                         text: t("labels.agenticReasoningEffortOptions.medium"),
-                                                        data: { description: "Comprehensive multi-source search. Best for complex analysis or questions spanning multiple rules." }
+                                                        data: {
+                                                            description:
+                                                                "Comprehensive multi-source search. Best for complex analysis or questions spanning multiple rules."
+                                                        }
                                                     }
                                                 ]}
                                                 selectedKey={reasoningEffort}

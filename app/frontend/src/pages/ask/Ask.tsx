@@ -19,7 +19,10 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, isIframeBlocked, DataPrivacyNotice } from "../../customizations";
+import { useCategories, isIframeBlocked, DataPrivacyNotice, isAdminMode } from "../../customizations";
+
+// CUSTOM: Check admin mode for showing developer settings
+const adminMode = isAdminMode();
 
 export function Component(): JSX.Element {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -379,7 +382,8 @@ export function Component(): JSX.Element {
             <div className={styles.askTopSection}>
                 <div className={styles.commandsContainer}>
                     {showUserUpload && <UploadFile className={styles.commandButton} disabled={!loggedIn} />}
-                    <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
+                    {/* CUSTOM: Only show settings button in admin mode (add ?admin=true to URL) */}
+                    {adminMode && <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />}
                 </div>
                 <h1 className={styles.askTitle}>{t("askTitle")}</h1>
                 <div className={styles.askQuestionInput}>
