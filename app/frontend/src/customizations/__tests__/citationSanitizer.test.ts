@@ -81,6 +81,30 @@ describe("fixMalformedCitations", () => {
     it("fixes range citations with hyphen", () => {
         expect(fixMalformedCitations("See rules [69-81] for details")).toBe("See rules [69] for details");
     });
+
+    it("fixes 'source1' pattern → '[1]'", () => {
+        expect(fixMalformedCitations("according to source1")).toBe("according to [1]");
+    });
+
+    it("fixes 'source 1' pattern with space → '[1]'", () => {
+        expect(fixMalformedCitations("according to source 1")).toBe("according to [1]");
+    });
+
+    it("fixes 'Source1' pattern (capitalized) → '[1]'", () => {
+        expect(fixMalformedCitations("according to Source1")).toBe("according to [1]");
+    });
+
+    it("fixes 'Source 1' pattern (capitalized with space) → '[1]'", () => {
+        expect(fixMalformedCitations("according to Source 1")).toBe("according to [1]");
+    });
+
+    it("fixes '(source 1)' pattern in parentheses → '[1]'", () => {
+        expect(fixMalformedCitations("see details (source 1) here")).toBe("see details [1] here");
+    });
+
+    it("fixes multiple source patterns in same text", () => {
+        expect(fixMalformedCitations("from source1 and Source 2")).toBe("from [1] and [2]");
+    });
 });
 
 describe("collapseAdjacentCitations", () => {

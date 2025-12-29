@@ -84,6 +84,14 @@ export function fixMalformedCitations(text: string): string {
         return `[${firstNum}]`;
     });
 
+    // 4. Fix "source N" or "Source N" patterns → "[N]"
+    // Matches: "source1", "source 1", "Source1", "Source 1", "(source 1)", etc.
+    // Case-insensitive match for "source" followed by optional space and a number
+    const sourceNPattern = /\(?source\s*(\d{1,3})\)?/gi;
+    result = result.replace(sourceNPattern, (_, num) => {
+        return `[${num}]`;
+    });
+
     return result;
 }
 
