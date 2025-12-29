@@ -26,5 +26,5 @@ export { LegalFeedback } from "./LegalFeedback";
 // External source handling
 export { isIframeBlocked } from "./externalSourceHandler";
 
-// Data Privacy Notice
-export { DataPrivacyNotice } from "./DataPrivacyNotice";
+// Help & About Panel (replaces DataPrivacyNotice)
+export { HelpAboutPanel } from "./HelpAboutPanel";

@@ -19,7 +19,7 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, isIframeBlocked, DataPrivacyNotice, isAdminMode } from "../../customizations";
+import { useCategories, isIframeBlocked, HelpAboutPanel, isAdminMode } from "../../customizations";
 
 // CUSTOM: Check admin mode for showing developer settings
 const adminMode = isAdminMode();
@@ -549,8 +549,8 @@ export function Component(): JSX.Element {
                 {useLogin && <TokenClaimsDisplay />}
             </Panel>
 
-            {/* CUSTOM: Data Privacy Notice for lawyers testing the system */}
-            <DataPrivacyNotice showBanner={true} />
+            {/* CUSTOM: Help & About panel for lawyers testing the system */}
+            <HelpAboutPanel />
         </div>
     );
 }

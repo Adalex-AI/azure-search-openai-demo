@@ -27,9 +27,9 @@ export function isFeatureEnabled(featureName: keyof typeof CUSTOM_FEATURES): boo
 
 // Check URL parameter for admin mode override (?admin=true)
 export function isAdminMode(): boolean {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('admin') === 'true') {
+        if (urlParams.get("admin") === "true") {
             return true;
         }
     }

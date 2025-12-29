@@ -37,7 +37,7 @@ import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, DataPrivacyNotice, isAdminMode } from "../../customizations";
+import { useCategories, HelpAboutPanel, isAdminMode } from "../../customizations";
 
 import { isIframeBlocked } from "../../customizations";
 
@@ -788,8 +788,8 @@ const Chat = () => {
                     {useLogin && <TokenClaimsDisplay />}
                 </Panel>
 
-                {/* CUSTOM: Data Privacy Notice for lawyers testing the system */}
-                <DataPrivacyNotice showBanner={true} />
+                {/* CUSTOM: Help & About panel for lawyers testing the system */}
+                <HelpAboutPanel />
             </div>
         </div>
     );
