@@ -636,68 +636,54 @@ const Chat = () => {
                                             This allows users to control how thoroughly the system plans search queries.
                                             Integration point - re-add after upstream merges. */}
                                         {showAgenticRetrievalOption && useAgenticRetrieval && (
-                                            <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                                                <Dropdown
-                                                    styles={{
-                                                        dropdown: { minWidth: 90, maxWidth: 110 },
-                                                        title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 24px 0 8px" },
-                                                        caretDownWrapper: { height: "32px", lineHeight: "30px" }
-                                                    }}
-                                                    options={[
-                                                        {
-                                                            key: "minimal",
-                                                            text: t("labels.agenticReasoningEffortOptions.minimal"),
-                                                            title: "Quick single search - best for simple lookups"
-                                                        },
-                                                        {
-                                                            key: "low",
-                                                            text: t("labels.agenticReasoningEffortOptions.low"),
-                                                            title: "Standard search - recommended for most questions"
-                                                        },
-                                                        {
-                                                            key: "medium",
-                                                            text: t("labels.agenticReasoningEffortOptions.medium"),
-                                                            title: "Thorough search - best for complex legal analysis"
-                                                        }
-                                                    ]}
-                                                    selectedKey={reasoningEffort}
-                                                    onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
-                                                    onRenderTitle={(items?: IDropdownOption[]) => {
-                                                        if (!items || items.length === 0) return <span>Depth</span>;
-                                                        return <span title={items[0].title}>{items[0].text}</span>;
-                                                    }}
-                                                    disabled={isLoading}
-                                                    placeholder="Depth"
-                                                />
-                                                <TooltipHost
-                                                    content={
-                                                        <div style={{ padding: "8px", maxWidth: "280px" }}>
-                                                            <strong>Search Depth</strong>
-                                                            <p style={{ margin: "6px 0 0 0", fontSize: "13px" }}>Controls how extensively the system searches for relevant documents.</p>
-                                                            <ul style={{ margin: "8px 0 0 0", paddingLeft: "16px", fontSize: "13px" }}>
-                                                                <li style={{ marginBottom: "4px" }}>
-                                                                    <strong>Quick:</strong> Fast single search. Best for straightforward questions.
-                                                                </li>
-                                                                <li style={{ marginBottom: "4px" }}>
-                                                                    <strong>Standard:</strong> Balanced search depth. Recommended for most legal questions.
-                                                                </li>
-                                                                <li>
-                                                                    <strong>Thorough:</strong> Comprehensive multi-source search. Best for complex analysis
-                                                                    or questions spanning multiple rules.
-                                                                </li>
-                                                            </ul>
-                                                        </div>
+                                            <Dropdown
+                                                styles={{
+                                                    dropdown: { minWidth: 90, maxWidth: 110 },
+                                                    title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 24px 0 8px" },
+                                                    caretDownWrapper: { height: "32px", lineHeight: "30px" },
+                                                    dropdownItem: { padding: "8px 12px" },
+                                                    dropdownItemSelected: { padding: "8px 12px" }
+                                                }}
+                                                options={[
+                                                    {
+                                                        key: "minimal",
+                                                        text: t("labels.agenticReasoningEffortOptions.minimal"),
+                                                        data: { description: "Fast single search. Best for straightforward questions like 'What is CPR Part 31?'" }
+                                                    },
+                                                    {
+                                                        key: "low",
+                                                        text: t("labels.agenticReasoningEffortOptions.low"),
+                                                        data: { description: "Balanced search depth. Recommended for most legal questions." }
+                                                    },
+                                                    {
+                                                        key: "medium",
+                                                        text: t("labels.agenticReasoningEffortOptions.medium"),
+                                                        data: { description: "Comprehensive multi-source search. Best for complex analysis or questions spanning multiple rules." }
                                                     }
-                                                    directionalHint={DirectionalHint.topCenter}
-                                                >
-                                                    <IconButton
-                                                        iconProps={{ iconName: "Info" }}
-                                                        title="About search depth"
-                                                        ariaLabel="About search depth"
-                                                        styles={{ root: { height: "28px", width: "28px" }, icon: { fontSize: "12px" } }}
-                                                    />
-                                                </TooltipHost>
-                                            </div>
+                                                ]}
+                                                selectedKey={reasoningEffort}
+                                                onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
+                                                onRenderTitle={(items?: IDropdownOption[]) => {
+                                                    if (!items || items.length === 0) return <span>Depth</span>;
+                                                    return <span>{items[0].text}</span>;
+                                                }}
+                                                onRenderOption={(option?: IDropdownOption) => {
+                                                    if (!option) return null;
+                                                    return (
+                                                        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", width: "100%" }}>
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{ fontWeight: 600, fontSize: "13px" }}>{option.text}</div>
+                                                                <div style={{ fontSize: "11px", color: "#666", marginTop: "2px", lineHeight: "1.3" }}>
+                                                                    {option.data?.description}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }}
+                                                disabled={isLoading}
+                                                placeholder="Depth"
+                                                calloutProps={{ styles: { root: { minWidth: 280 } } }}
+                                            />
                                         )}
                                     </div>
                                 ) : undefined
