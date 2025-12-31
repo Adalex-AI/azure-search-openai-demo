@@ -10,7 +10,6 @@ import styles from "./Answer.module.css";
 export const LoadingAnswer: React.FC = () => {
     return (
         <div className={styles.loadingAnswer}>
-            <span className={styles.answerLogo}>✨</span>
             <div className={styles.loadingDot} />
             <div className={styles.loadingDot} />
             <div className={styles.loadingDot} />

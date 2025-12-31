@@ -15,7 +15,6 @@ export const AnswerLoading = () => {
     return (
         <animated.div style={{ ...animatedStyles }}>
             <div className={styles.loadingAnswer}>
-                <span className={styles.answerLogo}>✨</span>
                 <div className={styles.loadingDot} />
                 <div className={styles.loadingDot} />
                 <div className={styles.loadingDot} />
