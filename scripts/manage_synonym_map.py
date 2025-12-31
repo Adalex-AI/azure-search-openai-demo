@@ -202,32 +202,12 @@ authorised, authorized
 defence, defense
 
 # ============================================================================
-# COMMON TYPOS/MISSPELLINGS (as equivalencies for query-time expansion)
-# Note: For comprehensive typo handling, also enable fuzzy search in queries.
-# These cover the most common misspellings found in user queries.
-# Using comma-separated format for query-time expansion.
+# NOTE: TYPO/MISSPELLING HANDLING
 # ============================================================================
-discloure, disclosure
-disclousure, disclosure
-diclosure, disclosure
-injuction, injunction
-injuntion, injunction
-freezeing, freezing
-judgement, judgment
-jugdment, judgment
-sumary, summary
-defendent, defendant
-claiment, claimant
-witnes, witness
-statment, statement
-particualrs, particulars
-cliam, claim
-securty, security
-watsed, wasted
-proceedigns, proceedings
-appplication, application
-aplication, application
-acknowlegement, acknowledgement
+# Typos are now handled by fuzzy search (enabled in backend/approaches/approach.py)
+# which automatically applies ~1 edit distance operators to search terms.
+# This is more efficient than maintaining explicit typo synonym rules.
+# Removed entries: discloure, disclousure, diclosure, injuction, injuntion, etc.
 """.strip()
 
 
