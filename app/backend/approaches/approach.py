@@ -260,6 +260,31 @@ class Approach(ABC):
 
         return messages
 
+    def add_fuzzy_operators(self, query_text: str, edit_distance: int = 1) -> str:
+        """Add fuzzy operators (~1 or ~2) to search terms for typo tolerance.
+        
+        Args:
+            query_text: The search query
+            edit_distance: Edit distance for fuzzy matching (1 or 2)
+        
+        Returns:
+            Query with fuzzy operators applied to words longer than 2 characters
+        """
+        import re
+        # Match words and preserve operators like AND, OR, NOT
+        words = re.findall(r'\b\w+\b|AND|OR|NOT', query_text)
+        fuzzy_words = []
+        
+        for word in words:
+            # Skip boolean operators and short words
+            if word in ('AND', 'OR', 'NOT') or len(word) <= 2:
+                fuzzy_words.append(word)
+            else:
+                # Add fuzzy operator ~1 for typo tolerance (edit distance 1)
+                fuzzy_words.append(f"{word}~{edit_distance}")
+        
+        return " ".join(fuzzy_words)
+
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
         exclude_category = overrides.get("exclude_category")
@@ -282,7 +307,7 @@ class Approach(ABC):
 
         if exclude_category:
             escaped = exclude_category.replace("'", "''")
-            filters.append(f"category ne '{escaped}'")
+            filters.append(f"category ne '{excluded}'")
         if security_filter:
             filters.append(security_filter)
         return None if len(filters) == 0 else " and ".join(filters)
@@ -301,7 +326,8 @@ class Approach(ABC):
         minimum_reranker_score: float,
         use_query_rewriting: bool = False,
     ) -> list[Document]:
-        search_text = query_text if use_text_search else ""
+        # Add fuzzy operators for typo tolerance if doing text search
+        search_text = self.add_fuzzy_operators(query_text) if use_text_search else ""
         vector_queries = vectors if use_vector_search else []
 
         select_fields = [
@@ -325,12 +351,14 @@ class Approach(ABC):
                 semantic_query=query_text,
             )
         else:
+            # For non-semantic search, use FULL query type to support fuzzy operators
             results = await self.search_client.search(
                 search_text=search_text,
                 filter=filter,
                 top=top,
                 select=select_fields,
                 vector_queries=vector_queries,
+                query_type=QueryType.FULL,
             )
 
         documents: list[Document] = []
