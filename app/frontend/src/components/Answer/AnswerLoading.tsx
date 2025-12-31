@@ -8,21 +8,18 @@ import { AnswerIcon } from "./AnswerIcon";
 export const AnswerLoading = () => {
     const { t, i18n } = useTranslation();
     const animatedStyles = useSpring({
-        from: { opacity: 0 },
-        to: { opacity: 1 }
+        from: { opacity: 0, transform: "translateY(8px)" },
+        to: { opacity: 1, transform: "translateY(0)" }
     });
 
     return (
         <animated.div style={{ ...animatedStyles }}>
-            <Stack className={styles.answerContainer} verticalAlign="space-between">
-                <AnswerIcon />
-                <Stack.Item grow>
-                    <p className={styles.answerText}>
-                        {t("generatingAnswer")}
-                        <span className={styles.loadingdots} />
-                    </p>
-                </Stack.Item>
-            </Stack>
+            <div className={styles.loadingAnswer}>
+                <span className={styles.answerLogo}>✨</span>
+                <div className={styles.loadingDot} />
+                <div className={styles.loadingDot} />
+                <div className={styles.loadingDot} />
+            </div>
         </animated.div>
     );
 };
