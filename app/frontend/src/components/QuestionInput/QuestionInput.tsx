@@ -105,33 +105,32 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
             <div className={styles.questionInputButtonsContainer}>
                 {leftOfSend && <div style={{ marginRight: 8 }}>{leftOfSend}</div>}
                 <Tooltip content={t("tooltips.submitQuestion")} relationship="label">
-                    <Button 
-                        size="large" 
-                        icon={<Send28Filled primaryFill="white" />} 
-                        disabled={sendQuestionDisabled} 
+                    <Button
+                        icon={<Send28Filled primaryFill="rgba(115, 118, 225, 1)" />}
+                        disabled={sendQuestionDisabled}
                         onClick={sendQuestion}
                         style={{
-                            backgroundColor: "rgba(115, 118, 225, 1)",
-                            color: "white",
+                            backgroundColor: "transparent",
                             border: "none",
-                            borderRadius: "8px",
-                            padding: "8px 12px",
-                            transition: "all 0.2s ease",
+                            borderRadius: "4px",
+                            padding: "4px",
+                            transition: "all 0.15s ease",
                             cursor: sendQuestionDisabled ? "not-allowed" : "pointer",
-                            opacity: sendQuestionDisabled ? 0.6 : 1,
-                            boxShadow: sendQuestionDisabled ? "none" : "0 2px 8px rgba(115, 118, 225, 0.3)"
+                            opacity: sendQuestionDisabled ? 0.4 : 1
                         }}
-                        onMouseEnter={(e) => {
+                        onMouseEnter={e => {
                             if (!sendQuestionDisabled) {
-                                e.currentTarget.style.backgroundColor = "rgba(95, 98, 205, 1)";
-                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(115, 118, 225, 0.4)";
-                                e.currentTarget.style.transform = "translateY(-2px)";
+                                const currentIcon = e.currentTarget.querySelector("svg");
+                                if (currentIcon) {
+                                    currentIcon.style.fill = "rgba(95, 98, 205, 1)";
+                                }
                             }
                         }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "rgba(115, 118, 225, 1)";
-                            e.currentTarget.style.boxShadow = "0 2px 8px rgba(115, 118, 225, 0.3)";
-                            e.currentTarget.style.transform = "translateY(0)";
+                        onMouseLeave={e => {
+                            const currentIcon = e.currentTarget.querySelector("svg");
+                            if (currentIcon) {
+                                currentIcon.style.fill = "rgba(115, 118, 225, 1)";
+                            }
                         }}
                     />
                 </Tooltip>
