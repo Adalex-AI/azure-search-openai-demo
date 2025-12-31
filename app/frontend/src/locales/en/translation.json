@@ -40,14 +40,14 @@
         "1": "What documents are required for a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "In one sentence, what is the overriding objective?",
-        "placeholder": "Ask a question about CPR, Practice Directions, or Court Guides..."
+        "placeholder": "Ask a question about CPR, Practice Directions, and/or Court Guides..."
     },
     "askTitle": "Civil Procedure Copilot",
     "gpt4vExamples": {
         "1": "What documents are required for a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "What are the rules of service?",
-        "placeholder": "Ask a question about CPR, Practice Directions, or Court Guides..."
+        "placeholder": "Ask a question about CPR, Practice Directions, and/or Court Guides..."
     },
     "generatingAnswer": "Generating answer",
     "citationWithColon": "Citation:",
