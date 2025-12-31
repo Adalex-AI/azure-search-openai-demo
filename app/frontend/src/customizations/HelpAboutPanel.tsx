@@ -1,7 +1,7 @@
 // Help & About Panel Component
 // ==============================
 // Provides comprehensive help, usage instructions, and privacy information
-// for non-technical users of the Legal CPR Research Assistant.
+// for non-technical users of the Civil Procedure Copilot.
 
 import React, { useState } from "react";
 import {
@@ -192,7 +192,7 @@ export const HelpAboutPanel: React.FC = () => {
                 isOpen={isOpen}
                 onDismiss={() => setIsOpen(false)}
                 type={PanelType.medium}
-                headerText="Legal CPR Research Assistant"
+                headerText="Civil Procedure Copilot"
                 closeButtonAriaLabel="Close"
                 styles={{
                     main: { maxWidth: "600px" },

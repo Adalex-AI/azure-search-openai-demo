@@ -1,14 +1,14 @@
-# Data Privacy & Security Guide for Legal CPR Research Assistant
+# Data Privacy & Security Guide for Civil Procedure Copilot
 
 **Version:** 1.0  
 **Last Updated:** December 2024  
-**Audience:** Lawyers and legal professionals using the Legal CPR Research Assistant
+**Audience:** Lawyers and legal professionals using the Civil Procedure Copilot
 
 ---
 
 ## Executive Summary
 
-This Legal CPR Research Assistant uses **Microsoft Azure OpenAI Service** to provide AI-powered search and question-answering capabilities for Civil Procedure Rules (CPR), Practice Directions, and Court Guides applicable to England and Wales.
+This Civil Procedure Copilot uses **Microsoft Azure OpenAI Service** to provide AI-powered search and question-answering capabilities for Civil Procedure Rules (CPR), Practice Directions, and Court Guides applicable to England and Wales.
 
 ### Key Takeaways
 
@@ -23,7 +23,7 @@ This Legal CPR Research Assistant uses **Microsoft Azure OpenAI Service** to pro
 
 ## 1. What This Application Searches
 
-This Legal CPR Research Assistant indexes the following publicly available legal documents:
+This Civil Procedure Copilot indexes the following publicly available legal documents:
 
 | Document | Edition/Version |
 |----------|-----------------|
