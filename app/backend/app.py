@@ -1009,7 +1009,7 @@ def create_app():
     logging.basicConfig(level=logging.WARNING)
     # Set our own logger levels to INFO by default
     app_level = os.getenv("APP_LOG_LEVEL", "INFO")
-    app.logger.setLevel(os.getenv("APP_LOG_LEVEL", app_level))
+    app.logger.setLevel(app_level)
     logging.getLogger("scripts").setLevel(app_level)
 
     if allowed_origin := os.getenv("ALLOWED_ORIGIN"):

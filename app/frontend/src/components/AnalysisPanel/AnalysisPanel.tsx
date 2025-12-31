@@ -13,7 +13,10 @@ import { useLogin, getToken } from "../../authConfig";
 import { useState, useEffect } from "react";
 
 // CUSTOM: Import external source handler
-import { isIframeBlocked } from "../../customizations";
+import { isIframeBlocked, isAdminMode } from "../../customizations";
+
+// CUSTOM: Check if admin mode is enabled
+const adminMode = isAdminMode();
 
 interface Props {
     className: string;
@@ -323,13 +326,16 @@ export const AnalysisPanel = ({
             selectedKey={activeTab}
             onLinkClick={pivotItem => pivotItem && onActiveTabChanged(pivotItem.props.itemKey! as AnalysisPanelTabs)}
         >
-            <PivotItem
-                itemKey={AnalysisPanelTabs.ThoughtProcessTab}
-                headerText={t("headerTexts.thoughtProcess")}
-                headerButtonProps={isDisabledThoughtProcessTab ? pivotItemDisabledStyle : undefined}
-            >
-                <ThoughtProcess thoughts={answer.context.thoughts || []} />
-            </PivotItem>
+            {/* CUSTOM: Only show Thought Process tab in admin mode */}
+            {adminMode && (
+                <PivotItem
+                    itemKey={AnalysisPanelTabs.ThoughtProcessTab}
+                    headerText={t("headerTexts.thoughtProcess")}
+                    headerButtonProps={isDisabledThoughtProcessTab ? pivotItemDisabledStyle : undefined}
+                >
+                    <ThoughtProcess thoughts={answer.context.thoughts || []} />
+                </PivotItem>
+            )}
             <PivotItem
                 itemKey={AnalysisPanelTabs.SupportingContentTab}
                 headerText={t("headerTexts.supportingContent")}
@@ -342,7 +348,8 @@ export const AnalysisPanel = ({
                     onViewSourceDocument={handleViewSourceDocument}
                 />
             </PivotItem>
-            {!isBlocked && (
+            {/* CUSTOM: Only show Citation tab in admin mode */}
+            {adminMode && !isBlocked && (
                 <PivotItem
                     itemKey={AnalysisPanelTabs.CitationTab}
                     headerText={t("headerTexts.citation")}

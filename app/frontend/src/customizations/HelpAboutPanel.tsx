@@ -23,9 +23,9 @@ import {
 // Styles
 const helpButtonStyle = mergeStyles({
     position: "fixed",
-    top: "12px",
-    left: "12px",
-    zIndex: 1000,
+    bottom: "24px",
+    right: "24px",
+    zIndex: 100,
     backgroundColor: "#0078d4",
     borderRadius: "50%",
     width: "44px",
@@ -164,10 +164,26 @@ export const HelpAboutPanel: React.FC = () => {
 
     return (
         <>
-            {/* Help Button - Top Left */}
-            <TooltipHost content="Help & About" directionalHint={DirectionalHint.rightCenter}>
+            {/* Help Button - Bottom Right */}
+            <TooltipHost content="Help & About" directionalHint={DirectionalHint.leftCenter}>
                 <div className={helpButtonStyle}>
-                    <IconButton iconProps={helpIcon} onClick={() => setIsOpen(true)} ariaLabel="Help and About" />
+                    <IconButton
+                        iconProps={helpIcon}
+                        onClick={() => setIsOpen(true)}
+                        ariaLabel="Help and About"
+                        styles={{
+                            root: {
+                                backgroundColor: "transparent",
+                                border: "none"
+                            },
+                            rootHovered: {
+                                backgroundColor: "transparent"
+                            },
+                            rootPressed: {
+                                backgroundColor: "transparent"
+                            }
+                        }}
+                    />
                 </div>
             </TooltipHost>
 
@@ -193,33 +209,25 @@ export const HelpAboutPanel: React.FC = () => {
                                         🔨 What is this tool?
                                     </Text>
                                     <Text>
-                                        This AI-powered research assistant helps you search and query the <strong>Civil Procedure Rules (CPR)</strong>, Practice
-                                        Directions, and Court Guides for England and Wales.
+                                        This AI-powered research assistant helps you search and query the Civil Procedure Rules (CPR), Practice Directions, and
+                                        Court Guides for England and Wales.
                                     </Text>
                                 </div>
 
-                                <Text variant="mediumPlus" styles={{ root: { fontWeight: 600 } }}>
-                                    📚 Document Sources
-                                </Text>
-                                <Stack tokens={{ childrenGap: 8 }}>
-                                    <FeatureCard
-                                        icon="Library"
-                                        iconColor="#0078d4"
-                                        title="Civil Procedure Rules"
-                                        description="Parts 1-89 and all associated Practice Directions"
-                                    />
-                                    <FeatureCard icon="CityNext" iconColor="#107c10" title="Commercial Court Guide" description="11th Edition (July 2023)" />
-                                    <FeatureCard icon="Courthouse" iconColor="#5c2d91" title="King's Bench Division Guide" description="2025 Edition" />
-                                    <FeatureCard icon="Certificate" iconColor="#008272" title="Chancery Guide" description="2022 Edition" />
-                                    <FeatureCard icon="Lightbulb" iconColor="#ff8c00" title="Patents Court Guide" description="February 2025" />
-                                    <FeatureCard
-                                        icon="ConstructionCone"
-                                        iconColor="#d83b01"
-                                        title="Technology & Construction Court Guide"
-                                        description="October 2022"
-                                    />
-                                    <FeatureCard icon="Money" iconColor="#004e8c" title="Circuit Commercial Court Guide" description="August 2023" />
-                                </Stack>
+                                <div className={sectionStyle}>
+                                    <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 12, display: "block" } }}>
+                                        📚 Available Documents
+                                    </Text>
+                                    <Stack tokens={{ childrenGap: 8 }}>
+                                        <Text variant="small">• Civil Procedure Rules (Parts 1-89) and Practice Directions</Text>
+                                        <Text variant="small">• Commercial Court Guide (11th Edition, July 2023)</Text>
+                                        <Text variant="small">• King's Bench Division Guide (2025 Edition)</Text>
+                                        <Text variant="small">• Chancery Guide (2022 Edition)</Text>
+                                        <Text variant="small">• Patents Court Guide (February 2025)</Text>
+                                        <Text variant="small">• Technology & Construction Court Guide (October 2022)</Text>
+                                        <Text variant="small">• Circuit Commercial Court Guide (August 2023)</Text>
+                                    </Stack>
+                                </div>
                             </Stack>
                         </PivotItem>
 
@@ -228,57 +236,154 @@ export const HelpAboutPanel: React.FC = () => {
                             <Stack tokens={{ childrenGap: 20 }} styles={{ root: { marginTop: 16 } }}>
                                 <div className={sectionStyle}>
                                     <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 16, display: "block" } }}>
-                                        🔄 Query Process
+                                        🔄 Quick Start Guide
                                     </Text>
-                                    <Step number={1} title="You Ask a Question" description="Type your legal research question in plain English" />
+                                    <Step
+                                        number={1}
+                                        title="Type Your Question"
+                                        description="Enter your legal research question in plain English. For example: 'What are the time limits for filing a defence?' or 'What documents are needed for a CMC in the Commercial Court?'"
+                                    />
                                     <Step
                                         number={2}
-                                        title="AI Searches Documents"
-                                        description="Azure AI Search finds relevant passages from CPR, Practice Directions & Court Guides"
+                                        title="Review the Answer"
+                                        description="The AI searches through CPR documents and provides a response with numbered citations [1], [2], [3] that reference specific source documents."
                                     />
                                     <Step
                                         number={3}
-                                        title="AI Generates Answer"
-                                        description="GPT-5-nano creates a response based ONLY on the retrieved documents"
+                                        title="Click Citations to Verify"
+                                        description="Click on any numbered citation to open the Supporting Content panel, which shows the exact text from the source document that the AI used."
                                     />
-                                    <Step number={4} title="Citations Added" description="Each claim is linked to the source document for verification" />
+                                    <Step
+                                        number={4}
+                                        title="Continue the Conversation"
+                                        description="Ask follow-up questions to refine your understanding. The chat remembers context from previous questions in the same session."
+                                    />
                                 </div>
 
-                                <Text variant="mediumPlus" styles={{ root: { fontWeight: 600 } }}>
-                                    📊 Visual Flow
-                                </Text>
-                                <div className={visualDiagramStyle}>
-                                    {`┌─────────────────┐
-│  Your Question  │
-│ "What are the   │
-│  disclosure     │
-│  obligations?"  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Azure AI       │
-│  Search         │◄──── CPR Parts 1-89
-│  (finds         │◄──── Practice Directions
-│   relevant      │◄──── Court Guides
-│   passages)     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  GPT-5-nano     │
-│  (generates     │
-│   answer from   │
-│   retrieved     │
-│   sources ONLY) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Answer with    │
-│  Citations      │
-│  [1][2][3]      │
-└─────────────────┘`}
+                                {/* Visual Guide: The Interface */}
+                                <div className={sectionStyle}>
+                                    <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 12, display: "block" } }}>
+                                        🖥️ Understanding the Interface
+                                    </Text>
+
+                                    {/* Category Dropdown */}
+                                    <Stack tokens={{ childrenGap: 12 }} styles={{ root: { marginBottom: 16 } }}>
+                                        <Text styles={{ root: { fontWeight: 600 } }}>Category Filter (Optional)</Text>
+                                        <div style={{ padding: "12px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
+                                            <Text variant="small">
+                                                Use the dropdown next to the input box to filter by document type: CPR Rules, Practice Directions, or specific
+                                                Court Guides. Select "All Categories" to search across all documents.
+                                            </Text>
+                                        </div>
+                                    </Stack>
+
+                                    {/* Search Depth */}
+                                    <Stack tokens={{ childrenGap: 12 }} styles={{ root: { marginBottom: 16 } }}>
+                                        <Text styles={{ root: { fontWeight: 600 } }}>Search Depth</Text>
+                                        <div style={{ padding: "12px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
+                                            <Stack tokens={{ childrenGap: 8 }}>
+                                                <Text variant="small">
+                                                    <strong>Quick:</strong> Fast single search - best for simple lookups like "What is CPR Part 31?"
+                                                </Text>
+                                                <Text variant="small">
+                                                    <strong>Standard:</strong> Balanced search depth - recommended for most legal questions
+                                                </Text>
+                                                <Text variant="small">
+                                                    <strong>Thorough:</strong> Comprehensive multi-source search - best for complex analysis spanning multiple
+                                                    rules
+                                                </Text>
+                                            </Stack>
+                                        </div>
+                                    </Stack>
+                                </div>
+
+                                {/* Understanding Citations */}
+                                <div className={sectionStyle}>
+                                    <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 12, display: "block" } }}>
+                                        📖 Understanding Citations
+                                    </Text>
+                                    <Text variant="small" styles={{ root: { marginBottom: 12, display: "block", color: "#666" } }}>
+                                        Every answer includes numbered citations that link to source documents:
+                                    </Text>
+                                    <div
+                                        style={{
+                                            padding: "16px",
+                                            backgroundColor: "#fff",
+                                            borderRadius: "8px",
+                                            border: "1px solid #e1e4e8",
+                                            marginBottom: "12px"
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                padding: "12px",
+                                                backgroundColor: "#f8f9fa",
+                                                borderRadius: "6px",
+                                                fontStyle: "italic"
+                                            }}
+                                        >
+                                            "Standard disclosure requires a party to disclose documents on which it relies
+                                            <span
+                                                style={{
+                                                    backgroundColor: "#deecf9",
+                                                    padding: "2px 6px",
+                                                    borderRadius: "4px",
+                                                    margin: "0 4px",
+                                                    cursor: "pointer",
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                [1]
+                                            </span>
+                                            and documents which adversely affect its case
+                                            <span
+                                                style={{
+                                                    backgroundColor: "#deecf9",
+                                                    padding: "2px 6px",
+                                                    borderRadius: "4px",
+                                                    margin: "0 4px",
+                                                    cursor: "pointer",
+                                                    fontWeight: 600
+                                                }}
+                                            >
+                                                [2]
+                                            </span>
+                                            ."
+                                        </div>
+                                    </div>
+                                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                                        <Icon iconName="HandPointer" styles={{ root: { color: "#0078d4" } }} />
+                                        <Text variant="small">Click any blue citation number to view the supporting content from the source document</Text>
+                                    </Stack>
+                                </div>
+
+                                {/* Supporting Content Panel */}
+                                <div className={sectionStyle}>
+                                    <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 12, display: "block" } }}>
+                                        📄 Supporting Content Panel
+                                    </Text>
+                                    <div style={{ padding: "12px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
+                                        <Text variant="small">
+                                            When you click a citation, a panel opens on the right showing the exact text from CPR, Practice Directions, or Court
+                                            Guides that the AI used. This is your primary source for verification - always check that the AI's interpretation
+                                            matches the original text.
+                                        </Text>
+                                    </div>
+                                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} styles={{ root: { marginTop: 12 } }}>
+                                        <Icon iconName="OpenInNewTab" styles={{ root: { color: "#0078d4" } }} />
+                                        <Text variant="small">Click "View Source in New Tab" to open the full source document</Text>
+                                    </Stack>
+                                </div>
+
+                                {/* Feedback */}
+                                <div className={sectionStyle}>
+                                    <Text variant="large" styles={{ root: { fontWeight: 600, marginBottom: 12, display: "block" } }}>
+                                        👍 Providing Feedback
+                                    </Text>
+                                    <Text variant="small" styles={{ root: { marginBottom: 12, display: "block" } }}>
+                                        Use the thumbs up/down buttons below each answer to rate the response quality. Your feedback helps improve the accuracy
+                                        of future answers.
+                                    </Text>
                                 </div>
                             </Stack>
                         </PivotItem>
@@ -348,30 +453,6 @@ export const HelpAboutPanel: React.FC = () => {
                                                 <strong>This is the PRIMARY SOURCE</strong> - always verify the AI's interpretation against these original
                                                 passages.
                                             </Text>
-                                        </Stack>
-                                    </Stack>
-                                </div>
-
-                                {/* Thought Process */}
-                                <Text variant="large" styles={{ root: { fontWeight: 600 } }}>
-                                    🧠 Thought Process
-                                </Text>
-                                <div className={sectionStyle}>
-                                    <Text styles={{ root: { marginBottom: 12, display: "block" } }}>
-                                        Click <strong>"Show thought process"</strong> to see:
-                                    </Text>
-                                    <Stack tokens={{ childrenGap: 8 }}>
-                                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                                            <Icon iconName="Search" styles={{ root: { color: "#0078d4" } }} />
-                                            <Text variant="small">What search queries were used</Text>
-                                        </Stack>
-                                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                                            <Icon iconName="Filter" styles={{ root: { color: "#0078d4" } }} />
-                                            <Text variant="small">Which documents were retrieved</Text>
-                                        </Stack>
-                                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                                            <Icon iconName="Processing" styles={{ root: { color: "#0078d4" } }} />
-                                            <Text variant="small">How the AI processed the information</Text>
                                         </Stack>
                                     </Stack>
                                 </div>

@@ -135,7 +135,7 @@ class RetrieveThenReadApproach(Approach):
         filter = self.build_filter(overrides, auth_claims)
         
         use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
+        use_vector_search = self.should_use_vector_search(overrides)
         use_semantic_ranker = overrides.get("semantic_ranker", False)
         use_semantic_captions = overrides.get("semantic_captions", False)
         

@@ -3,8 +3,11 @@ import { useTranslation } from "react-i18next";
 import { parseSupportingContentItem, extractSubsectionContent, parseSubsectionFromCitation } from "./SupportingContentParser";
 import styles from "./SupportingContent.module.css";
 
-// CUSTOM: Import external source handler
-import { isIframeBlocked } from "../../customizations";
+// CUSTOM: Import external source handler and admin mode check
+import { isIframeBlocked, isAdminMode } from "../../customizations";
+
+// CUSTOM: Check if admin mode is enabled
+const adminMode = isAdminMode();
 
 interface SupportingContentProps {
     supportingContent: any[];
@@ -435,7 +438,8 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                         <div className={styles.supportingContentActions} style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                             {hasDocumentUrl && (
                                 <>
-                                    {!isBlocked && (
+                                    {/* Only show "View Source" (in-panel) for admins; everyone else gets "View Source in New Tab" */}
+                                    {adminMode && !isBlocked && (
                                         <button
                                             className={styles.viewSourceButton}
                                             onClick={() => handleViewSourceDocument(parsedItem)}
@@ -444,7 +448,7 @@ export const SupportingContent = ({ supportingContent, activeCitationReference, 
                                             View Source
                                         </button>
                                     )}
-                                    {isBlocked && (
+                                    {(!adminMode || isBlocked) && (
                                         <button
                                             className={styles.viewSourceButton}
                                             onClick={() => handleViewSourceDocumentNewTab(parsedItem)}

@@ -28,3 +28,6 @@ export { isIframeBlocked } from "./externalSourceHandler";
 
 // Help & About Panel (replaces DataPrivacyNotice)
 export { HelpAboutPanel } from "./HelpAboutPanel";
+
+// Splash Screen (animated intro with morph-to-header effect)
+export { SplashScreen } from "./SplashScreen";

@@ -41,6 +41,216 @@
     margin-bottom: 0.625rem;
 }
 
+/* CUSTOM: Animation for logo on initial load */
+.animatedLogo {
+    animation:
+        logoFadeIn 0.8s ease-out forwards,
+        logoFloat 3s ease-in-out 2s infinite;
+}
+
+@keyframes logoFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes logoFloat {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* CUSTOM: Animation for title with staggered delay */
+.animatedTitle {
+    animation: textFadeIn 0.7s ease-out 0.15s forwards;
+    opacity: 0;
+}
+
+/* CUSTOM: Animation for subtitle with longer delay */
+.animatedSubtitle {
+    animation: textFadeIn 0.7s ease-out 0.3s forwards;
+    opacity: 0;
+}
+
+@keyframes textFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CUSTOM: Intro content container - matches persistent greeting layout */
+.introContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* CUSTOM: Intro logo - same size as persistent, with fade-in */
+.introLogo {
+    animation:
+        introLogoIn 0.5s ease-out forwards,
+        logoFloat 3s ease-in-out 0.5s infinite;
+    opacity: 0;
+}
+
+@keyframes introLogoIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* CUSTOM: Intro title - matches greeting text size */
+.introTitle {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #242424;
+    margin: 0;
+    text-align: center;
+    animation: introTextIn 0.4s ease-out 0.15s forwards;
+    opacity: 0;
+}
+
+/* CUSTOM: Intro subtitle - slightly smaller */
+.introSubtitle {
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #666;
+    margin: 0;
+    text-align: center;
+    max-width: 400px;
+    animation: introTextIn 0.4s ease-out 0.25s forwards;
+    opacity: 0;
+}
+
+@keyframes introTextIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CUSTOM: Fade out animation - quick and smooth */
+.fadeOut {
+    animation: introFadeOut 0.5s ease-in-out forwards !important;
+}
+
+@keyframes introFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+/* CUSTOM: Persistent greeting shown after intro fades */
+.persistentGreeting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    animation: greetingFadeIn 0.5s ease-out forwards;
+    margin-bottom: 1.5rem;
+}
+
+@keyframes greetingFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* CUSTOM: Smaller persistent logo with gentle float animation */
+.persistentLogo {
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+.greetingText {
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: #444;
+    margin: 0;
+    text-align: center;
+    animation: textSlideUp 0.6s ease-out 0.2s forwards;
+    opacity: 0;
+}
+
+@keyframes textSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .animatedLogo,
+    .animatedTitle,
+    .animatedSubtitle,
+    .introLogo,
+    .introTitle,
+    .introSubtitle {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .fadeOut {
+        animation: none !important;
+        opacity: 0;
+    }
+
+    .persistentLogo {
+        animation: none;
+    }
+
+    .persistentGreeting,
+    .introContent {
+        animation: none;
+        opacity: 1;
+    }
+
+    .greetingText {
+        animation: none;
+        opacity: 1;
+    }
+}
+
 .chatMessageStream {
     flex-grow: 1;
     max-height: 64rem;

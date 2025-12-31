@@ -69,11 +69,8 @@ export const Answer = ({
     const processedAnswerHtml = useMemo(() => {
         let html = DOMPurify.sanitize(parsedAnswer.answerHtml);
 
-        // Add click handlers and proper styling to citation superscripts
-        html = html.replace(
-            /<sup class="citation-sup"([^>]*)>(\d+)<\/sup>/g,
-            '<sup class="citation-sup citation-clickable"$1 style="cursor: pointer; color: #0066cc; margin-left: 2px;">$2</sup>'
-        );
+        // Citation superscripts are styled via CSS in Answer.module.css
+        // No need to add inline styles - the .citation-sup class handles styling
 
         return html;
     }, [parsedAnswer.answerHtml]);
@@ -370,26 +367,8 @@ export const Answer = ({
                 </div>
             </Stack.Item>
 
-            <Stack.Item>
-                <LegalFeedback
-                    messageId={`msg-${index}`}
-                    userPrompt={userPrompt}
-                    aiResponse={answer.message?.content}
-                    conversationHistory={conversationHistory}
-                    thoughts={answer.context?.thoughts}
-                />
-            </Stack.Item>
-
-            {/* CUSTOM: Microsoft AI disclaimer for legal compliance */}
-            <Stack.Item>
-                <div className={styles.aiDisclaimer}>
-                    <span className={styles.disclaimerIcon}>ℹ️</span>
-                    AI-generated content may be incorrect. Always verify with the primary source documents cited above.
-                </div>
-            </Stack.Item>
-
-            {/* CUSTOM: Only show citations list in admin mode */}
-            {adminMode && !!parsedAnswer.citations.length && showCitations && (
+            {/* Citations list - shown for all users below the answer content */}
+            {!!parsedAnswer.citations.length && showCitations && (
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>{t("citationWithColon")}</span>
@@ -416,14 +395,6 @@ export const Answer = ({
                             // Display concise text: subsection - sourcePage
                             const displayText = subsection && sourcePage ? `${subsection} - ${sourcePage}` : normalizedLabel;
 
-                            console.log("Rendering citation link:", {
-                                citation,
-                                normalizedLabel,
-                                hasMatchingSupportingContent: !!matchingSupportingContent,
-                                citationContentLength: citationContent.length,
-                                displayText
-                            });
-
                             return (
                                 <a
                                     key={i}
@@ -431,11 +402,6 @@ export const Answer = ({
                                     title={normalizedLabel}
                                     onClick={e => {
                                         e.preventDefault();
-                                        console.log("Citation link clicked:", {
-                                            normalizedLabel,
-                                            matchingSupportingContent: !!matchingSupportingContent,
-                                            citationContentLength: citationContent.length
-                                        });
                                         handleCitationLinkClick(normalizedLabel, citationContent);
                                     }}
                                     style={{ cursor: "pointer" }}
@@ -447,6 +413,21 @@ export const Answer = ({
                     </Stack>
                 </Stack.Item>
             )}
+
+            <Stack.Item>
+                <LegalFeedback
+                    messageId={`msg-${index}`}
+                    userPrompt={userPrompt}
+                    aiResponse={answer.message?.content}
+                    conversationHistory={conversationHistory}
+                    thoughts={answer.context?.thoughts}
+                />
+            </Stack.Item>
+
+            {/* CUSTOM: Subtle AI disclaimer for legal compliance */}
+            <Stack.Item>
+                <div className={styles.aiDisclaimer}>AI-generated content may be incorrect. Always verify with the primary source documents cited above.</div>
+            </Stack.Item>
 
             {!!followupQuestions?.length && showFollowupQuestions && onFollowupQuestionClicked && (
                 <Stack.Item>

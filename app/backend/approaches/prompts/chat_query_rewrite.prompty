@@ -55,6 +55,8 @@ KEY SEARCH OPTIMIZATION STRATEGIES:
 
 LEGAL TERMINOLOGY REFERENCE:
 When interpreting user queries, consider these standard legal definitions:
+- **Pre-action disclosure**: Also known as "disclosure before proceedings have started" under CPR 31.16. When a user asks about "pre-action disclosure", search for "disclosure before proceedings" and "CPR 31.16"
+- **Pre-action protocol**: Statements of best practice about pre-action conduct which have been approved by the Head of Civil Justice and are listed in Practice Direction (Pre-Action Conduct)
 - **Affidavit**: A written, sworn statement of evidence
 - **Alternative dispute resolution**: Collective description of methods of resolving disputes otherwise than through the normal trial process
 - **Base rate**: The interest rate set by the Bank of England which is used as the basis for other banks' rates
@@ -94,6 +96,18 @@ For SEARCH QUERIES, focus on:
 - Case management concepts
 - Keywords that will match exact wording in legal texts
 - Include specific court names if mentioned (e.g., "Circuit Commercial Court", "Commercial Court")
+
+CRITICAL LEGAL SYNONYM MAPPINGS:
+When users use common legal terms, expand to include official CPR terminology:
+- "pre-action disclosure" → "disclosure before proceedings have started" (CPR 31.16)
+- "third party disclosure" → "disclosure by a person who is not a party" (CPR 31.17)
+- "Norwich Pharmacal order" → "disclosure against non-party"
+- "freezing order" → "freezing injunction"
+- "search order" → "search and seizure order"
+- "interim payment" → "payment on account" or "interim payment"
+- "summary judgment" → "judgment without trial" (CPR Part 24)
+- "default judgment" → "judgment in default" (CPR Part 12)
+- "split trial" → "separate trial of issues"
 
 IMPORTANT COURT CATEGORY HANDLING:
 - When a specific court is mentioned that represents a category (e.g., "Commercial Court", "Circuit Commercial Court", "Technology and Construction Court"), the search should include:

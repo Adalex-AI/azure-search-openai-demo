@@ -140,8 +140,14 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         self.citation_map = {}
         enhanced_citations = []
         
+        logging.info(f"🔍 DEBUG: Building citations from {len(extra_info.data_points.text) if extra_info.data_points.text else 0} data points")
+        
         for i, source in enumerate(extra_info.data_points.text, 1):
+            logging.info(f"🔍 DEBUG: Source {i} type={type(source).__name__}, is_dict={isinstance(source, dict)}")
             if isinstance(source, dict):
+                logging.info(f"🔍 DEBUG: Source {i} keys={list(source.keys())}")
+                logging.info(f"🔍 DEBUG: Source {i} sourcepage='{source.get('sourcepage')}' sourcefile='{source.get('sourcefile')}'")
+                
                 # Create Document object from dict for consistent processing
                 doc = Document(
                     id=source.get("id"),
@@ -155,6 +161,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                 enhanced_citation = self.build_enhanced_citation_from_document(doc, i)
             else:
                 # Handle legacy string format
+                logging.info(f"🔍 DEBUG: Source {i} is NOT dict, using fallback. Value: {str(source)[:100]}")
                 enhanced_citation = f"Source {i}"
             
             # Store mapping - ensure uniqueness
@@ -536,7 +543,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         This does not affect the normal search path.
         """
         hydrated: list[Document] = []
-        for i, doc in enumerate(docs):
+        for doc in docs:
             try:
                 # Decide if hydration is needed
                 needs_hydration = any(
@@ -548,10 +555,12 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                         not doc.sourcepage,
                     ]
                 )
+                
                 if needs_hydration and doc.id:
                     try:
                         # Fetch full document from the index
                         raw = await self.search_client.get_document(key=str(doc.id))
+                        
                         # Safely map known fields (prefer existing values)
                         doc.sourcepage = doc.sourcepage or raw.get(self.sourcepage_field, raw.get("sourcepage", ""))
                         doc.sourcefile = doc.sourcefile or raw.get("sourcefile", raw.get("source_file", ""))
@@ -563,11 +572,10 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                         # Content: keep agent content if present; otherwise hydrate
                         if not doc.content:
                             doc.content = raw.get(self.content_field, raw.get("content", ""))
-                    except Exception as e:
-                        logging.warning(f"Agentic hydration: failed to fetch doc id='{doc.id}': {e}")
+                    except Exception:
+                        pass  # Hydration failed, continue with original doc
                 hydrated.append(doc)
-            except Exception as e:
-                logging.warning(f"Agentic hydration: error processing doc index {i}: {e}")
+            except Exception:
                 hydrated.append(doc)
         return hydrated
 
@@ -577,11 +585,20 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
     ):
+        """
+        Run the agentic retrieval approach.
+        
+        NOTE: Legal terminology expansion (e.g., "pre-action disclosure" -> "disclosure before proceedings")
+        is now handled by Azure AI Search synonym maps, configured via scripts/manage_synonym_map.py.
+        This is more scalable and doesn't require code changes when adding new terminology.
+        """
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0)
         search_index_filter = self.build_filter(overrides, auth_claims)
         top = overrides.get("top", 3)
         max_subqueries = overrides.get("max_subqueries", 10)
         results_merge_strategy = overrides.get("results_merge_strategy", "interleaved")
+        # Get retrieval reasoning effort from overrides, default to "low" for best reference support
+        retrieval_reasoning_effort = overrides.get("retrieval_reasoning_effort", "low")
         # 50 is the amount of documents that the reranker can process per query
         max_docs_for_reranker = max_subqueries * 50
 
@@ -594,6 +611,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             minimum_reranker_score=minimum_reranker_score,
             max_docs_for_reranker=max_docs_for_reranker,
             results_merge_strategy=results_merge_strategy,
+            retrieval_reasoning_effort=retrieval_reasoning_effort,
         )
 
         # Normalize agent results to Document objects for consistent processing

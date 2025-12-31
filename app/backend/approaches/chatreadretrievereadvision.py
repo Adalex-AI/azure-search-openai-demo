@@ -82,7 +82,7 @@ class ChatReadRetrieveReadVisionApproach(ChatApproach):
     ) -> tuple[ExtraInfo, Union[Awaitable[ChatCompletion], Awaitable[AsyncStream[ChatCompletionChunk]]]]:
         seed = overrides.get("seed", None)
         use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
-        use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
+        use_vector_search = self.should_use_vector_search(overrides)
         use_semantic_ranker = True if overrides.get("semantic_ranker") else False
         use_query_rewriting = True if overrides.get("query_rewriting") else False
         use_semantic_captions = True if overrides.get("semantic_captions") else False

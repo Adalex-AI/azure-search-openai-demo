@@ -68,7 +68,12 @@ class SourceProcessor:
         document_groups = []  # List of (original_doc, [subsections]) tuples
         
         for i, doc in enumerate(documents):
-            logging.info(f"🔍 DEBUG: Processing document {i+1}/{len(documents)}: {getattr(doc, 'id', 'unknown')}")
+            doc_id = getattr(doc, 'id', 'unknown')
+            doc_sourcepage = getattr(doc, 'sourcepage', '')
+            doc_sourcefile = getattr(doc, 'sourcefile', '')
+            doc_content_preview = (getattr(doc, 'content', '') or '')[:100]
+            logging.info(f"🔍 DEBUG: SourceProcessor doc {i+1}: id='{doc_id}', sourcepage='{doc_sourcepage}', "
+                        f"sourcefile='{doc_sourcefile}', content_preview='{doc_content_preview}...'")
             
             # Check if document contains multiple subsections
             subsections = self.citation_builder.extract_multiple_subsections(doc)
@@ -169,6 +174,8 @@ class SourceProcessor:
         category = str(getattr(doc, 'category', '')) if getattr(doc, 'category', None) else ""
         storage_url = str(getattr(doc, 'storage_url', '')) if getattr(doc, 'storage_url', None) else ""
         updated = str(getattr(doc, 'updated', '')) if getattr(doc, 'updated', None) else ""
+        
+        logging.info(f"🔍 DEBUG: _process_single_document - id='{doc_id}', sourcepage='{sourcepage}', sourcefile='{sourcefile}'")
         
         # Generate citation
         citation = self.citation_builder.build_enhanced_citation(doc, len(results) + 1)

@@ -162,10 +162,16 @@ const Chat = () => {
             return new Promise(resolve => {
                 setTimeout(() => {
                     answer += newContent;
+                    // DEBUG: Log askResponse context before creating latestResponse
+                    const ctx = askResponse.context as any;
+                    console.log("[UPDATE STATE] askResponse has context?", !!ctx);
+                    console.log("[UPDATE STATE] askResponse.context.citation_map keys:", Object.keys(ctx?.citation_map || {}));
                     const latestResponse: ChatAppResponse = {
                         ...askResponse,
                         message: { content: answer, role: askResponse.message.role }
                     };
+                    const latestCtx = latestResponse.context as any;
+                    console.log("[UPDATE STATE] latestResponse.context.citation_map keys:", Object.keys(latestCtx?.citation_map || {}));
                     setStreamedAnswers([...answers, [question, latestResponse]]);
                     resolve(null);
                 }, 33);
@@ -173,20 +179,43 @@ const Chat = () => {
         };
         try {
             setIsStreaming(true);
+            let eventIndex = 0;
             for await (const event of readNDJSONStream(responseBody)) {
+                // DEBUG: Log all streaming events
+                console.log(`[STREAM EVENT ${eventIndex}]`, {
+                    hasContext: !!event["context"],
+                    hasDataPoints: !!event["context"]?.["data_points"],
+                    hasCitationMap: !!event["context"]?.["citation_map"],
+                    citationMapKeys: event["context"]?.["citation_map"] ? Object.keys(event["context"]["citation_map"]) : [],
+                    enhancedCitationsLen: event["context"]?.["enhanced_citations"]?.length || 0,
+                    hasDelta: !!event["delta"],
+                    deltaContent: event["delta"]?.["content"]?.substring(0, 50)
+                });
+                eventIndex++;
+
                 if (event["context"] && event["context"]["data_points"]) {
                     event["message"] = event["delta"];
                     askResponse = event as ChatAppResponse;
+                    const ctx = askResponse.context as any;
+                    console.log("[STREAM] Set askResponse with context. citation_map keys:", Object.keys(ctx?.citation_map || {}));
                 } else if (event["delta"] && event["delta"]["content"]) {
                     setIsLoading(false);
                     await updateState(event["delta"]["content"]);
                 } else if (event["context"]) {
                     // Update context with new keys from latest event
-                    askResponse.context = { ...askResponse.context, ...event["context"] };
+                    askResponse.context = { ...askResponse.context, ...event["context"] } as any;
+                    const ctx = askResponse.context as any;
+                    console.log("[STREAM] Merged context. citation_map keys:", Object.keys(ctx?.citation_map || {}));
                 } else if (event["error"]) {
                     throw Error(event["error"]);
                 }
             }
+            const finalCtx = askResponse.context as any;
+            console.log("[STREAM DONE] Final askResponse.context:", {
+                citationMapKeys: Object.keys(finalCtx?.citation_map || {}),
+                enhancedCitationsLen: finalCtx?.enhanced_citations?.length || 0,
+                dataPointsTextLen: finalCtx?.data_points?.text?.length || 0
+            });
         } finally {
             setIsStreaming(false);
         }
@@ -309,6 +338,7 @@ const Chat = () => {
     };
 
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
+
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "auto" }), [streamedAnswers]);
     useEffect(() => {
         getConfig();
@@ -508,10 +538,12 @@ const Chat = () => {
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
-                            <img src={appLogo} alt="App logo" width="120" height="120" />
-
-                            <h1 className={styles.chatEmptyStateTitle}>{t("chatEmptyStateTitle")}</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>{t("chatEmptyStateSubtitle")}</h2>
+                            {/* CUSTOM: Animated intro - logo with floating animation, title, subtitle */}
+                            <div className={styles.introContent}>
+                                <img src={appLogo} alt="App logo" width="48" height="48" className={styles.introLogo} />
+                                <h1 className={styles.introTitle}>{t("chatEmptyStateTitle")}</h1>
+                                <p className={styles.introSubtitle}>{t("chatEmptyStateSubtitle")}</p>
+                            </div>
                             {showLanguagePicker && <LanguagePicker onLanguageChange={newLang => i18n.changeLanguage(newLang)} />}
 
                             <ExampleList onExampleClicked={onExampleClicked} useGPT4V={useGPT4V} />
@@ -645,8 +677,8 @@ const Chat = () => {
                                                     dropdown: { minWidth: 90, maxWidth: 110 },
                                                     title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 24px 0 8px" },
                                                     caretDownWrapper: { height: "32px", lineHeight: "30px" },
-                                                    dropdownItem: { padding: "8px 12px" },
-                                                    dropdownItemSelected: { padding: "8px 12px" }
+                                                    dropdownItem: { minHeight: "auto", height: "auto", padding: "10px 12px" },
+                                                    dropdownItemSelected: { minHeight: "auto", height: "auto", padding: "10px 12px" }
                                                 }}
                                                 options={[
                                                     {
@@ -679,14 +711,27 @@ const Chat = () => {
                                                 onRenderOption={(option?: IDropdownOption) => {
                                                     if (!option) return null;
                                                     return (
-                                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                                                            <span style={{ fontSize: "13px" }}>{option.text}</span>
-                                                            <TooltipHost content={option.data?.description} calloutProps={{ gapSpace: 0 }}>
-                                                                <Icon
-                                                                    iconName="Info"
-                                                                    style={{ fontSize: "12px", color: "#0078d4", cursor: "help", marginLeft: "8px" }}
-                                                                />
-                                                            </TooltipHost>
+                                                        <div
+                                                            style={{
+                                                                display: "flex",
+                                                                flexDirection: "column",
+                                                                width: "100%",
+                                                                padding: "4px 0"
+                                                            }}
+                                                        >
+                                                            <span style={{ fontSize: "13px", fontWeight: 500 }}>{option.text}</span>
+                                                            {option.data?.description && (
+                                                                <span
+                                                                    style={{
+                                                                        fontSize: "11px",
+                                                                        color: "#666",
+                                                                        marginTop: "2px",
+                                                                        lineHeight: "1.3"
+                                                                    }}
+                                                                >
+                                                                    {option.data.description}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     );
                                                 }}

@@ -1,3 +1,4 @@
+import logging
 import os
 from abc import ABC
 from collections.abc import AsyncGenerator, Awaitable
@@ -16,6 +17,10 @@ from azure.search.documents.knowledgebases.models import (
     KnowledgeBaseRetrievalRequest,
     KnowledgeBaseRetrievalResponse,
     KnowledgeBaseSearchIndexActivityRecord,
+    KnowledgeRetrievalMinimalReasoningEffort,
+    KnowledgeRetrievalLowReasoningEffort,
+    KnowledgeRetrievalMediumReasoningEffort,
+    KnowledgeRetrievalSemanticIntent,
 )
 from azure.search.documents.aio import SearchClient
 from azure.search.documents.models import (
@@ -366,26 +371,70 @@ class Approach(ABC):
         minimum_reranker_score: Optional[float] = None,
         max_docs_for_reranker: Optional[int] = None,
         results_merge_strategy: Optional[str] = None,
+        retrieval_reasoning_effort: Optional[str] = None,  # NEW: Added reasoning effort parameter
     ) -> tuple[KnowledgeBaseRetrievalResponse, list[Document]]:
         # STEP 1: Invoke agentic retrieval
+        # Treat 0.0 as None for reranker threshold to avoid aggressive filtering
+        threshold = minimum_reranker_score if minimum_reranker_score is not None and minimum_reranker_score > 0 else None
+        
+        # Build retrieval request kwargs
+        agentic_retrieval_input: dict[str, Any] = {}
+        
+        # Handle reasoning effort - use proper classes based on effort level
+        # For minimal reasoning, use semantic intents instead of messages
+        if retrieval_reasoning_effort == "minimal":
+            last_content = messages[-1]["content"] if messages else ""
+            if not isinstance(last_content, str):
+                raise ValueError("The most recent message content must be a string for minimal reasoning effort.")
+            agentic_retrieval_input["intents"] = [KnowledgeRetrievalSemanticIntent(search=last_content)]
+        else:
+            # For low/medium/high, use messages format
+            kb_messages = [
+                KnowledgeBaseMessage(
+                    role=str(msg["role"]), content=[KnowledgeBaseMessageTextContent(text=str(msg["content"]))]
+                )
+                for msg in messages
+                if msg["role"] != "system"
+            ]
+            agentic_retrieval_input["messages"] = kb_messages
+        
+        # Set output mode to extractiveData to get raw content without answer synthesis
+        agentic_retrieval_input["output_mode"] = "extractiveData"
+        
+        # Determine the reasoning effort class
+        retrieval_effort: Optional[
+            KnowledgeRetrievalMinimalReasoningEffort
+            | KnowledgeRetrievalLowReasoningEffort
+            | KnowledgeRetrievalMediumReasoningEffort
+        ] = None
+        if retrieval_reasoning_effort == "minimal":
+            retrieval_effort = KnowledgeRetrievalMinimalReasoningEffort()
+        elif retrieval_reasoning_effort == "low":
+            retrieval_effort = KnowledgeRetrievalLowReasoningEffort()
+        elif retrieval_reasoning_effort == "medium":
+            retrieval_effort = KnowledgeRetrievalMediumReasoningEffort()
+        # If None or unrecognized, don't set reasoning effort (use API default)
+        
+        request_kwargs: dict[str, Any] = {
+            "knowledge_source_params": [
+                SearchIndexKnowledgeSourceParams(
+                    knowledge_source_name=search_index_name,
+                    reranker_threshold=threshold,
+                    filter_add_on=filter_add_on,
+                    include_references=True,
+                    include_reference_source_data=True,
+                    always_query_source=False,  # Let the reasoning decide
+                )
+            ],
+            "include_activity": True,
+        }
+        if retrieval_effort is not None:
+            request_kwargs["retrieval_reasoning_effort"] = retrieval_effort
+        request_kwargs.update(agentic_retrieval_input)
+        
+        # Make the API call
         response = await agent_client.retrieve(
-            retrieval_request=KnowledgeBaseRetrievalRequest(
-                messages=[
-                    KnowledgeBaseMessage(
-                        role=str(msg["role"]), content=[KnowledgeBaseMessageTextContent(text=str(msg["content"]))]
-                    )
-                    for msg in messages
-                    if msg["role"] != "system"
-                ],
-                knowledge_source_params=[
-                    SearchIndexKnowledgeSourceParams(
-                        knowledge_source_name=search_index_name,
-                        reranker_threshold=minimum_reranker_score,
-                        filter_add_on=filter_add_on,
-                        include_reference_source_data=True,
-                    )
-                ],
-            )
+            retrieval_request=KnowledgeBaseRetrievalRequest(**request_kwargs)
         )
 
         # STEP 2: Generate a contextual and content specific answer using the search results and chat history
@@ -408,13 +457,20 @@ class Approach(ABC):
             else:
                 # Default to descending strategy
                 references = response.references
-            for reference in references:
+            for i, reference in enumerate(references):
                 if isinstance(reference, KnowledgeBaseSearchIndexReference) and reference.source_data:
+                    source_data = reference.source_data
+                    
+                    # Extract all available fields from source_data for proper citation building
                     results.append(
                         Document(
                             id=reference.doc_key,
-                            content=reference.source_data.get("content"),
-                            sourcepage=reference.source_data.get("sourcepage"),
+                            content=source_data.get("content", ""),
+                            sourcepage=source_data.get("sourcepage", ""),
+                            sourcefile=source_data.get("sourcefile", ""),
+                            category=source_data.get("category", ""),
+                            storage_url=source_data.get("storageUrl", source_data.get("storage_url", "")),
+                            updated=source_data.get("updated", ""),
                             search_agent_query=activity_mapping.get(reference.activity_source, ""),
                         )
                     )

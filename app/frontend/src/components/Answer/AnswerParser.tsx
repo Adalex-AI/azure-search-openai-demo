@@ -20,8 +20,11 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean)
     const enhancedCitations = context?.enhanced_citations || [];
     const citationMap = context?.citation_map || {};
 
-    console.log("AnswerParser - Enhanced citations:", enhancedCitations);
-    console.log("AnswerParser - Citation map:", citationMap);
+    // DEBUG: Log the full answer context to understand the structure
+    console.log("AnswerParser - FULL CONTEXT:", JSON.stringify(context, null, 2)?.slice(0, 1000));
+    console.log("AnswerParser - Enhanced citations length:", enhancedCitations.length);
+    console.log("AnswerParser - Citation map keys:", Object.keys(citationMap));
+    console.log("AnswerParser - isStreaming:", isStreaming);
 
     const citations: string[] = [];
 
