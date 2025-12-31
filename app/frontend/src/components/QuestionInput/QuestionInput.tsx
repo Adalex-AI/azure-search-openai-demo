@@ -114,9 +114,14 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
                             border: "none",
                             borderRadius: "4px",
                             padding: "4px",
+                            minWidth: "auto",
+                            minHeight: "auto",
                             transition: "all 0.15s ease",
                             cursor: sendQuestionDisabled ? "not-allowed" : "pointer",
-                            opacity: sendQuestionDisabled ? 0.4 : 1
+                            opacity: sendQuestionDisabled ? 0.4 : 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
                         }}
                         onMouseEnter={e => {
                             if (!sendQuestionDisabled) {
