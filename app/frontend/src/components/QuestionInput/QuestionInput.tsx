@@ -17,9 +17,10 @@ interface Props {
     clearOnSend?: boolean;
     showSpeechInput?: boolean;
     leftOfSend?: React.ReactNode;
+    autoFocus?: boolean;
 }
 
-export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, initQuestion, showSpeechInput, leftOfSend }: Props) => {
+export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, initQuestion, showSpeechInput, leftOfSend, autoFocus }: Props) => {
     const [question, setQuestion] = useState<string>("");
     const { loggedIn } = useContext(LoginContext);
     const { t } = useTranslation();
@@ -86,6 +87,7 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, init
                 multiline
                 resizable={false}
                 borderless
+                autoFocus={autoFocus}
                 value={question}
                 onChange={onQuestionChange}
                 onKeyDown={onEnterPress}

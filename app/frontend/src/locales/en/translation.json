@@ -40,7 +40,8 @@
         "1": "What documents are required for a CMC in the Circuit Commercial Court?",
         "2": "What are the deadlines for filing in the Circuit Commercial Court?",
         "3": "In one sentence, what is the overriding objective?",
-        "placeholder": "Ask a question about CPR, Practice Directions, and/or Court Guides..."
+        "placeholder": "Ask a question on Civil Procedure",
+        "placeholderDesktop": "Ask a question about CPR, Practice Directions, and/or Court Guides..."
     },
     "askTitle": "Civil Procedure Copilot",
     "gpt4vExamples": {
@@ -89,11 +90,11 @@
             "interleaved": "Interleaved",
             "descending": "Descending"
         },
-        "includeCategory": "Include category",
+        "includeCategory": "Include source",
         "includeCategoryOptions": {
             "all": "All"
         },
-        "excludeCategory": "Exclude category",
+        "excludeCategory": "Exclude source",
         "useSemanticRanker": "Use semantic ranker for retrieval",
         "useSemanticCaptions": "Use semantic captions",
         "useQueryRewriting": "Use query rewriting for retrieval",
@@ -158,9 +159,9 @@
         "resultsMergeStrategy":
             "Sets the strategy for merging results from multiple subqueries. Interleaved picks the top results from each subquery in round robin order, while descending sorts all results by reranker score.",
         "includeCategory":
-            "Specifies a category to include in the search results. There are no categories used in the default data set.",
+            "Specifies a source to include in the search results (e.g., Commercial Court Guide, CPR & Practice Directions).",
          "excludeCategory":
-            "Specifies a category to exclude from the search results. There are no categories used in the default data set.",
+            "Specifies a source to exclude from the search results.",
          "useSemanticReranker":
             "Enables the Azure AI Search semantic ranker, a model that re-ranks search results based on semantic similarity to the user's query.",
         "useQueryRewriting":

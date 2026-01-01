@@ -17,20 +17,31 @@ from ..config import is_feature_enabled
 
 categories_bp = Blueprint("categories", __name__, url_prefix="/api")
 
+# Display name mapping: category key -> friendly display name with "Guide" for courts
+SOURCE_DISPLAY_NAMES = {
+    "Commercial Court": "Commercial Court Guide",
+    "Circuit Commercial Court": "Circuit Commercial Court Guide",
+    "Technology and Construction Court": "Technology and Construction Court Guide",
+    "King's Bench Division": "King's Bench Division Guide",
+    "Chancery Division": "Chancery Guide",
+    "Patents Court": "Patents Court Guide",
+    "Civil Procedure Rules and Practice Directions": "Civil Procedure Rules and Practice Directions",
+}
+
 
 @categories_bp.route("/categories", methods=["GET"])
 async def get_categories():
     """
-    Fetch available categories from Azure Search index using faceted search.
+    Fetch available sources from Azure Search index using faceted search.
     
-    Returns a list of categories with their document counts, useful for
-    building category filter dropdowns in the frontend.
+    Returns a list of sources with their document counts, useful for
+    building source filter dropdowns in the frontend.
     
     Response format:
     {
         "categories": [
-            {"key": "", "text": "All Categories", "count": null},
-            {"key": "Category1", "text": "Category1", "count": 42},
+            {"key": "", "text": "All Sources", "count": null},
+            {"key": "Commercial Court", "text": "Commercial Court Guide", "count": 42},
             ...
         ]
     }
@@ -53,25 +64,28 @@ async def get_categories():
             select=["id"]  # Minimal field selection
         )
 
-        # Extract categories from facets
+        # Extract categories from facets and map to display names
         categories = []
         facets = await results.get_facets()
         if facets and "category" in facets:
             for facet in facets["category"]:
                 if facet.get("value"):
+                    category_key = facet["value"]
+                    # Use display name mapping, fallback to original value
+                    display_name = SOURCE_DISPLAY_NAMES.get(category_key, category_key)
                     categories.append({
-                        "key": facet["value"],
-                        "text": facet["value"],
+                        "key": category_key,
+                        "text": display_name,
                         "count": facet.get("count")
                     })
 
-        # Sort alphabetically by category name
+        # Sort alphabetically by display name
         categories.sort(key=lambda x: x["text"])
 
-        # Add "All Categories" option at the beginning
+        # Add "All Sources" option at the beginning
         categories.insert(0, {
             "key": "",
-            "text": "All Categories",
+            "text": "All Sources",
             "count": None
         })
 

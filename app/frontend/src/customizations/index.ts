@@ -7,7 +7,9 @@
 // - config.ts: Feature flags
 // - citationSanitizer.ts: Citation formatting fixes
 // - useCategories.ts: Hook for fetching categories
+// - useMobile.ts: Mobile detection and abbreviations
 // - DataPrivacyNotice.tsx: Data privacy information panel for users
+// - mobile.css: Mobile-responsive styles (imported in index.tsx)
 // - __tests__/: Tests for customizations
 
 // Feature configuration
@@ -19,6 +21,9 @@ export { sanitizeCitations, fixMalformedCitations, collapseAdjacentCitations } f
 // Category filtering
 export { useCategories } from "./useCategories";
 export type { Category } from "./useCategories";
+
+// Mobile detection and abbreviations (source names and responsive hooks)
+export { useIsMobile, getAbbreviatedCategory, getDepthLabel, DEPTH_OPTIONS } from "./useMobile";
 
 // Legal Feedback
 export { LegalFeedback } from "./LegalFeedback";

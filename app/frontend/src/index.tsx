@@ -6,6 +6,8 @@ import { HelmetProvider } from "react-helmet-async";
 import { initializeIcons } from "@fluentui/react";
 
 import "./index.css";
+// CUSTOM: Mobile-responsive styles for smartphone users
+import "./customizations/mobile.css";
 
 import Chat from "./pages/chat/Chat";
 import LayoutWrapper from "./layoutWrapper";

@@ -133,14 +133,14 @@ The custom prompts in `/approaches/prompts/` contain explicit citation format ru
 - Punctuation before citation: `...rule.[1]` not `...[1] rule.`
 - Explicit examples of correct and incorrect formats
 
-### 2. Dynamic Category Filtering
+### 2. Dynamic Source Filtering
 **Files:** Backend `categories.py`, Frontend `useCategories.ts`, `CategoryDropdown/`
 
-Enables filtering search results by document categories fetched dynamically from Azure Search index.
+Enables filtering search results by document source fetched dynamically from Azure Search index. Sources are displayed with friendly names (e.g., "Commercial Court Guide" instead of "Commercial Court").
 
 **Backend Endpoint:** `GET /api/categories`
-- Returns categories from "category" field in search index
-- Falls back to default categories if field not found
+- Returns sources from "category" field in search index with display name mapping
+- Falls back to default sources if field not found
 
 **Frontend Usage:**
 ```typescript
@@ -161,7 +161,7 @@ Adds a user-facing dropdown next to the category filter to control agentic retri
 | `low` | Low (Recommended) | Expands queries for better coverage - good for most legal questions |
 | `medium` | Medium | Thorough multi-query planning - best for complex comparative questions |
 
-**UI Location:** Chat input area, to the right of the category dropdown, with an info icon (ℹ️) that shows a tooltip explaining each option.
+**UI Location:** Chat input area, to the right of the source dropdown, with an info icon (ℹ️) that shows a tooltip explaining each option.
 
 **Visibility Conditions:**
 - Only shows when `showAgenticRetrievalOption` is true (configured in backend)

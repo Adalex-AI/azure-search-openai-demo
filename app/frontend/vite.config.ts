@@ -27,6 +27,9 @@ export default defineConfig({
         target: "esnext"
     },
     server: {
+        // CUSTOM: Allow network access for mobile testing
+        // Access from phone via: http://<your-computer-ip>:5173
+        host: true,
         proxy: {
             "/content/": "http://localhost:50505",
             "/auth_setup": "http://localhost:50505",

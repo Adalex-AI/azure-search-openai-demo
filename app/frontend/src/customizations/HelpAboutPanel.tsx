@@ -40,7 +40,10 @@ const helpButtonStyle = mergeStyles({
 });
 
 const panelContentStyle = mergeStyles({
-    padding: "0 24px 24px 24px"
+    padding: "0 24px 24px 24px",
+    "@media (max-width: 768px)": {
+        padding: "0 12px 12px 12px"
+    }
 });
 
 const sectionStyle = mergeStyles({
@@ -48,6 +51,11 @@ const sectionStyle = mergeStyles({
     padding: "16px",
     backgroundColor: "#f8f9fa",
     borderRadius: "8px",
+    "@media (max-width: 768px)": {
+        marginBottom: "12px",
+        padding: "12px",
+        fontSize: "14px"
+    },
     border: "1px solid #e1e4e8"
 });
 
@@ -56,7 +64,11 @@ const featureBoxStyle = mergeStyles({
     backgroundColor: "#fff",
     borderRadius: "8px",
     border: "1px solid #e1e4e8",
-    marginBottom: "12px"
+    marginBottom: "12px",
+    "@media (max-width: 768px)": {
+        padding: "12px",
+        marginBottom: "8px"
+    }
 });
 
 const iconBoxStyle = mergeStyles({
@@ -79,7 +91,12 @@ const visualDiagramStyle = mergeStyles({
     fontSize: "12px",
     lineHeight: "1.6",
     overflowX: "auto",
-    whiteSpace: "pre"
+    whiteSpace: "pre",
+    "@media (max-width: 768px)": {
+        padding: "12px",
+        fontSize: "10px",
+        lineHeight: "1.4"
+    }
 });
 
 const tipBoxStyle = mergeStyles({
@@ -87,7 +104,11 @@ const tipBoxStyle = mergeStyles({
     backgroundColor: "#fff4ce",
     borderLeft: "4px solid #ffb900",
     borderRadius: "0 8px 8px 0",
-    marginBottom: "12px"
+    marginBottom: "12px",
+    "@media (max-width: 768px)": {
+        padding: "8px 12px",
+        fontSize: "13px"
+    }
 });
 
 const warningBoxStyle = mergeStyles({
@@ -95,7 +116,11 @@ const warningBoxStyle = mergeStyles({
     backgroundColor: "#fde7e9",
     borderLeft: "4px solid #d13438",
     borderRadius: "0 8px 8px 0",
-    marginBottom: "12px"
+    marginBottom: "12px",
+    "@media (max-width: 768px)": {
+        padding: "8px 12px",
+        fontSize: "13px"
+    }
 });
 
 const stepNumberStyle = mergeStyles({
@@ -266,13 +291,14 @@ export const HelpAboutPanel: React.FC = () => {
                                         🖥️ Understanding the Interface
                                     </Text>
 
-                                    {/* Category Dropdown */}
+                                    {/* Source Dropdown */}
                                     <Stack tokens={{ childrenGap: 12 }} styles={{ root: { marginBottom: 16 } }}>
-                                        <Text styles={{ root: { fontWeight: 600 } }}>Category Filter (Optional)</Text>
+                                        <Text styles={{ root: { fontWeight: 600 } }}>Source Filter (Optional)</Text>
                                         <div style={{ padding: "12px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
                                             <Text variant="small">
-                                                Use the dropdown next to the input box to filter by document type: CPR Rules, Practice Directions, or specific
-                                                Court Guides. Select "All Categories" to search across all documents.
+                                                Use the dropdown next to the input box to filter by document source: CPR & Practice Directions, or specific
+                                                Court Guides (e.g., Commercial Court Guide, Chancery Guide). Select "All Sources" to search across all
+                                                documents.
                                             </Text>
                                         </div>
                                     </Stack>
@@ -457,19 +483,19 @@ export const HelpAboutPanel: React.FC = () => {
                                     </Stack>
                                 </div>
 
-                                {/* Category Filter */}
+                                {/* Source Filter */}
                                 <Text variant="large" styles={{ root: { fontWeight: 600 } }}>
-                                    🏷️ Category Filter
+                                    🏷️ Source Filter
                                 </Text>
                                 <div className={sectionStyle}>
                                     <Text styles={{ root: { marginBottom: 12, display: "block" } }}>
-                                        Use the dropdown to narrow your search to specific document types:
+                                        Use the dropdown to narrow your search to specific document sources:
                                     </Text>
                                     <Stack tokens={{ childrenGap: 4 }}>
-                                        <Text variant="small">• CPR Rules only</Text>
-                                        <Text variant="small">• Practice Directions only</Text>
-                                        <Text variant="small">• Specific Court Guides</Text>
-                                        <Text variant="small">• All documents (default)</Text>
+                                        <Text variant="small">• CPR & Practice Directions</Text>
+                                        <Text variant="small">• Commercial Court Guide</Text>
+                                        <Text variant="small">• Other Court Guides (Chancery, TCC, etc.)</Text>
+                                        <Text variant="small">• All Sources (default)</Text>
                                     </Stack>
                                 </div>
 

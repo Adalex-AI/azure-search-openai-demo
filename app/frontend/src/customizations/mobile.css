@@ -1,0 +1,454 @@
+/**
+ * Mobile UI Customizations for Legal RAG Application
+ * ===================================================
+ * 
+ * This file provides mobile-responsive styles optimized for smartphone usage.
+ * It simplifies the UI for end-users, hiding developer-focused features.
+ * 
+ * Testing:
+ * 1. Browser DevTools: F12 > Toggle Device Toolbar (Ctrl+Shift+M)
+ * 2. Local network: Access via http://<your-ip>:5173 on your phone
+ * 3. ngrok tunnel: Run `ngrok http 5173` for public URL testing
+ */
+
+/* ===== MOBILE BASE STYLES ===== */
+@media (max-width: 768px) {
+    /* Improve touch targets */
+    button,
+    .ms-Button,
+    a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Prevent horizontal scrolling */
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* Improve readability */
+    body {
+        -webkit-text-size-adjust: 100%;
+    }
+}
+
+/* ===== HEADER MOBILE OPTIMIZATION ===== */
+@media (max-width: 768px) {
+    .layout .header .headerContainer {
+        padding: 0.5rem;
+    }
+
+    .layout .header .headerTitle {
+        font-size: 1rem;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .layout .header .loginMenuContainer {
+        gap: 0;
+    }
+}
+
+/* ===== CHAT CONTAINER MOBILE ===== */
+@media (max-width: 768px) {
+    /* Full-width chat on mobile */
+    .chatContainer {
+        padding: 0 0.5rem;
+        max-height: calc(100vh - 8rem) !important;
+    }
+
+    /* Simplify empty state for mobile */
+    .chatEmptyState {
+        padding: 1rem 0.5rem;
+    }
+
+    .chatEmptyStateTitle {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Mobile-optimized message stream */
+    .chatMessageStream {
+        padding: 0 0.5rem;
+        min-width: unset !important;
+        width: 100%;
+    }
+
+    /* Full-width messages on mobile */
+    .chatMessageGpt {
+        max-width: 100% !important;
+        min-width: unset !important;
+    }
+
+    /* Compact chat input */
+    .chatInput {
+        padding: 0.5rem;
+        max-width: 100%;
+    }
+
+    /* Stack dropdowns vertically on small phones */
+    .chatInput > div > div {
+        flex-wrap: wrap;
+    }
+
+    /* Category and depth dropdowns */
+    .chatInput .ms-Dropdown {
+        min-width: 100px !important;
+        max-width: 45% !important;
+    }
+}
+
+/* ===== VERY SMALL PHONES (< 375px) ===== */
+@media (max-width: 375px) {
+    .chatEmptyStateTitle {
+        font-size: 1.25rem !important;
+    }
+
+    .chatInput .ms-Dropdown {
+        min-width: 80px !important;
+        font-size: 12px;
+    }
+}
+
+/* ===== ANSWER CARDS MOBILE ===== */
+@media (max-width: 768px) {
+    /* Compact answer cards */
+    .answerContainer {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Smaller answer text */
+    .answerText {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        padding: 0.5rem 0;
+    }
+
+    /* Compact citations */
+    .citation {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Smaller AI disclaimer */
+    .aiDisclaimer {
+        font-size: 0.65rem;
+    }
+
+    /* Stack follow-up questions vertically */
+    .followupQuestionsList {
+        flex-direction: column !important;
+    }
+
+    .followupQuestion {
+        font-size: 0.85rem;
+        width: 100%;
+        text-align: left;
+    }
+}
+
+/* ===== ANALYSIS PANEL MOBILE ===== */
+@media (max-width: 768px) {
+    /* Hide the desktop side panel on mobile - we use chatAnalysisPanelMobile instead */
+    .chatAnalysisPanel {
+        display: none !important;
+    }
+
+    /* Mobile analysis panel - shown below input */
+    .chatAnalysisPanelMobile {
+        display: block;
+        width: 100%;
+        max-height: 45vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.75rem;
+        background: #fff;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+
+    /* Compact tabs for mobile */
+    .chatAnalysisPanelMobile .ms-Pivot {
+        font-size: 0.85rem;
+    }
+
+    .chatAnalysisPanelMobile .ms-Pivot-link {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ===== SETTINGS PANEL MOBILE ===== */
+@media (max-width: 768px) {
+    /* Full-width settings panel */
+    .ms-Panel-main {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .ms-Panel-scrollableContent {
+        padding: 0.5rem;
+    }
+}
+
+/* ===== QUESTION INPUT MOBILE ===== */
+@media (max-width: 768px) {
+    /* CUSTOM: ChatGPT-style bottom sticky input */
+    .chatInput {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        max-width: 100% !important;
+        padding: 0.75rem !important;
+        background: #ffffff !important;
+        border-top: 1px solid #d1d1d1 !important;
+        z-index: 999 !important;
+        margin: 0 !important;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Add bottom padding to chat container to account for fixed input */
+    .chatContainer {
+        padding-bottom: 140px !important;
+        max-height: 100vh !important;
+    }
+
+    .chatMessageStream {
+        padding-bottom: 1rem !important;
+    }
+
+    /* Ensure empty state content is visible above fixed input */
+    .chatEmptyState {
+        padding-bottom: 140px !important;
+        max-height: calc(100vh - 140px) !important;
+        overflow-y: auto;
+    }
+
+    /* Optimize input for thumb typing */
+    .questionInputContainer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Larger text input area */
+    .questionInputTextArea {
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+        min-height: 44px;
+    }
+
+    /* Full-width send button on very small screens */
+    .questionInputSendButton {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* ===== SUPPORTING CONTENT MOBILE ===== */
+@media (max-width: 768px) {
+    .supportingContent {
+        padding: 0.5rem;
+    }
+
+    .supportingContentItem {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* ===== CITATION TAB MOBILE ===== */
+@media (max-width: 768px) {
+    /* Full-width citation content */
+    .citationContent {
+        padding: 0.5rem;
+    }
+
+    /* Scrollable citation viewer */
+    .citationViewer {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+}
+
+/* ===== TOUCH-FRIENDLY IMPROVEMENTS ===== */
+@media (max-width: 768px) {
+    /* Increase tap targets */
+    .ms-Button {
+        padding: 12px 16px;
+    }
+
+    .ms-Button-icon {
+        font-size: 18px;
+    }
+
+    /* Larger checkbox/toggle targets */
+    .ms-Checkbox {
+        min-height: 44px;
+        padding: 8px 0;
+    }
+
+    .ms-Toggle {
+        min-height: 44px;
+    }
+
+    /* Better dropdown touch targets */
+    .ms-Dropdown-item {
+        min-height: 44px;
+        padding: 12px !important;
+    }
+}
+
+/* ===== KEYBOARD/SAFE AREA HANDLING ===== */
+@media (max-width: 768px) {
+    /* Account for iOS safe areas */
+    .chatInput {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    /* Sticky input when keyboard is open */
+    .chatInputContainer {
+        position: sticky;
+        bottom: 0;
+        background: #f2f2f2;
+        z-index: 100;
+    }
+}
+
+/* ===== LANDSCAPE PHONE ADJUSTMENTS ===== */
+@media (max-width: 768px) and (orientation: landscape) {
+    .chatContainer {
+        max-height: calc(100vh - 6rem) !important;
+    }
+
+    .chatEmptyState {
+        padding-top: 0.5rem;
+    }
+
+    .chatEmptyStateTitle {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* ===== USER-FOCUSED UI (HIDE ADMIN FEATURES) ===== */
+/* These are hidden by default for regular users */
+/* Add ?admin=true to URL to show them */
+
+/* Hide history panel toggle by default on mobile */
+@media (max-width: 768px) {
+    .historyButtonContainer:not(.adminVisible) {
+        display: none;
+    }
+}
+
+/* ===== INTRO/GREETING MOBILE ===== */
+@media (max-width: 768px) {
+    .introContent,
+    .persistentGreeting {
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .introLogo,
+    .persistentLogo {
+        width: 40px;
+        height: 40px;
+    }
+
+    .introTitle,
+    .greetingText {
+        font-size: 1rem;
+    }
+
+    .introSubtitle {
+        font-size: 0.85rem;
+        max-width: 280px;
+    }
+}
+
+/* ===== EXAMPLE QUESTIONS MOBILE ===== */
+@media (max-width: 768px) {
+    .examplesNavList {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .exampleCard {
+        width: 100%;
+        max-width: 100%;
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* ===== FLUENT UI OVERRIDES FOR MOBILE ===== */
+@media (max-width: 768px) {
+    /* Fix Pivot tabs for mobile */
+    .ms-Pivot {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .ms-Pivot-link {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    /* Fix Panel for mobile */
+    .ms-Panel-main {
+        width: 100vw !important;
+    }
+
+    /* Better scrolling */
+    .ms-ScrollablePane {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Help/About Panel mobile optimizations */
+    .ms-Panel-scrollableContent {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        max-height: calc(100vh - 60px);
+    }
+
+    /* Ensure panel content doesn't get cut off */
+    .ms-Panel-content {
+        overflow: visible;
+    }
+
+    /* Make pivot tabs wrap on mobile */
+    .ms-Pivot {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Reduce padding in panel sections for mobile */
+    .ms-Panel .ms-Pivot-text {
+        font-size: 13px;
+    }
+}
+
+/* ===== PRINT/DARK MODE ===== */
+@media print {
+    .chatInput,
+    .commandsContainer,
+    .menuToggle {
+        display: none !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+    /* Dark mode optimizations for mobile */
+    .answerContainer {
+        background: #1a1a1a;
+    }
+
+    .chatInput {
+        background: #1a1a1a;
+    }
+}

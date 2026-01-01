@@ -27,8 +27,8 @@ export function useCategories() {
             } catch (err) {
                 if (mounted) {
                     setError(err instanceof Error ? err.message : "Unknown error");
-                    // Set default categories on error
-                    setCategories([{ key: "", text: "All Categories" }]);
+                    // Set default sources on error
+                    setCategories([{ key: "", text: "All Sources" }]);
                 }
             } finally {
                 if (mounted) setLoading(false);

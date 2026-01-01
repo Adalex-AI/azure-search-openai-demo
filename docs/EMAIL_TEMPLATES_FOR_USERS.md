@@ -1,122 +1,151 @@
-# Email Template: Inviting Lawyers to the Legal RAG System
+# Email Templates: Inviting Users to Civil Procedure Copilot
+
+> **Application Name:** Civil Procedure Copilot  
+> **Purpose:** AI-powered legal research assistant for CPR, Practice Directions, and Court Guides  
+> **URL:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
 ---
 
-## Data Privacy & Security Information for Lawyers
+## 📚 Available Documents in the System
 
-**Important:** This section provides key information about how your data is handled when using this Legal RAG application. Please share this with all users.
+Before sending invitations, note the documents available to users:
 
-### 🔒 Key Data Protection Assurances
+| Document Type | Description |
+|---------------|-------------|
+| **Civil Procedure Rules** | Parts 1-89 and all Practice Directions |
+| **Commercial Court Guide** | 11th Edition (July 2023) |
+| **King's Bench Division Guide** | 2025 Edition |
+| **Chancery Guide** | 2022 Edition |
+| **Patents Court Guide** | February 2025 |
+| **Technology & Construction Court Guide** | October 2022 |
+| **Circuit Commercial Court Guide** | August 2023 |
 
-This application uses **Azure OpenAI Service**, Microsoft's enterprise AI platform. Here are the critical privacy assurances from Microsoft:
+---
+
+## 🔒 Data Privacy & Security Summary
+
+**Copy this section into your emails or share as a separate document:**
+
+### Key Privacy Assurances
 
 | Assurance | Details |
 |-----------|---------|
-| ✅ **NOT used for AI training** | Your prompts (questions) and responses are NOT used to train, retrain, or improve Azure OpenAI's foundation models |
-| ✅ **NOT shared with other customers** | Your data is completely isolated and never available to other Azure customers |
-| ✅ **NOT shared with OpenAI** | Azure OpenAI operates independently from OpenAI's public services (ChatGPT, OpenAI API). Your data never goes to OpenAI |
-| ✅ **Stateless processing** | The AI models do not store your prompts or responses—they are stateless |
-| ✅ **Enterprise-grade security** | All data is encrypted in transit (TLS 1.2+) and at rest |
+| ✅ **NOT used for AI training** | Your queries are NEVER used to train, retrain, or improve AI models |
+| ✅ **NOT shared with other customers** | Your data is completely isolated and never available to others |
+| ✅ **NOT shared with OpenAI** | Uses Azure OpenAI (separate enterprise service) – data never goes to OpenAI's public services |
+| ✅ **NOT stored** | Your queries are discarded after processing – no chat history is retained |
+| ✅ **Enterprise-grade encryption** | TLS 1.2+ in transit, AES-256 at rest |
 
-### 📊 How Your Data is Handled
+### Technical Details
 
-**During a query:**
-- Your question is sent to Azure OpenAI for processing
-- The model generates a response which is returned to you
-- The model itself does NOT retain your query or the response
-- No human at Microsoft sees your queries under normal operation
+- **AI Model:** GPT-5-nano via Azure OpenAI
+- **Hosting Region:** East US 2 (Microsoft Azure)
+- **Authentication:** Microsoft Entra ID (Azure Active Directory)
 
-**Chat history (if enabled):**
-- Conversations may be stored in our Azure database to allow session continuity
-- This data is stored in our Azure tenant, NOT by OpenAI
-- Chat history can be deleted by users
+### Official Documentation
 
-**Document content:**
-- Legal documents are stored in Azure AI Search and Azure Blob Storage
-- All data remains within our Azure subscription with appropriate access controls
-- Documents are not exposed to OpenAI or other customers
-
-### 🛡️ Content Safety & Abuse Monitoring
-
-Azure OpenAI includes content safety measures:
-
-1. **Automated filtering**: AI models filter potentially harmful content in real-time
-2. **Automated review**: If content is flagged, AI systems may review it to detect abuse patterns—prompts reviewed this way are NOT stored
-3. **Human review (rare)**: In exceptional cases of suspected severe abuse, authorized Microsoft employees may review flagged content using secure access controls
-4. **Enterprise option**: Organizations processing highly sensitive data can apply to Microsoft to modify or disable abuse monitoring with human review
-
-### 📍 Data Residency
-
-- Data is processed within Microsoft's Azure infrastructure
-- Processing location depends on the Azure OpenAI deployment region
-- All data transmission is encrypted
-
-### ⏱️ Data Retention
-
-| Data Type | Retention |
-|-----------|-----------|
-| Model processing | NOT retained—models are stateless |
-| Chat history (if enabled) | Per our organization's policy; user-deletable |
-| Abuse monitoring (if flagged) | Up to 30 days if human review occurs |
-
-### 📚 Official Microsoft Documentation
-
-For authoritative information, please refer to:
-- [Azure OpenAI Data, Privacy, and Security](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/data-privacy)
-- [Azure OpenAI Abuse Monitoring](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/abuse-monitoring)
-- [Microsoft Trust Center](https://www.microsoft.com/trust-center)
+- [Azure OpenAI Data, Privacy & Security](https://learn.microsoft.com/en-gb/legal/cognitive-services/openai/data-privacy)
+- [Microsoft Trust Center (UK)](https://www.microsoft.com/en-gb/trust-center)
 
 ---
 
-## Email Option 1: Internal Organization Users
+## Email Option 1: Internal Organization Users (Full Details)
 
-**Subject:** Access to Legal Document Research Assistant - AI-Powered CPR Search Tool
+**Subject:** 🔨 Access Civil Procedure Copilot – AI-Powered Legal Research Assistant
 
 ---
 
-Dear [Lawyer's Name],
+Dear [Name],
 
-I'm pleased to invite you to use our new **Legal Document Research Assistant** – an AI-powered tool that allows you to quickly search and query our legal document database, including Civil Procedure Rules (CPR) and related materials.
+I'm pleased to invite you to use **Civil Procedure Copilot** – our AI-powered research assistant for searching the Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
 
-### What is this tool?
+### 📚 What Documents Can I Search?
 
-This is a secure, internal application that uses Azure OpenAI and Azure AI Search to help you:
-- **Ask questions in plain English** about legal procedures, court rules, and compliance requirements
-- **Get instant answers** with citations to the source documents
-- **Access relevant passages** from our legal document library
+The system contains the following curated legal materials:
+- **Civil Procedure Rules (Parts 1-89)** and all Practice Directions
+- **Commercial Court Guide** (11th Edition, July 2023)
+- **King's Bench Division Guide** (2025 Edition)
+- **Chancery Guide** (2022 Edition)
+- **Patents Court Guide** (February 2025)
+- **Technology & Construction Court Guide** (October 2022)
+- **Circuit Commercial Court Guide** (August 2023)
 
-### How to Access
+### 🚀 How to Access
 
-1. **Click this link:** [https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io](https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io)
+1. **Visit:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
 2. **Click "Login"** in the top-right corner
 
-3. **Sign in with your Microsoft account** (work email address)
+3. **Sign in** with your Microsoft work account
 
-4. **Approve the permissions** when prompted (first time only)
+4. **Approve permissions** when prompted (first time only)
 
-5. **Start asking questions!** For example:
-   - "What are the time limits for filing a defence?"
-   - "Explain the pre-action protocol requirements"
-   - "What is the overriding objective in CPR Part 1?"
+### 🔄 How It Works
 
-### Security & Privacy
+| Step | What to Do |
+|------|------------|
+| **1. Ask a Question** | Type your legal research question in plain English |
+| **2. Review the Answer** | The AI searches CPR documents and provides a response with numbered citations [1], [2], [3] |
+| **3. Click Citations** | Click any citation number to view the exact source text the AI used |
+| **4. Verify Sources** | Always check that the AI's interpretation matches the original text |
+| **5. Ask Follow-ups** | The chat remembers context from your conversation |
 
-This application is:
-- ✅ **Authenticated** – Only authorized users with valid Microsoft accounts can access it
-- ✅ **Encrypted** – All data is transmitted over HTTPS
-- ✅ **Access-Controlled** – Document access is restricted based on your permissions
-- ✅ **Azure-Hosted** – Runs entirely within Microsoft Azure's secure cloud environment
-- ✅ **No AI Training** – Your queries are NOT used to train AI models
-- ✅ **Data Isolation** – Your data is never shared with other customers or OpenAI
+### ⚙️ Key Features
 
-**📋 Full Data Privacy Information:** See the "Data Privacy & Security Information for Lawyers" section at the top of this document for comprehensive details about how your data is handled.
+**🏷️ Category Filter**
+Use the dropdown next to the input box to narrow your search:
+- CPR Rules only
+- Practice Directions only
+- Specific Court Guides (Commercial, Chancery, etc.)
+- All documents (default)
 
-### Getting Help
+**🔍 Search Depth**
+Choose how thorough the AI should search:
+- **Quick:** Fast single search – best for simple lookups like "What is CPR Part 31?"
+- **Standard:** Balanced depth – recommended for most questions
+- **Thorough:** Comprehensive multi-source search – best for complex analysis
 
-If you encounter any issues logging in or using the application, please contact me and I'll assist you.
+**📄 Supporting Content Panel**
+When you click a citation, a panel shows the exact text from CPR, Practice Directions, or Court Guides that the AI used. This is your primary source for verification.
 
-I look forward to your feedback on this tool!
+**👍👎 Feedback Buttons**
+Rate responses to help improve accuracy. You can optionally share your query for analysis.
+
+### 💡 Example Questions to Try
+
+- "What are the time limits for filing an acknowledgment of service?"
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+- "Explain the pre-action protocol requirements for professional negligence claims"
+- "What documents are needed for a CMC in the Commercial Court?"
+
+### ⚠️ Important Warnings
+
+| Warning | Details |
+|---------|---------|
+| ❌ **Not for deadline calculations** | Always verify deadlines via official court channels |
+| ❌ **AI can make mistakes** | Responses are assistive, not authoritative legal advice |
+| ❌ **Check currency** | Verify Practice Direction dates are current before relying on them |
+
+### 🛡️ Privacy & Security
+
+Your data is protected:
+- ✅ **NOT used for AI training** – Your queries never train AI models
+- ✅ **NOT shared** – Your queries are isolated; others cannot see them
+- ✅ **NOT sent to OpenAI** – Uses Azure OpenAI (separate enterprise service)
+- ✅ **NOT stored** – No chat history is retained after your session
+- ✅ **Encrypted** – TLS 1.2+ in transit, AES-256 at rest
+
+### ❓ Getting Help
+
+Click the **blue question mark button (?)** in the bottom-right corner of the application for:
+- Detailed usage instructions
+- Feature explanations
+- Tips for effective queries
+- Full privacy information
+
+If you encounter any issues, please contact me directly.
 
 Best regards,
 
@@ -128,66 +157,85 @@ Best regards,
 
 ## Email Option 2: External Guest Users (Lawyers Outside Your Organization)
 
-**Subject:** Invitation: Access Legal Document Research Tool – AI-Powered CPR Assistant
+**Subject:** Invitation: Access Civil Procedure Copilot – AI Legal Research Assistant
 
 ---
 
-Dear [Lawyer's Name],
+Dear [Name],
 
-You've been invited to access our **Legal Document Research Assistant**, an AI-powered tool for searching Civil Procedure Rules and legal documentation.
+You've been invited to access **Civil Procedure Copilot**, our AI-powered research assistant for searching the Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
 
-### Accepting Your Invitation
+### Step 1: Accept the Microsoft Invitation
 
-You should have received a separate invitation email from Microsoft Azure with the subject line: **"[Organization] invited you to access applications within their organization"**
+You should have received a separate email from Microsoft with the subject: **"You're invited to access applications in Default Directory"**
 
-Please:
-1. **Check your inbox** (and spam folder) for this Microsoft invitation
+1. **Check your inbox** (and spam/junk folder) for this Microsoft invitation
 2. **Click "Accept invitation"** in that email
-3. **Sign in** with your work or personal Microsoft account
+3. **Sign in** with your Microsoft account (work, school, or personal)
 4. **Complete the consent process**
 
 If you haven't received the invitation, please let me know and I'll resend it.
 
-### Accessing the Application
+### Step 2: Access the Application
 
 Once you've accepted the invitation:
 
-1. **Navigate to:** [https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io](https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io)
+1. **Visit:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
 2. **Click "Login"** and sign in with the account you used to accept the invitation
 
 3. **Approve permissions** when prompted (first-time only)
 
-### What You Can Do
+### 📚 What You Can Search
 
-The Legal RAG Assistant allows you to:
-- Ask natural language questions about legal procedures
-- Search across our curated legal document library
-- Receive AI-generated answers with source citations
-- Access relevant passages and supporting documentation
+The Civil Procedure Copilot gives you access to:
+- **Civil Procedure Rules (Parts 1-89)** and all Practice Directions
+- **Commercial Court Guide** (11th Edition, July 2023)
+- **King's Bench Division Guide** (2025 Edition)
+- **Chancery Guide** (2022 Edition)
+- **Patents Court Guide** (February 2025)
+- **Technology & Construction Court Guide** (October 2022)
+- **Circuit Commercial Court Guide** (August 2023)
 
-### Example Questions
+### 🔄 How to Use It
 
-Try asking:
-- "What are the requirements for service of documents under CPR Part 6?"
-- "Explain the small claims track allocation criteria"
-- "What are the grounds for setting aside a default judgment?"
+1. **Type a question** in plain English (e.g., "What are the time limits for filing a defence?")
+2. **Review the AI answer** which includes numbered citations [1], [2], [3]
+3. **Click citations** to view the exact source text from CPR documents
+4. **Ask follow-up questions** – the chat remembers your conversation context
 
-### Security Information
+### ⚙️ Key Features
 
-- **Authentication:** Microsoft Entra ID (Azure Active Directory)
-- **Access Control:** Document-level permissions ensure you only see authorized content
-- **Data Protection:** All communications are encrypted (HTTPS/TLS)
-- **Hosting:** Microsoft Azure (UK data residency available)
+- **🏷️ Category Filter:** Use the dropdown to search only CPR Rules, Practice Directions, or specific Court Guides
+- **🔍 Search Depth:** Choose Quick, Standard, or Thorough search depending on query complexity
+- **📄 Supporting Content:** Click citations to see exact source passages for verification
+- **👍👎 Feedback:** Rate responses to help improve accuracy
 
-### Need Help?
+### 💡 Example Questions to Try
 
-If you have any trouble:
-- **Cannot accept invitation:** Ensure you're using a valid Microsoft account (work, school, or personal)
-- **Login errors:** Try using a private/incognito browser window
-- **Permission denied:** Contact me to verify your access rights
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+- "Explain the pre-action protocol requirements for professional negligence claims"
 
-Please don't hesitate to reach out if you have any questions.
+### ⚠️ Important Warnings
+
+- ❌ **Not for deadline calculations** – Always verify deadlines via official court channels
+- ❌ **AI can make mistakes** – Responses are assistive, not authoritative legal advice
+- ❌ **Check currency** – Verify Practice Direction dates are current before relying on them
+
+### 🛡️ Privacy & Security
+
+- ✅ Your queries are **NOT used for AI training**
+- ✅ Your data is **NOT shared** with others or OpenAI
+- ✅ Your queries are **NOT stored** after processing
+- ✅ All communications are **encrypted** (HTTPS/TLS 1.2+)
+
+### ❓ Need Help?
+
+Click the **blue question mark button (?)** in the bottom-right corner of the application for detailed help, tips, and privacy information.
+
+If you have any trouble accessing the system, please contact me directly.
 
 Kind regards,
 
@@ -201,46 +249,114 @@ Kind regards,
 
 ## Email Option 3: Brief Internal Announcement
 
-**Subject:** New Tool Available: AI Legal Document Assistant
+**Subject:** 🔨 New Tool: Civil Procedure Copilot – AI Legal Research Assistant
 
 ---
 
 Hi Team,
 
-We've launched a new **AI-powered Legal Document Assistant** for searching our CPR and legal procedure documentation.
+We've launched **Civil Procedure Copilot**, an AI-powered assistant for researching CPR, Practice Directions, and Court Guides.
 
-**Access it here:** [https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io](https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io)
+**🔗 Access it here:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
-**How it works:**
-1. Login with your work Microsoft account
-2. Type a question in plain English
-3. Get an AI-generated answer with source citations
+### 🚀 Quick Start
 
-**Example questions to try:**
+1. **Login** with your work Microsoft account
+2. **Type a question** in plain English
+3. **Click citations [1][2][3]** to verify source documents
+
+### 📚 What's Searchable?
+
+- Civil Procedure Rules (Parts 1-89) + Practice Directions
+- Commercial Court Guide (July 2023)
+- King's Bench Division Guide (2025)
+- Chancery Guide (2022)
+- Patents Court Guide (Feb 2025)
+- TCC Guide (Oct 2022)
+- Circuit Commercial Court Guide (Aug 2023)
+
+### 💡 Try These Queries
+
 - "What is the overriding objective?"
 - "Time limits for appealing a court order?"
 - "Pre-action protocol for personal injury claims"
+- "What are the cost budgeting requirements in the Commercial Court?"
 
-This is a secure, authenticated application hosted on Azure. Let me know if you have any questions or feedback!
+### ⚙️ Pro Tips
+
+- Use the **Category Filter** to narrow searches to specific document types
+- Choose **Search Depth** (Quick/Standard/Thorough) based on query complexity
+- **Always click citations** to verify the AI's interpretation against source text
+
+### ⚠️ Remember
+
+- Not for calculating deadlines – verify via official channels
+- AI can make mistakes – treat as assistive, not authoritative
+- Click the **? button** for detailed help and privacy info
+
+Questions or feedback? Reply to this email!
 
 [Your Name]
 
 ---
 
-## Quick Checklist for Administrator
+## Email Option 4: One-Paragraph Quick Invite
+
+**Subject:** Access to Civil Procedure Copilot
+
+---
+
+Hi [Name],
+
+You now have access to **Civil Procedure Copilot**, our AI-powered research tool for searching the Civil Procedure Rules, Practice Directions, and Court Guides. Visit https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io, login with your Microsoft account, and start asking questions like "What are the time limits for filing a defence?" The AI will provide answers with numbered citations that link to source documents – always click these to verify. Questions? Click the **? button** in the app or reply to this email.
+
+[Your Name]
+
+---
+
+## 📋 Administrator Checklist
 
 Before sending invitations, ensure:
 
-- [ ] User is added as a guest in Azure AD (for external users)
+- [ ] User is added as a guest in Microsoft Entra ID (for external users)
+- [ ] Admin consent has been granted for the application (Enterprise Apps → Permissions)
 - [ ] User has been added to appropriate security groups (if using group-based access)
-- [ ] Document ACLs are configured correctly
-- [ ] Admin consent has been granted for the application
+- [ ] Document ACLs are configured correctly (or global access is enabled)
 - [ ] Test login works with a test account
 
 ### Azure Portal Quick Links
 
-| Task | Action |
-|------|--------|
-| Invite Guest User | [Azure Portal → Users → New User → Invite External](https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserManagementMenuBlade/~/AllUsers) |
-| Create Security Group | [Azure Portal → Groups → New Group](https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupsManagementMenuBlade/~/AllGroups) |
-| Grant Admin Consent | [Azure Portal → Enterprise Apps → Your App → Permissions](https://portal.azure.com/#view/Microsoft_AAD_IAM/StartboardApplicationsMenuBlade/~/AppAppsPreview) |
+| Task | URL |
+|------|-----|
+| **Invite Guest User** | https://portal.azure.com/#view/Microsoft_AAD_UsersAndTenants/UserManagementMenuBlade/~/AllUsers |
+| **Create Security Group** | https://portal.azure.com/#view/Microsoft_AAD_IAM/GroupsManagementMenuBlade/~/AllGroups |
+| **Grant Admin Consent** | https://portal.azure.com/#view/Microsoft_AAD_IAM/StartboardApplicationsMenuBlade/~/AppAppsPreview |
+| **View App Registration** | https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/1d382868-51d6-4200-a4ba-3a7b94ecb2d3 |
+
+### Quick Commands for Document Access
+
+```bash
+# Activate Python environment
+source .venv/bin/activate
+
+# Enable global access (all authenticated users see all documents)
+python ./scripts/manageacl.py --acl-action enable_global_access
+
+# Add specific user to documents
+python ./scripts/manageacl.py -v --acl-type oids --acl-action add \
+  --acl <USER-OBJECT-ID> \
+  --url https://stgz2m4s637t5me.blob.core.windows.net/content/
+
+# Add a security group to documents
+python ./scripts/manageacl.py -v --acl-type groups --acl-action add \
+  --acl <GROUP-OBJECT-ID> \
+  --url https://stgz2m4s637t5me.blob.core.windows.net/content/
+```
+
+---
+
+## Related Documentation
+
+- [Sharing With Users Guide](./SHARING_WITH_USERS.md) – Detailed step-by-step instructions
+- [Login and ACL Configuration](./login_and_acl.md) – Technical setup guide
+- [Data Privacy for Lawyers](./DATA_PRIVACY_FOR_LAWYERS.md) – Comprehensive privacy information

@@ -19,12 +19,15 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, isIframeBlocked, HelpAboutPanel, isAdminMode } from "../../customizations";
+import { useCategories, isIframeBlocked, HelpAboutPanel, isAdminMode, useIsMobile } from "../../customizations";
 
 // CUSTOM: Check admin mode for showing developer settings
 const adminMode = isAdminMode();
 
 export function Component(): JSX.Element {
+    // CUSTOM: Mobile detection for responsive UI
+    const isMobile = useIsMobile();
+
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [promptTemplate, setPromptTemplate] = useState<string>("");
     const [promptTemplatePrefix, setPromptTemplatePrefix] = useState<string>("");
@@ -128,7 +131,7 @@ export function Component(): JSX.Element {
     // Load categories
     const { categories, loading: categoriesLoading } = useCategories();
     const categoryOptions: IDropdownOption[] = [
-        { key: "", text: "All Categories" },
+        { key: "", text: "All Sources" },
         ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
     ];
 
@@ -442,15 +445,13 @@ export function Component(): JSX.Element {
                                     selectedKeys={allCategoriesSelected ? [""] : includeKeys}
                                     onChange={onIncludeCategoryChange}
                                     disabled={isLoading || categoriesLoading}
-                                    placeholder="Select categories or All"
+                                    placeholder="Select sources or All"
                                 />
                             ) : undefined
                         }
                     />
                     {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
-                        <div className={styles.categoryWarning}>
-                            Please select a category before searching. Choose "All Categories" to search all documents.
-                        </div>
+                        <div className={styles.categoryWarning}>Please select a source before searching. Choose "All Sources" to search all documents.</div>
                     )}
                 </div>
             </div>
@@ -487,7 +488,41 @@ export function Component(): JSX.Element {
                         <AnswerError error={error.toString()} onRetry={() => makeApiRequest(lastQuestionRef.current)} />
                     </div>
                 ) : null}
-                {activeAnalysisPanelTab && answer && (
+
+                {/* Mobile: Modal overlay for analysis panel */}
+                {isMobile && activeAnalysisPanelTab && answer && (
+                    <>
+                        {/* Overlay backdrop */}
+                        <div className={styles.mobileAnalysisOverlay} onClick={() => setActiveAnalysisPanelTab(undefined)} />
+                        {/* Modal panel */}
+                        <div className={styles.mobileAnalysisModal}>
+                            {/* Close button */}
+                            <div className={styles.mobileAnalysisHeader}>
+                                <button
+                                    className={styles.mobileAnalysisCloseButton}
+                                    onClick={() => setActiveAnalysisPanelTab(undefined)}
+                                    aria-label="Close supporting content"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <AnalysisPanel
+                                className={styles.askAnalysisPanelMobile}
+                                activeCitation={activeCitation}
+                                onActiveTabChanged={x => onToggleTab(x)}
+                                citationHeight="calc(85vh - 60px)"
+                                answer={answer}
+                                activeTab={activeAnalysisPanelTab}
+                                activeCitationContent={activeCitationContent}
+                                enableCitationTab={enableCitationTab}
+                                onCitationChanged={setActiveCitation}
+                            />
+                        </div>
+                    </>
+                )}
+
+                {/* Desktop: Analysis panel on the right */}
+                {!isMobile && activeAnalysisPanelTab && answer && (
                     <AnalysisPanel
                         className={styles.askAnalysisPanel}
                         activeCitation={activeCitation}

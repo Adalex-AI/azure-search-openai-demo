@@ -37,7 +37,7 @@ import { LoginContext } from "../../loginContext";
 import { LanguagePicker } from "../../i18n/LanguagePicker";
 import { Settings } from "../../components/Settings/Settings";
 // CUSTOM: Import from customizations folder for merge-safe architecture
-import { useCategories, HelpAboutPanel, isAdminMode } from "../../customizations";
+import { useCategories, HelpAboutPanel, isAdminMode, useIsMobile, getAbbreviatedCategory, getDepthLabel } from "../../customizations";
 
 import { isIframeBlocked } from "../../customizations";
 
@@ -45,6 +45,9 @@ import { isIframeBlocked } from "../../customizations";
 const adminMode = isAdminMode();
 
 const Chat = () => {
+    // CUSTOM: Mobile detection for responsive UI
+    const isMobile = useIsMobile();
+
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
     const [promptTemplate, setPromptTemplate] = useState<string>("");
@@ -73,6 +76,8 @@ const Chat = () => {
     const [userHasInteracted, setUserHasInteracted] = useState<boolean>(false);
     const [userTriedToSearch, setUserTriedToSearch] = useState<boolean>(false);
     const [allCategoriesSelected, setAllCategoriesSelected] = useState<boolean>(false);
+    // CUSTOM: Mobile dropdown panel state
+    const [showMobileDropdown, setShowMobileDropdown] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
@@ -240,6 +245,10 @@ const Chat = () => {
         // Block search if no category is selected and "All" isn't ticked
         if (showCategoryFilter && includeCategory.trim() === "" && !allCategoriesSelected) {
             setUserTriedToSearch(true);
+            // Auto-open mobile dropdown to help user select a source
+            if (isMobile) {
+                setShowMobileDropdown(true);
+            }
             return;
         }
         setUserTriedToSearch(false);
@@ -467,10 +476,28 @@ const Chat = () => {
     // Load categories for dropdown (ensure options are strings, not objects)
     const { categories = [], loading: categoriesLoading } = useCategories();
 
+    // CUSTOM: Map category display names to add "Guide" suffix for courts
+    const enhanceDisplayName = (text: string): string => {
+        const displayNameMap: Record<string, string> = {
+            "Commercial Court": "Commercial Court Guide",
+            "Circuit Commercial Court": "Circuit Commercial Court Guide",
+            "Technology and Construction Court": "Technology and Construction Court Guide",
+            "King's Bench Division": "King's Bench Division Guide",
+            "Chancery Division": "Chancery Guide",
+            "Patents Court": "Patents Court Guide"
+        };
+        return displayNameMap[text] || text;
+    };
+
     const categoryOptions: IDropdownOption[] = [
-        { key: "", text: "All Categories" },
-        // Ensure each option is a simple { key: string, text: string }
-        ...categories.filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "").map(c => ({ key: c.key, text: c.text }))
+        { key: "", text: "All Sources" },
+        // Ensure each option is a simple { key: string, text: string } with enhanced display names
+        ...categories
+            .filter(c => typeof c?.key === "string" && typeof c?.text === "string" && c.key !== "")
+            .map(c => ({
+                key: c.key,
+                text: enhanceDisplayName(c.text)
+            }))
     ];
 
     // Selected keys from CSV
@@ -637,122 +664,268 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend={false}
-                            placeholder={t("defaultExamples.placeholder")}
+                            placeholder={isMobile ? t("defaultExamples.placeholder") : t("defaultExamples.placeholderDesktop")}
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                             showSpeechInput={showSpeechInput}
+                            autoFocus={isMobile}
                             leftOfSend={
                                 showCategoryFilter || (showAgenticRetrievalOption && useAgenticRetrieval) ? (
-                                    <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                                        {showCategoryFilter && (
-                                            <Dropdown
-                                                multiSelect
-                                                styles={{
-                                                    dropdown: { minWidth: 140, maxWidth: 180 },
-                                                    title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 28px 0 8px" },
-                                                    caretDownWrapper: { height: "32px", lineHeight: "30px" },
-                                                    callout: { minWidth: 300, maxWidth: 400 },
-                                                    dropdownItem: { minHeight: "32px", height: "auto", padding: "6px 8px", fontSize: "13px" },
-                                                    dropdownOptionText: { whiteSpace: "normal", fontSize: "13px", lineHeight: "18px" }
-                                                }}
-                                                options={categoryOptions}
-                                                selectedKeys={allCategoriesSelected ? [""] : includeKeys}
-                                                onChange={onIncludeCategoryChange}
-                                                onRenderTitle={(items?: IDropdownOption[]) => {
-                                                    if (!items || items.length === 0) return <span>Category</span>;
-                                                    if (items.some(i => i.key === "")) return <span>All</span>;
-                                                    if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
-                                                    return <span title={items.map(i => i.text).join(", ")}>{items.length} selected</span>;
-                                                }}
-                                                disabled={isLoading || categoriesLoading}
-                                                placeholder="Category"
-                                            />
-                                        )}
-                                        {/* CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort.
-                                            This allows users to control how thoroughly the system plans search queries.
-                                            Integration point - re-add after upstream merges. */}
-                                        {showAgenticRetrievalOption && useAgenticRetrieval && (
-                                            <Dropdown
-                                                styles={{
-                                                    dropdown: { minWidth: 90, maxWidth: 110 },
-                                                    title: { fontSize: "13px", height: "32px", lineHeight: "30px", padding: "0 24px 0 8px" },
-                                                    caretDownWrapper: { height: "32px", lineHeight: "30px" },
-                                                    dropdownItem: { minHeight: "auto", height: "auto", padding: "10px 12px" },
-                                                    dropdownItemSelected: { minHeight: "auto", height: "auto", padding: "10px 12px" }
-                                                }}
-                                                options={[
-                                                    {
-                                                        key: "minimal",
-                                                        text: t("labels.agenticReasoningEffortOptions.minimal"),
-                                                        data: {
-                                                            description: "Fast single search. Best for straightforward questions like 'What is CPR Part 31?'"
+                                    isMobile ? (
+                                        /* CUSTOM: Mobile - Single icon button to toggle settings panel */
+                                        <IconButton
+                                            iconProps={{ iconName: "Settings" }}
+                                            title="Search settings"
+                                            ariaLabel="Search settings"
+                                            onClick={() => setShowMobileDropdown(!showMobileDropdown)}
+                                            styles={{
+                                                root: {
+                                                    width: "32px",
+                                                    height: "32px",
+                                                    color: showMobileDropdown ? "#0066cc" : "#666"
+                                                },
+                                                icon: { fontSize: "16px" }
+                                            }}
+                                        />
+                                    ) : (
+                                        /* Desktop - Two separate dropdowns */
+                                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                                            {showCategoryFilter && (
+                                                <Dropdown
+                                                    multiSelect
+                                                    styles={{
+                                                        dropdown: { minWidth: 140, maxWidth: 180 },
+                                                        title: {
+                                                            fontSize: "13px",
+                                                            height: "32px",
+                                                            lineHeight: "30px",
+                                                            padding: "0 28px 0 8px"
+                                                        },
+                                                        caretDownWrapper: { height: "32px", lineHeight: "30px" },
+                                                        callout: { minWidth: 300, maxWidth: 400 },
+                                                        dropdownItem: { minHeight: "32px", height: "auto", padding: "6px 8px", fontSize: "13px" },
+                                                        dropdownOptionText: { whiteSpace: "normal", fontSize: "13px", lineHeight: "18px" }
+                                                    }}
+                                                    options={categoryOptions}
+                                                    selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                                    onChange={onIncludeCategoryChange}
+                                                    onRenderTitle={(items?: IDropdownOption[]) => {
+                                                        if (!items || items.length === 0) return <span>Source</span>;
+                                                        if (items.some(i => i.key === "")) return <span>All</span>;
+                                                        if (items.length === 1) return <span title={items[0].text}>{items[0].text}</span>;
+                                                        return <span title={items.map(i => i.text).join(", ")}>{items.length} selected</span>;
+                                                    }}
+                                                    disabled={isLoading || categoriesLoading}
+                                                    placeholder="Source"
+                                                />
+                                            )}
+                                            {/* CUSTOM: Search Depth dropdown for agentic retrieval reasoning effort.
+                                                This allows users to control how thoroughly the system plans search queries.
+                                                Integration point - re-add after upstream merges. */}
+                                            {showAgenticRetrievalOption && useAgenticRetrieval && (
+                                                <Dropdown
+                                                    styles={{
+                                                        dropdown: { minWidth: 90, maxWidth: 110 },
+                                                        title: {
+                                                            fontSize: "13px",
+                                                            height: "32px",
+                                                            lineHeight: "30px",
+                                                            padding: "0 24px 0 8px"
+                                                        },
+                                                        caretDownWrapper: { height: "32px", lineHeight: "30px" },
+                                                        dropdownItem: { minHeight: "auto", height: "auto", padding: "10px 12px" },
+                                                        dropdownItemSelected: { minHeight: "auto", height: "auto", padding: "10px 12px" }
+                                                    }}
+                                                    options={[
+                                                        {
+                                                            key: "minimal",
+                                                            text: t("labels.agenticReasoningEffortOptions.minimal"),
+                                                            data: {
+                                                                description:
+                                                                    "Fast single search. Best for straightforward questions like 'What is CPR Part 31?'"
+                                                            }
+                                                        },
+                                                        {
+                                                            key: "low",
+                                                            text: t("labels.agenticReasoningEffortOptions.low"),
+                                                            data: { description: "Balanced search depth. Recommended for most legal questions." }
+                                                        },
+                                                        {
+                                                            key: "medium",
+                                                            text: t("labels.agenticReasoningEffortOptions.medium"),
+                                                            data: {
+                                                                description:
+                                                                    "Comprehensive multi-source search. Best for complex analysis or questions spanning multiple rules."
+                                                            }
                                                         }
-                                                    },
-                                                    {
-                                                        key: "low",
-                                                        text: t("labels.agenticReasoningEffortOptions.low"),
-                                                        data: { description: "Balanced search depth. Recommended for most legal questions." }
-                                                    },
-                                                    {
-                                                        key: "medium",
-                                                        text: t("labels.agenticReasoningEffortOptions.medium"),
-                                                        data: {
-                                                            description:
-                                                                "Comprehensive multi-source search. Best for complex analysis or questions spanning multiple rules."
-                                                        }
-                                                    }
-                                                ]}
-                                                selectedKey={reasoningEffort}
-                                                onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
-                                                onRenderTitle={(items?: IDropdownOption[]) => {
-                                                    if (!items || items.length === 0) return <span>Depth</span>;
-                                                    return <span>{items[0].text}</span>;
-                                                }}
-                                                onRenderOption={(option?: IDropdownOption) => {
-                                                    if (!option) return null;
-                                                    return (
-                                                        <div
-                                                            style={{
-                                                                display: "flex",
-                                                                flexDirection: "column",
-                                                                width: "100%",
-                                                                padding: "4px 0"
-                                                            }}
-                                                        >
-                                                            <span style={{ fontSize: "13px", fontWeight: 500 }}>{option.text}</span>
-                                                            {option.data?.description && (
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: "11px",
-                                                                        color: "#666",
-                                                                        marginTop: "2px",
-                                                                        lineHeight: "1.3"
-                                                                    }}
-                                                                >
-                                                                    {option.data.description}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                }}
-                                                disabled={isLoading}
-                                                placeholder="Depth"
-                                                calloutProps={{ styles: { root: { minWidth: 280 } } }}
-                                            />
-                                        )}
-                                    </div>
+                                                    ]}
+                                                    selectedKey={reasoningEffort}
+                                                    onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
+                                                    onRenderTitle={(items?: IDropdownOption[]) => {
+                                                        if (!items || items.length === 0) return <span>Depth</span>;
+                                                        return <span>{items[0].text}</span>;
+                                                    }}
+                                                    onRenderOption={(option?: IDropdownOption) => {
+                                                        if (!option) return null;
+                                                        return (
+                                                            <div
+                                                                style={{
+                                                                    display: "flex",
+                                                                    flexDirection: "column",
+                                                                    width: "100%",
+                                                                    padding: "4px 0"
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: "13px", fontWeight: 500 }}>{option.text}</span>
+                                                                {option.data?.description && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: "11px",
+                                                                            color: "#666",
+                                                                            marginTop: "2px",
+                                                                            lineHeight: "1.3"
+                                                                        }}
+                                                                    >
+                                                                        {option.data.description}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }}
+                                                    disabled={isLoading}
+                                                    placeholder="Depth"
+                                                    calloutProps={{ styles: { root: { minWidth: 280 } } }}
+                                                />
+                                            )}
+                                        </div>
+                                    )
                                 ) : undefined
                             }
                         />
+                        {/* CUSTOM: Mobile dropdown panel - shown when settings button is clicked */}
+                        {isMobile && showMobileDropdown && (
+                            <div className={styles.mobileDropdownPanel}>
+                                {showCategoryFilter && (
+                                    <div className={styles.mobileDropdownSection}>
+                                        <label className={styles.mobileDropdownLabel}>Select Source</label>
+                                        <Dropdown
+                                            multiSelect
+                                            styles={{
+                                                dropdown: { width: "100%" },
+                                                title: { fontSize: "14px", padding: "10px 8px", lineHeight: "20px", display: "flex", alignItems: "center" },
+                                                callout: { maxWidth: "90vw" },
+                                                dropdownItem: { fontSize: "14px", padding: "8px" }
+                                            }}
+                                            options={categoryOptions}
+                                            selectedKeys={allCategoriesSelected ? [""] : includeKeys}
+                                            onChange={onIncludeCategoryChange}
+                                            onRenderTitle={(items?: IDropdownOption[]) => {
+                                                if (!items || items.length === 0) return <span>Select source</span>;
+                                                if (items.some(i => i.key === "")) return <span>All Sources</span>;
+                                                if (items.length === 1) return <span>{items[0].text}</span>;
+                                                return <span>{items.length} sources selected</span>;
+                                            }}
+                                            disabled={isLoading || categoriesLoading}
+                                            placeholder="Select source"
+                                        />
+                                    </div>
+                                )}
+                                {showAgenticRetrievalOption && useAgenticRetrieval && (
+                                    <div className={styles.mobileDropdownSection}>
+                                        <label className={styles.mobileDropdownLabel}>Search Depth</label>
+                                        <Dropdown
+                                            styles={{
+                                                dropdown: { width: "100%" },
+                                                title: { fontSize: "14px", padding: "10px 8px", lineHeight: "20px", display: "flex", alignItems: "center" },
+                                                dropdownItem: { fontSize: "14px", padding: "10px" }
+                                            }}
+                                            options={[
+                                                {
+                                                    key: "minimal",
+                                                    text: t("labels.agenticReasoningEffortOptions.minimal"),
+                                                    data: { description: "Fast single search" }
+                                                },
+                                                {
+                                                    key: "low",
+                                                    text: t("labels.agenticReasoningEffortOptions.low"),
+                                                    data: { description: "Balanced search depth (recommended)" }
+                                                },
+                                                {
+                                                    key: "medium",
+                                                    text: t("labels.agenticReasoningEffortOptions.medium"),
+                                                    data: { description: "Comprehensive multi-source search" }
+                                                }
+                                            ]}
+                                            selectedKey={reasoningEffort}
+                                            onChange={(_ev, option) => setReasoningEffort((option?.key as string) || "low")}
+                                            onRenderOption={(option?: IDropdownOption) => {
+                                                if (!option) return null;
+                                                return (
+                                                    <div style={{ padding: "4px 0" }}>
+                                                        <div style={{ fontWeight: 500 }}>{option.text}</div>
+                                                        {option.data?.description && (
+                                                            <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>{option.data.description}</div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }}
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {showCategoryFilter && userTriedToSearch && !userHasInteracted && (
-                            <div className={styles.categoryWarning}>
-                                Please select a category before searching. Choose "All Categories" to search all documents.
+                            <div
+                                className={styles.categoryWarning}
+                                onClick={() => isMobile && setShowMobileDropdown(true)}
+                                style={isMobile ? { cursor: "pointer" } : {}}
+                            >
+                                Please select a source before searching. Choose "All Sources" to search all documents.
+                                {isMobile && " Tap the settings icon (⚙️) above to select a source."}
                             </div>
                         )}
                     </div>
+
+                    {/* CUSTOM: Analysis Panel shown as modal overlay on mobile for better UX */}
+                    {isMobile && answers.length > 0 && activeAnalysisPanelTab && (
+                        <>
+                            {/* Overlay backdrop */}
+                            <div className={styles.mobileAnalysisOverlay} onClick={() => setActiveAnalysisPanelTab(undefined)} />
+                            {/* Modal panel */}
+                            <div className={styles.mobileAnalysisModal}>
+                                {/* Close button */}
+                                <div className={styles.mobileAnalysisHeader}>
+                                    <button
+                                        className={styles.mobileAnalysisCloseButton}
+                                        onClick={() => setActiveAnalysisPanelTab(undefined)}
+                                        aria-label="Close supporting content"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <AnalysisPanel
+                                    className={styles.chatAnalysisPanelMobile}
+                                    activeCitation={activeCitation}
+                                    onActiveTabChanged={x => onToggleTab(x, selectedAnswer)}
+                                    citationHeight="calc(85vh - 60px)"
+                                    answer={answers[selectedAnswer][1]}
+                                    activeTab={activeAnalysisPanelTab}
+                                    activeCitationLabel={activeCitationLabel}
+                                    activeCitationContent={activeCitationContent}
+                                    enableCitationTab={enableCitationTab}
+                                    onCitationChanged={citation => {
+                                        setActiveCitation(citation);
+                                        setEnableCitationTab(true);
+                                    }}
+                                />
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                {answers.length > 0 && activeAnalysisPanelTab && (
+                {/* Desktop: Analysis Panel on the right side */}
+                {!isMobile && answers.length > 0 && activeAnalysisPanelTab && (
                     <AnalysisPanel
                         className={styles.chatAnalysisPanel}
                         activeCitation={activeCitation}

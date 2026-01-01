@@ -4,7 +4,7 @@
 // This file is the single source of truth for frontend feature flags.
 
 export const CUSTOM_FEATURES = {
-    // Category filtering feature - adds category dropdown in chat/ask pages
+    // Source filtering feature - adds source dropdown in chat/ask pages
     categoryFilter: true,
 
     // Citation sanitization - fixes malformed citations like "1. 1" -> "[1]"
