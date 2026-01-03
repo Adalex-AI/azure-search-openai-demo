@@ -5,7 +5,7 @@ These are advanced topics that are not necessary for a basic deployment.
 
 ## Custom Features (This Fork)
 
-See [CUSTOMIZATIONS_README.md](../CUSTOMIZATIONS_README.md) for documentation on:
+See [CUSTOMIZATIONS_README.md](customizations/README.md) for documentation on:
 - Citation sanitization for legal documents
 - Dynamic category filtering
 - Legal domain prompts

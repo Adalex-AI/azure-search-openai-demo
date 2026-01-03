@@ -154,7 +154,7 @@ cd . && python -m pytest tests/
 
 ## 📚 Documentation
 
-- `CUSTOMIZATIONS_README.md` - Detailed customization guide
+- `docs/customizations/README.md` - Detailed customization guide
 - `AGENTS.md` - Coding agent instructions
 - `docs/M365_AGENT_IMPLEMENTATION.md` - M365 integration guide
 

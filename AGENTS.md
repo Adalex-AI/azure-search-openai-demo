@@ -7,7 +7,7 @@ If necessary, edit this file to ensure it accurately reflects the current state 
 
 ## Custom Features (This Fork)
 
-This fork includes customizations for legal document RAG. See [CUSTOMIZATIONS_README.md](CUSTOMIZATIONS_README.md) for details.
+This fork includes customizations for legal document RAG. See [CUSTOMIZATIONS_README.md](docs/customizations/README.md) for details.
 
 Key custom folders:
 * app/backend/customizations/: Backend feature flags and custom API routes

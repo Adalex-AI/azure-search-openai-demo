@@ -32,4 +32,4 @@ This folder contains historical documentation from the development and debugging
 
 ## Note
 
-For current customization documentation, see `/CUSTOMIZATIONS_README.md` in the project root.
+For current customization documentation, see `/docs/customizations/README.md` in the project root.
