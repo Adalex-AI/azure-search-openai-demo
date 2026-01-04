@@ -1,6 +1,17 @@
-# Customizations Guide
+# Customizations Guide: Legal RAG System
 
 This document describes all custom features added to this Azure Search + OpenAI RAG application and how they are organized for merge-safe updates.
+
+## 🎯 Overview
+
+This fork of the Azure Search + OpenAI demo implements a specialized **Legal RAG (Retrieval Augmented Generation)** system for the UK Civil Procedure Rules. It includes:
+
+- **Phase 1**: Custom prompts and evaluation framework for legal domain
+- **Phase 2**: Automated scraping and indexing pipeline (GitHub Actions workflow)
+- **Enhanced Citations**: Legal-specific citation formatting
+- **Quality Metrics**: Precedent matching, legal terminology validation
+
+All custom code is isolated in `/customizations/` folders to support seamless upstream merges.
 
 ## 📁 Merge-Safe Architecture
 
@@ -374,7 +385,44 @@ azd up
 
 ---
 
+## � Phase 2: Automated Scraper Pipeline
+
+Phase 2 introduces a **GitHub Actions workflow** that automates the scraping, validation, and indexing of Civil Procedure Rules.
+
+**Key Files:**
+- [Phase 2 Detailed Documentation](./PHASE_2_SCRAPER_AUTOMATION.md) - Complete architecture and maintenance guide
+- `.github/workflows/legal-scraper.yml` - GitHub Actions workflow definition
+- `scripts/legal-scraper/` - Scraper, validator, and uploader scripts
+
+**Features:**
+- ✅ Weekly automated scraping from justice.gov.uk
+- ✅ Document validation with legal term checking
+- ✅ Vector embedding generation with Azure OpenAI
+- ✅ Automatic upload to Azure Search
+- ✅ Dry-run mode for testing without uploading
+- ✅ Rate-limited embedding generation (respects Azure quotas)
+
+**Quick Start:**
+```bash
+# Manual trigger (dry-run, no actual upload)
+gh workflow run legal-scraper.yml --repo adalex-ai/azure-search-openai-demo -f dry_run=true
+
+# View results
+https://github.com/adalex-ai/azure-search-openai-demo/actions
+```
+
+See [Phase 2 Documentation](./PHASE_2_SCRAPER_AUTOMATION.md) for detailed configuration and troubleshooting.
+
+---
+
 ## 📝 Changelog
+
+### Phase 2: Automated Scraper Pipeline (2026-01-04)
+- **GitHub Actions Workflow**: Automated weekly scraping of Civil Procedure Rules
+- **Embedding Generation**: On-demand vector generation with rate limiting
+- **Service Principal**: OIDC federated credentials for secure authentication
+- **Batch Processing**: Intelligent batching with exponential backoff for Azure OpenAI
+- **Validation Enhancements**: Pass-through for empty embeddings during scrape phase
 
 ### Legal Evaluation Framework v2.0 (2025-12-24)
 - **Achieved 95% precedent matching** (up from initial 9.5%)
@@ -383,7 +431,7 @@ azd up
 - Implemented multi-level semantic matching (exact → containment → topic → word overlap)
 - Added topic-based matching for related legal concepts
 - Fixed ground truth references to match actual Azure Search index documents
-- Updated [Legal Evaluation Documentation](docs/legal_evaluation.md) with comprehensive results
+- Updated [Legal Evaluation Documentation](../legal_evaluation.md) with comprehensive results
 
 ### Legal Evaluation Framework v1.0 (2025-12-23)
 - Added 5 legal-specific evaluation metrics to `evaluate.py`

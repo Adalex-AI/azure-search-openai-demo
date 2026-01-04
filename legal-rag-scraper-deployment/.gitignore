@@ -1,0 +1,24 @@
+# Environment
+.env
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE
+.vscode/
+.idea/
+
+# Data (optional - uncomment if you don't want to track data files)
+# data/civil_rules/
+# data/processed/
+
+# Cache
+data/cache/
+
+# Docker
+*.log

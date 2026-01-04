@@ -1,0 +1,257 @@
+================================================================================
+INVITATIONS: Redeem links + App URL
+================================================================================
+
+App URL:
+https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
+
+See the individual files in this folder:
+
+- matthew_pimley.txt
+- c_wright.txt
+- mark_wing.txt
+
+Template email: template_email.txt
+
+Each file contains: email, unique redeem link, app URL and a short instruction block for copy/paste into Apple Mail.
+
+
+🚀 Getting Started
+
+Visit: https://login.microsoftonline.com/redeem?rd=https%3a%2f%2finvitations.microsoft.com%2fredeem%2f%3ftenant%3d3bfe16b2-5fcc-4565-b1f1-15271d20fecf%26user%3d080c6808-a48f-499f-a21a-0e33dfacbbce%26ticket%3dRFo93W9M47hz7fBh1%25252bZNDndhgaBtGFjeZ69IrfyA1MQ%25253d%26ver%3d2.0
+
+Step 1: Login
+1. Click the link above to accept the invitation.
+2. Sign in with your Microsoft account (matthewpimley1@gmail.com).
+3. Accept any permission prompts (first time only).
+
+Step 2: Start Searching
+1. Type a legal question in plain English.
+2. The AI will search CPR documents and provide answers with citations.
+
+📚 What Can You Search?
+- Civil Procedure Rules (Parts 1-89) and Practice Directions
+- Commercial Court Guide (July 2023)
+- King's Bench Division Guide (2025)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology & Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+💡 Try These Example Questions
+- "What are the time limits for filing a defence?"
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+
+⚙️ Key Features
+- 🏷️ Category Filter: Use the dropdown to search only specific document types
+- 🔍 Search Depth: Choose Quick (fast), Standard (balanced), or Thorough (comprehensive)
+- 📖 Citations [1][2][3]: Click any citation to see the exact source passage
+- 📄 Supporting Content: View the original CPR text that the AI used
+- 👍👎 Feedback: Rate responses to help improve accuracy
+- ❓ Help: Click the blue ? button for detailed instructions
+
+⚠️ Important Notes
+- Not for deadline calculations – Always verify deadlines via official court channels
+- AI can make mistakes – Treat answers as assistive, not authoritative legal advice
+- Verify sources – Always click citations to check the AI's interpretation
+
+🛡️ Privacy & Security
+Rest assured:
+✅ NOT used for AI training
+✅ NOT shared with others or OpenAI
+✅ NOT stored after processing
+✅ Encrypted communications (HTTPS/TLS)
+
+For more detailed privacy information, click the ? button in the app.
+
+🆘 Need Help?
+If you encounter any issues or have questions, just reply to this email or click the blue ? button in the bottom-right corner of the application for comprehensive help.
+
+I'd love to hear your feedback on the tool!
+
+
+================================================================================
+EMAIL DRAFT 2: C. Wright (cwright@st-philips.com)
+================================================================================
+
+Subject: Access to Civil Procedure Copilot
+
+I'm excited to invite you to try Civil Procedure Copilot, our AI-powered research assistant for searching Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
+
+🚀 Getting Started
+
+Visit: https://login.microsoftonline.com/redeem?rd=https%3a%2f%2finvitations.microsoft.com%2fredeem%2f%3ftenant%3d3bfe16b2-5fcc-4565-b1f1-15271d20fecf%26user%3d90440cd5-ef0e-4aae-9d00-1acb276e3675%26ticket%3dg0ysTwGFiC5CTKdOh8QTYEdabXfkRRHGQbHo%25252fRWIVnw%25253d%26ver%3d2.0
+
+Step 1: Login
+1. Click the link above to accept the invitation.
+2. Sign in with your Microsoft account (cwright@st-philips.com).
+3. Accept any permission prompts (first time only).
+
+Step 2: Start Searching
+1. Type a legal question in plain English.
+2. The AI will search CPR documents and provide answers with citations.
+
+📚 What Can You Search?
+- Civil Procedure Rules (Parts 1-89) and Practice Directions
+- Commercial Court Guide (July 2023)
+- King's Bench Division Guide (2025)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology & Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+💡 Try These Example Questions
+- "What are the time limits for filing a defence?"
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+
+⚙️ Key Features
+- 🏷️ Category Filter: Use the dropdown to search only specific document types
+- 🔍 Search Depth: Choose Quick (fast), Standard (balanced), or Thorough (comprehensive)
+- 📖 Citations [1][2][3]: Click any citation to see the exact source passage
+- 📄 Supporting Content: View the original CPR text that the AI used
+- 👍👎 Feedback: Rate responses to help improve accuracy
+- ❓ Help: Click the blue ? button for detailed instructions
+
+⚠️ Important Notes
+- Not for deadline calculations – Always verify deadlines via official court channels
+- AI can make mistakes – Treat answers as assistive, not authoritative legal advice
+- Verify sources – Always click citations to check the AI's interpretation
+
+🛡️ Privacy & Security
+Rest assured:
+✅ NOT used for AI training
+✅ NOT shared with others or OpenAI
+✅ NOT stored after processing
+✅ Encrypted communications (HTTPS/TLS)
+
+For more detailed privacy information, click the ? button in the app.
+
+🆘 Need Help?
+If you encounter any issues or have questions, just reply to this email or click the blue ? button in the bottom-right corner of the application for comprehensive help.
+
+I'd love to hear your feedback on the tool!
+
+
+================================================================================
+EMAIL DRAFT 3: Mark Wing (mark.wing@talk21.com)
+================================================================================
+
+Subject: Access to Civil Procedure Copilot
+
+I'm excited to invite you to try Civil Procedure Copilot, our AI-powered research assistant for searching Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
+
+🚀 Getting Started
+
+Visit: https://login.microsoftonline.com/redeem?rd=https%3a%2f%2finvitations.microsoft.com%2fredeem%2f%3ftenant%3d3bfe16b2-5fcc-4565-b1f1-15271d20fecf%26user%3dfde5d2e7-eecf-4a5c-bbb8-f5acba4b298b%26ticket%3d8bXskJcABD7NKByUU5II0cBBlsKKdAbs6RYcjlUzS2M%25253d%26ver%3d2.0
+
+Step 1: Login
+1. Click the link above to accept the invitation.
+2. Sign in with your Microsoft account (mark.wing@talk21.com).
+3. Accept any permission prompts (first time only).
+
+Step 2: Start Searching
+1. Type a legal question in plain English.
+2. The AI will search CPR documents and provide answers with citations.
+
+📚 What Can You Search?
+- Civil Procedure Rules (Parts 1-89) and Practice Directions
+- Commercial Court Guide (July 2023)
+- King's Bench Division Guide (2025)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology & Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+💡 Try These Example Questions
+- "What are the time limits for filing a defence?"
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+
+⚙️ Key Features
+- 🏷️ Category Filter: Use the dropdown to search only specific document types
+- 🔍 Search Depth: Choose Quick (fast), Standard (balanced), or Thorough (comprehensive)
+- 📖 Citations [1][2][3]: Click any citation to see the exact source passage
+- 📄 Supporting Content: View the original CPR text that the AI used
+- 👍👎 Feedback: Rate responses to help improve accuracy
+- ❓ Help: Click the blue ? button for detailed instructions
+
+⚠️ Important Notes
+- Not for deadline calculations – Always verify deadlines via official court channels
+- AI can make mistakes – Treat answers as assistive, not authoritative legal advice
+- Verify sources – Always click citations to check the AI's interpretation
+
+🛡️ Privacy & Security
+Rest assured:
+✅ NOT used for AI training
+✅ NOT shared with others or OpenAI
+✅ NOT stored after processing
+✅ Encrypted communications (HTTPS/TLS)
+
+For more detailed privacy information, click the ? button in the app.
+
+🆘 Need Help?
+If you encounter any issues or have questions, just reply to this email or click the blue ? button in the bottom-right corner of the application for comprehensive help.
+
+I'd love to hear your feedback on the tool!
+
+I'm excited to invite you to try Civil Procedure Copilot, our AI-powered research assistant for searching Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
+
+🚀 Getting Started
+
+Visit: https://login.microsoftonline.com/redeem?rd=https%3a%2f%2finvitations.microsoft.com%2fredeem%2f%3ftenant%3d3bfe16b2-5fcc-4565-b1f1-15271d20fecf%26user%3d90440cd5-ef0e-4aae-9d00-1acb276e3675%26ticket%3dg0ysTwGFiC5CTKdOh8QTYEdabXfkRRHGQbHo%25252fRWIVnw%25253d%26ver%3d2.0
+
+Step 1: Login
+1. Click the link above to accept the invitation.
+2. Sign in with your Microsoft account (cwright@st-philips.com).
+3. Accept any permission prompts (first time only).
+
+Step 2: Start Searching
+1. Type a legal question in plain English.
+2. The AI will search CPR documents and provide answers with citations.
+
+📚 What Can You Search?
+- Civil Procedure Rules (Parts 1-89) and Practice Directions
+- Commercial Court Guide (July 2023)
+- King's Bench Division Guide (2025)
+- Chancery Guide (2022)
+- Patents Court Guide (February 2025)
+- Technology & Construction Court Guide (October 2022)
+- Circuit Commercial Court Guide (August 2023)
+
+💡 Try These Example Questions
+- "What are the time limits for filing a defence?"
+- "What are the requirements for standard disclosure under CPR Part 31?"
+- "How do I apply for summary judgment?"
+- "What are the cost budgeting requirements in the Commercial Court?"
+
+⚙️ Key Features
+- 🏷️ Category Filter: Use the dropdown to search only specific document types
+- 🔍 Search Depth: Choose Quick (fast), Standard (balanced), or Thorough (comprehensive)
+- 📖 Citations [1][2][3]: Click any citation to see the exact source passage
+- 📄 Supporting Content: View the original CPR text that the AI used
+- 👍👎 Feedback: Rate responses to help improve accuracy
+- ❓ Help: Click the blue ? button for detailed instructions
+
+⚠️ Important Notes
+- Not for deadline calculations – Always verify deadlines via official court channels
+- AI can make mistakes – Treat answers as assistive, not authoritative legal advice
+- Verify sources – Always click citations to check the AI's interpretation
+
+🛡️ Privacy & Security
+Rest assured:
+✅ NOT used for AI training
+✅ NOT shared with others or OpenAI
+✅ NOT stored after processing
+✅ Encrypted communications (HTTPS/TLS)
+
+For more detailed privacy information, click the ? button in the app.
+
+🆘 Need Help?
+If you encounter any issues or have questions, just reply to this email or click the blue ? button in the bottom-right corner of the application for comprehensive help.
+
+I'd love to hear your feedback on the tool!

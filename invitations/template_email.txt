@@ -1,0 +1,14 @@
+Subject: Access to Civil Procedure Copilot
+
+Hi [Name],
+
+I'm excited to invite you to try Civil Procedure Copilot, our AI-powered research assistant for searching the Civil Procedure Rules, Practice Directions, and Court Guides for England and Wales.
+
+Step 1: Click the redeem link provided and accept the invitation, then sign in with your Microsoft account.
+Step 2: Visit the app at:
+https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
+
+If you have any issues, reply to this email or click the blue ? button in the app for help.
+
+Best regards,
+[Your name]

@@ -1,14 +1,16 @@
 # Legal Document Scraper for Azure Search
 
-Local scraping and validation pipeline for legal documents (UK Civil Procedure Rules) with Azure AI Search integration.
+This folder contains the local pipeline for scraping, validating, and uploading UK Civil Procedure Rules to Azure AI Search. Phase 2 automates this via GitHub Actions (see [Phase 2 Documentation](../../docs/customizations/PHASE_2_SCRAPER_AUTOMATION.md)).
 
 ## Overview
 
-This folder contains Phase 1 of the legal document scraper integration:
-- **Scraping**: Selenium-based web scraper for Civil Procedure Rules
-- **Validation**: Content quality checks before upload
-- **Review**: Interactive approval workflow before pushing to Azure
-- **Upload**: Direct integration with Azure AI Search
+**Core Pipeline Scripts:**
+- **scrape_cpr.py**: Selenium-based web scraper for Civil Procedure Rules from justice.gov.uk
+- **validation.py**: Content quality checks and legal terminology validation
+- **upload_with_embeddings.py**: Azure Search upload with automatic vector embedding generation from Azure OpenAI
+- **run_pipeline.sh**: Orchestration script that runs scrape → validate → upload pipeline
+- **token_chunker.py**: Text chunking utility for breaking documents into indexable chunks
+- **config.py**: Configuration for Azure services and pipeline settings
 
 ## Setup
 
@@ -47,16 +49,13 @@ azd env get-values
 
 ## Usage
 
-### Full Pipeline
+### Full Pipeline (Local)
 
 Run the complete scrape → validate → upload workflow:
 
 ```bash
 # Dry-run (validate without uploading)
 ./run_pipeline.sh --dry-run
-
-# Upload to staging index for review
-./run_pipeline.sh --staging
 
 # Upload to production
 ./run_pipeline.sh
@@ -69,30 +68,22 @@ Run the complete scrape → validate → upload workflow:
 ```bash
 python scrape_cpr.py                 # Scrape all CPR rules
 python scrape_cpr.py --test-single   # Test with first rule only
-python scrape_cpr.py --test-few 5    # Test with first 5 rules
 ```
 
 Output: JSON files in `data/legal-scraper/processed/Upload/`
 
-#### Step 2: Validate & Review
+#### Step 2: Validate
 
 ```bash
-# Validate with approval prompt
-python validate_and_review.py --input Upload
-
-# Validate without approval prompt (batch mode)
-python validate_and_review.py --input Upload --no-approve
-
-# Upload to staging for manual review in Azure Portal
-./run_pipeline.sh --staging --skip-validation
+# Validate and show validation report
+python validation.py --input Upload
 ```
 
-The validation script:
-- ✅ Checks content quality (length, legal terminology)
-- 📊 Detects duplicate content
-- 🔍 Compares against current Azure Search index
-- ⚠️ Reports new, updated, and unchanged documents
-- 📋 Generates validation report JSON
+The validation script checks:
+- ✅ Content quality (length, legal terminology)
+- 📊 Duplicate detection
+- 🔍 Comparison against Azure Search index
+- 📋 Validation report JSON generation
 
 #### Step 3: Upload
 
@@ -102,13 +93,23 @@ python upload_with_embeddings.py --input Upload --dry-run
 
 # Upload to production index
 python upload_with_embeddings.py --input Upload
-
-# Upload to staging index
-python upload_with_embeddings.py --input Upload --staging
-
-# Upload with custom batch size
-python upload_with_embeddings.py --input Upload --batch-size 200
 ```
+
+**Key Features:**
+- Automatic vector embedding generation (Azure OpenAI `text-embedding-3-large`)
+- Rate-limited batch processing (3 documents per batch, 10-second delays)
+- Exponential backoff retry for Azure rate limits
+- Graceful error handling with detailed logging
+
+## Automated Pipeline (Phase 2)
+
+For **automated weekly scraping via GitHub Actions**, see [Phase 2 Documentation](../../docs/customizations/PHASE_2_SCRAPER_AUTOMATION.md).
+
+This folder contains the core scripts that Phase 2 orchestrates. The GitHub Actions workflow:
+- Runs on a schedule (weekly by default)
+- Can be triggered manually via GitHub Actions UI
+- Supports dry-run mode for testing
+- Uses service principal authentication (OIDC)
 
 ## Output Structure
 

@@ -1,0 +1,52 @@
+{
+  "14.341_JO_Commercial_Court_Guide_FINAL_processed.json": {
+    "upload_path": "14.341_JO_Commercial_Court_Guide_FINAL_processed.json",
+    "pdf_path": "14.341_JO_Commercial_Court_Guide_FINAL.pdf",
+    "processed_path": "court_guides_processed/14.341_JO_Commercial_Court_Guide_FINAL_processed.json",
+    "review_path": "court_guides_processed/14.341_JO_Commercial_Court_Guide_FINAL_review.json",
+    "markdown": "SOURCE_FILES/03_Markdown_Output/14.341_JO_Commercial_Court_Guide_FINAL.md",
+    "original_pdf_url": "https://www.judiciary.uk/wp-content/uploads/2023/06/14.341_JO_Commercial_Court_Guide_FINAL.pdf",
+    "primary_scripts": ["scripts/extract_court_guides.py", "scripts/process_court_guides.py", "scripts/reconstruct_and_compare_all.py"],
+    "notes": "Standard processing; content retention validated in reports."
+  },
+  "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4_processed.json": {
+    "upload_path": "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4_processed.json",
+    "pdf_path": "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf",
+    "processed_path": "court_guides_processed/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4_processed.json",
+    "review_path": "court_guides_processed/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4_review.json",
+    "markdown": "SOURCE_FILES/03_Markdown_Output/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.md",
+    "original_pdf_url": null,
+    "primary_scripts": ["scripts/rebuild_kings_bench_from_md.py", "scripts/add_kings_bench_annexes.py", "scripts/process_court_guides.py"],
+    "notes": "King's Bench was rebuilt from Markdown; special annex handling and rebuild scripts used."
+  },
+  "Chancery-Guide-2024-web_processed.json": {
+    "upload_path": "Chancery-Guide-2024-web_processed.json",
+    "pdf_path": "Chancery-Guide-2024-web.pdf",
+    "processed_path": "court_guides_processed/Chancery-Guide-2024-web_processed.json",
+    "review_path": "court_guides_processed/Chancery-Guide-2024-web_review.json",
+    "markdown": "SOURCE_FILES/03_Markdown_Output/Chancery-Guide-2024-web.md",
+    "original_pdf_url": null,
+    "primary_scripts": ["scripts/extract_court_guides.py", "scripts/process_court_guides.py", "scripts/reconstruct_and_compare_all.py"],
+    "notes": "Processed normally; verify missing-content reports if moving."
+  },
+  "Patents-Court-Guide-Updated-February-2025_processed.json": {
+    "upload_path": "Patents-Court-Guide-Updated-February-2025_processed.json",
+    "pdf_path": "Patents-Court-Guide-Updated-February-2025.pdf",
+    "processed_path": "court_guides_processed/Patents-Court-Guide-Updated-February-2025_processed.json",
+    "review_path": "court_guides_processed/Patents-Court-Guide-Updated-February-2025_review.json",
+    "markdown": "SOURCE_FILES/03_Markdown_Output/Patents-Court-Guide-Updated-February-2025.md",
+    "original_pdf_url": "https://www.judiciary.uk/wp-content/uploads/2025/02/Patents-Court-Guide-Updated-February-2025.pdf",
+    "primary_scripts": ["scripts/extract_court_guides.py", "scripts/process_court_guides.py"],
+    "notes": "Processed normally; review missing items and verification reports before moving."
+  },
+  "The-Technology-and-Construction-Court-Guide_processed.json": {
+    "upload_path": "The-Technology-and-Construction-Court-Guide_processed.json",
+    "pdf_path": "The-Technology-and-Construction-Court-Guide.pdf",
+    "processed_path": "court_guides_processed/The-Technology-and-Construction-Court-Guide_processed.json",
+    "review_path": "court_guides_processed/The-Technology-and-Construction-Court-Guide_review.json",
+    "markdown": "SOURCE_FILES/03_Markdown_Output/The-Technology-and-Construction-Court-Guide.md",
+    "original_pdf_url": null,
+    "primary_scripts": ["scripts/extract_court_guides.py", "scripts/process_court_guides.py", "scripts/reconstruct_and_compare_all.py"],
+    "notes": "TCC guide processed; reports show retention >100% (includes appendices/images)."
+  }
+}

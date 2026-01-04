@@ -1,0 +1,22 @@
+{
+  "source_count": 232,
+  "document_count": 278,
+  "chunked_document_count": 72,
+  "unique_source_count": 232,
+  "chunked_source_count": 26,
+  "files_created": 232,
+  "document_type": "civil_procedure_rules",
+  "category": "Civil Procedure Rules and Practice Directions",
+  "description": "The civil procedure rules and its practice directions make up a procedural code whose overriding aim is to enable the courts to deal with cases justly. Documents are only chunked if they exceed text-embedding-3-large token limits (7500 tokens with safety margin).",
+  "output_file": "/Users/HasithB/Downloads/PROJECTS/azure-search-openai-demo-2/legal-rag-scraper-deployment/data/processed/civil_rules/civil_procedure_rules_flattened.json",
+  "review_file": "/Users/HasithB/Downloads/PROJECTS/azure-search-openai-demo-2/legal-rag-scraper-deployment/data/processed/civil_rules/civil_procedure_rules_review.json",
+  "individual_files_directory": "/Users/HasithB/Downloads/PROJECTS/azure-search-openai-demo-2/legal-rag-scraper-deployment/data/processed/civil_rules",
+  "format": "azure_search_openai_demo_compatible",
+  "structure": "minimal_chunking_only_when_necessary",
+  "chunking_strategy": "text_embedding_3_large_token_limit_based",
+  "max_tokens_per_chunk": 7500,
+  "embedding_model": "text-embedding-3-large",
+  "content_format": "string_with_line_breaks_and_section_delimiters",
+  "section_delimiters": "\\n\\n---\\n\\n for frontend parsing",
+  "test_mode": false
+}

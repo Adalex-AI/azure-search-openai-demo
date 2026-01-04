@@ -16,6 +16,9 @@ import hashlib
 import time
 import re
 from pathlib import Path
+from openai import AzureOpenAI, RateLimitError
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 # Add scripts to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +55,74 @@ def load_documents_from_files(input_dir: str) -> list:
             logger.error(f"Error loading {json_file}: {e}")
     
     logger.info(f"Loaded {len(documents)} documents from {len(json_files)} files")
+    return documents
+
+@retry(
+    retry=retry_if_exception_type(RateLimitError),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    stop=stop_after_attempt(5)
+)
+def create_embeddings_with_retry(client, texts: list, model: str):
+    """Create embeddings with automatic retry on rate limit errors."""
+    return client.embeddings.create(input=texts, model=model)
+
+def generate_embeddings(documents: list) -> list:
+    """Generate embeddings for documents that are missing them."""
+    
+    docs_to_embed = [doc for doc in documents if not doc.get("embedding")]
+    if not docs_to_embed:
+        return documents
+        
+    logger.info(f"Generating embeddings for {len(docs_to_embed)} documents...")
+    
+    endpoint = Config.AZURE_OPENAI_SERVICE
+    if not endpoint.startswith("https://"):
+        endpoint = f"https://{endpoint}.openai.azure.com"
+        
+    deployment = Config.AZURE_OPENAI_EMB_DEPLOYMENT
+    
+    if Config.AZURE_OPENAI_KEY:
+        client = AzureOpenAI(
+            api_key=Config.AZURE_OPENAI_KEY,
+            api_version="2023-05-15",
+            azure_endpoint=endpoint,
+            max_retries=3,  # Built-in retry mechanism
+            timeout=120.0
+        )
+    else:
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+        )
+        client = AzureOpenAI(
+            azure_ad_token_provider=token_provider,
+            api_version="2023-05-15",
+            azure_endpoint=endpoint,
+            max_retries=3,
+            timeout=120.0
+        )
+        
+    # Process in batches with aggressive rate limiting
+    batch_size = 3  # Very small batches to minimize rate limit issues
+    success_count = 0
+    for i in range(0, len(docs_to_embed), batch_size):
+        batch = docs_to_embed[i:i+batch_size]
+        texts = [doc["content"].replace("\n", " ")[:8000] for doc in batch]  # Truncate to token limit
+        
+        try:
+            response = create_embeddings_with_retry(client, texts, deployment)
+            for j, data in enumerate(response.data):
+                batch[j]["embedding"] = data.embedding
+            success_count += len(batch)
+            logger.info(f"✅ Generated embeddings: {success_count}/{len(docs_to_embed)} ({(success_count/len(docs_to_embed)*100):.1f}%)")
+            
+            # Aggressive rate limiting: wait longer between batches
+            if i + batch_size < len(docs_to_embed):
+                time.sleep(10)  # 10 second delay between batches
+        except Exception as e:
+            logger.error(f"❌ Error generating embeddings for batch {i//batch_size + 1}: {e}")
+            logger.warning(f"Skipping {len(batch)} documents in this batch")
+            
+    logger.info(f"Embedding generation complete: {success_count}/{len(docs_to_embed)} successful")
     return documents
 
 def sanitize_id(doc_id: str) -> str:
@@ -192,6 +263,9 @@ def main():
     if not documents:
         logger.error("No documents to upload")
         return 1
+    
+    # Generate embeddings if missing
+    documents = generate_embeddings(documents)
     
     # Validate documents
     logger.info(f"\n📋 Validating {len(documents)} documents...")

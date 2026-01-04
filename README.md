@@ -70,6 +70,20 @@ The repo includes sample data so it's ready to try end to end. In this sample ap
 
 ![RAG Architecture](docs/images/appcomponents.png)
 
+## Legal Domain Customizations (This Fork)
+
+This fork is customized for **legal document RAG** with automated data sourcing and quality evaluation:
+
+- **Phase 2: Automated Scraper Pipeline** - GitHub Actions workflow that weekly scrapes Civil Procedure Rules from justice.gov.uk, validates documents, generates embeddings, and indexes them in Azure Search. See [Phase 2 Documentation](docs/customizations/PHASE_2_SCRAPER_AUTOMATION.md) for architecture and configuration.
+
+- **Legal Evaluation Framework** - Comprehensive evaluation suite achieving 95% precedent matching on 62 ground truth Q&A pairs across UK court categories. See [Legal Evaluation](docs/legal_evaluation.md).
+
+- **Legal Domain Prompts** - Customized prompts for legal terminology and citation handling.
+
+- **Merge-Safe Architecture** - All customizations isolated in `/customizations/` folders to enable clean upgrades from upstream.
+
+👉 **For complete customizations overview:** See [docs/customizations/README.md](docs/customizations/README.md)
+
 ## Azure account requirements
 
 **IMPORTANT:** In order to deploy and run this example, you'll need:
@@ -245,6 +259,12 @@ The resource group and all the resources will be deleted.
 ## Guidance
 
 You can find extensive documentation in the [docs](docs/README.md) folder:
+
+- **Legal Domain Customizations:**
+  - [Legal Customizations Overview](docs/customizations/README.md) - Architecture, Phase 1 & 2, merge-safe design
+  - [Phase 2: Automated Scraper Pipeline](docs/customizations/PHASE_2_SCRAPER_AUTOMATION.md) - Complete automation guide
+  - [Legal Evaluation Framework](docs/legal_evaluation.md) - 95% precedent matching results
+  - [Legal Domain Prompts](docs/customizations/README.md#legal-domain-prompts) - Custom prompts for legal terminology
 
 - Deploying:
   - [Troubleshooting deployment](docs/deploy_troubleshooting.md)

@@ -52,7 +52,7 @@ class DocumentValidator:
         if "embedding" in doc:
             if not isinstance(doc["embedding"], list):
                 errors.append(f"'embedding' must be a list, got {type(doc['embedding'])}")
-            elif len(doc["embedding"]) != self.config.EMBEDDING_DIMENSIONS:
+            elif len(doc["embedding"]) > 0 and len(doc["embedding"]) != self.config.EMBEDDING_DIMENSIONS:
                 errors.append(
                     f"Embedding has {len(doc['embedding'])} dimensions, "
                     f"expected {self.config.EMBEDDING_DIMENSIONS}"
