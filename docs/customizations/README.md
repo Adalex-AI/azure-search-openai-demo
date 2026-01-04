@@ -13,6 +13,16 @@ This fork of the Azure Search + OpenAI demo implements a specialized **Legal RAG
 
 All custom code is isolated in `/customizations/` folders to support seamless upstream merges.
 
+## 🏗️ System Architecture
+
+For a comprehensive overview of the complete deployed system architecture, data flows, and component interactions, see [System Architecture Documentation](./SYSTEM_ARCHITECTURE.md). This includes:
+- **End-to-end system architecture diagrams**
+- **Data flow sequence diagrams**
+- **Component breakdown (frontend + backend)**
+- **Phase 2 scraping pipeline architecture**
+- **Technology stack & key metrics**
+- **What was accomplished (Phase 1 & 2)**
+
 ## 📁 Merge-Safe Architecture
 
 All customizations are isolated in dedicated `/customizations/` folders to prevent conflicts when updating from upstream.
