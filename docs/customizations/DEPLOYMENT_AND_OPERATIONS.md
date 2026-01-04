@@ -95,8 +95,14 @@ AZURE_OPENAI_EMB_DEPLOYMENT  (text-embedding-3-large)
 | Scraping | 2-3 min | Fetches all CPR documents |
 | Validation | < 1 min | Quality checks on 768 docs |
 | Embedding | 2.5-3 hrs | Rate-limited generation |
-| Upload | 30 sec | Batch push to Azure Search |
-| **Total** | **~3-4 hours** | Weekly execution |
+| Upload | 30 sec | Only if changes detected |
+| **Total** | **~3-4 hours** | Full pipeline (if changes found) |
+
+**Upload Behavior:**
+- Only uploads if **changes detected** in scraped content
+- Compares new documents against existing index
+- Skips upload if documents are unchanged (no redundant operations)
+- Dry-run mode always shows what would be uploaded without uploading
 
 ---
 
@@ -218,6 +224,7 @@ curl -X POST "https://<search-service>.search.windows.net/indexes/cpr-index/docs
 
 - Monitor GitHub Actions for any failures
 - Check Azure OpenAI quota usage (embedding API calls)
+- **Note**: If no changes detected, upload phase is skipped (this is normal behavior)
 - Verify document count hasn't dropped unexpectedly
 - Review workflow logs for any warnings
 
@@ -339,6 +346,27 @@ gh run view <run-id> --log
 - Review validation report in workflow artifacts
 - Adjust thresholds in `scripts/legal-scraper/config.py`
 - Check if justice.gov.uk content structure changed
+
+#### 7. Workflow Completes But No Upload
+
+**Scenario**: GitHub Actions finishes scraping and validation, but upload doesn't occur.
+
+**This is normal** - Upload only happens if changes are detected in content compared to existing index.
+
+**What's happening**:
+- Scraper fetched documents
+- Validation passed
+- Comparison found: documents match existing index
+- Upload skipped (prevents redundant operations)
+
+**To verify**:
+- Check workflow logs for "No changes detected" message
+- Ensure dry-run flag is not set to `true`
+- Verify justice.gov.uk documents actually changed
+
+**To force upload** (testing only):
+- Run with dry-run: `gh workflow run legal-scraper.yml -f dry_run=true`
+- Or manually modify documents in Azure Search index before next run
 
 ### Workflow Logs
 
