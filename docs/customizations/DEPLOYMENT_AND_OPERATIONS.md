@@ -1,6 +1,8 @@
 # Legal RAG Scraper: Deployment & Operations
 
-Deployed system for automating the scraping, validation, embedding, and indexing of UK Civil Procedure Rules and Practice Directions.
+**Status**: ✅ **DEPLOYED & OPERATIONAL**
+
+Deployed system for automating the scraping, validation, embedding, and indexing of UK Civil Procedure Rules and Practice Directions using a **GitHub Actions weekly automation workflow**.
 
 ## Table of Contents
 
