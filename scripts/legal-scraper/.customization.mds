@@ -1,0 +1,123 @@
+# Legal Document Scraper Customization
+
+## Purpose
+Automated scraping and upload of UK Civil Procedure Rules (CPR) to Azure Search with validation, change detection, and terminal-based approval workflow for Phase 1 local testing.
+
+## Architecture
+**Merge-Safe Design**: All code isolated in `scripts/legal-scraper/` folder with no modifications to upstream application code. Can be safely merged and updated independently.
+
+## Files & Components
+
+### Core Modules
+- **config.py** (1080 lines): Centralized configuration with Azure azd environment variable integration
+  - Reads credentials from `azd env get-values`
+  - Validation rules (min content length, legal terminology requirements)
+  - Configurable directory paths
+  
+- **validation.py** (347 lines): Content quality validation and duplicate detection
+  - DocumentValidator class for content quality checks
+  - SHA-256 hashing for change tracking
+  - ValidationReport generation and storage
+  
+- **upload_with_embeddings.py** (360 lines): Azure Search upload with dry-run support
+  - Document schema mapping to Azure Search format
+  - Batch processing with rate limiting
+  - Dry-run mode for testing without uploading
+  - Staging index support
+  
+- **validate_and_review.py** (490 lines): Interactive terminal-based approval workflow
+  - AzureSearchComparer class for index comparison
+  - Change tracking (new/updated/unchanged documents)
+  - Human-in-the-loop approval gate
+  - Detailed reporting with statistics
+  
+- **token_chunker.py** (309 lines): Legal document-aware token-based text chunking
+  - Legal boundary detection for preserving document structure
+  - Token counting via tiktoken (matches embedding model)
+  - Context preservation in chunked output
+
+### Orchestration
+- **run_pipeline.sh**: Bash orchestration script
+  - Manages full pipeline: scrape → validate → upload
+  - Color-coded output for clarity
+  - Multiple execution modes (full, dry-run, staging)
+  - Approval gates and user confirmations
+
+## Integration Points
+
+### Minimal Upstream Changes
+- ✅ No changes to `app/backend/app.py` 
+- ✅ No changes to main application code
+- ✅ Uses standard azd environment variables for authentication
+- ✅ Fully isolated as CLI tool (not integrated into Flask app)
+
+### Dependencies Added
+Updated in `requirements-dev.txt`:
+```
+selenium>=4.15.2
+beautifulsoup4>=4.12.2
+azure-search-documents>=11.4.0
+azure-identity>=1.14.0
+tenacity>=8.2.3
+```
+
+## Feature Flags (Phase 1)
+No feature flags needed for Phase 1 - runs as standalone CLI tool with explicit user control via `run_pipeline.sh`.
+
+For Phase 2+ integration, would use:
+```python
+from customizations.config import is_feature_enabled
+if is_feature_enabled("legal_scraper_enabled"):
+    # Enable integration
+```
+
+## Testing
+Manual testing performed on:
+- ✅ Configuration loading from azd env
+- ✅ Validation engine with content quality checks
+- ✅ Azure Search connectivity and upload
+- ✅ Approval workflow (prompts, confirmations)
+- ✅ Dry-run mode (no actual upload)
+- ✅ Change detection (SHA-256 hashing)
+
+## Data Flow
+```
+1. Scrape CPR rules from justice.gov.uk
+   ↓
+2. Validate content quality and detect changes
+   ↓
+3. Compare against existing Azure Search index
+   ↓
+4. Display summary (new/updated/unchanged)
+   ↓
+5. Require explicit user approval
+   ↓
+6. Upload to staging or production index (optional dry-run)
+```
+
+## Security Considerations
+- ✅ No hardcoded credentials (uses DefaultAzureCredential)
+- ✅ Credentials from azd environment (not committed to repo)
+- ✅ SHA-256 content tracking (one-way, non-reversible)
+- ✅ Validation reports contain only structure/stats (no sensitive data)
+- ✅ Explicit approval gate before any upload
+
+## Future Enhancements (Phase 2+)
+- GitHub Enterprise automation (scheduled jobs)
+- Bicep infrastructure for scraper deployment
+- Feature flag integration with main app
+- Automated testing in CI/CD pipeline
+- Performance metrics tracking
+- Rollback capabilities
+
+## References
+- Main project: Azure Search + OpenAI RAG demo (legal domain customization)
+- Original scraper: `legal-rag-scraper-deployment/` folder
+- Customization pattern: `.github/copilot-instructions.md`
+- Architecture guide: `AGENTS.md`, `docs/customizations/README.md`
+
+## Merge Safety
+✅ Safe for upstream merges - all code isolated in `scripts/legal-scraper/`
+✅ No conflicts with main application updates
+✅ Fully removable without affecting core functionality
+✅ Can be updated independently from upstream changes
