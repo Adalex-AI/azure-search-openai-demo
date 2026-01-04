@@ -390,8 +390,7 @@ azd up
 Phase 2 introduces a **GitHub Actions workflow** that automates the scraping, validation, and indexing of Civil Procedure Rules.
 
 **Key Files:**
-- [Phase 2 Detailed Documentation](./PHASE_2_SCRAPER_AUTOMATION.md) - Complete architecture and maintenance guide
-- `.github/workflows/legal-scraper.yml` - GitHub Actions workflow definition
+- [Phase 2 Detailed Documentation](./PHASE_2_SCRAPER_AUTOMATION.md) - Complete architecture and maintenance guide- [Deployment & Operations Guide](./DEPLOYMENT_AND_OPERATIONS.md) - Local, cloud, and monitoring setup- `.github/workflows/legal-scraper.yml` - GitHub Actions workflow definition
 - `scripts/legal-scraper/` - Scraper, validator, and uploader scripts
 
 **Features:**
