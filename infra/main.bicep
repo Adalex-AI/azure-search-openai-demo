@@ -347,6 +347,9 @@ param runningOnAdo string = ''
 @description('Used by azd for containerapps deployment')
 param webAppExists bool
 
+@description('Git commit SHA for deployment tracking (set by CI/CD pipeline)')
+param gitSha string = ''
+
 @allowed(['Consumption', 'D4', 'D8', 'D16', 'D32', 'E4', 'E8', 'E16', 'E32', 'NC24-A100', 'NC48-A100', 'NC96-A100'])
 param azureContainerAppsWorkloadProfile string
 
@@ -546,7 +549,7 @@ var appEnvVariables = {
   // CUSTOM: Deployment metadata for feedback tracking
   DEPLOYMENT_ID: environmentName
   APP_VERSION: 'v1.0.0'
-  GIT_SHA: deployment().properties.template.metadata.version
+  GIT_SHA: gitSha
   // RAG Configuration
   RAG_SEARCH_TEXT_EMBEDDINGS: ragSearchTextEmbeddings
   RAG_SEARCH_IMAGE_EMBEDDINGS: ragSearchImageEmbeddings

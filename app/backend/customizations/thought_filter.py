@@ -6,16 +6,24 @@ ensuring system prompts and raw LLM messages are never exposed to non-admin user
 
 CUSTOM: This is a merge-safe customization for protecting sensitive system prompts
 from being visible to end users while maintaining them in backend feedback storage.
+
+Supports both:
+- ThoughtStep dataclass objects from approaches (have .title, .description, .props attributes)
+- Dictionary representations from API responses (have "title", "description", "props" keys)
 """
 
-from typing import Any, TypedDict
+from typing import Any, TypedDict, Union
 
 
-class ThoughtStep(TypedDict, total=False):
-    """TypedDict representing a thought step from the backend response."""
+class ThoughtStepDict(TypedDict, total=False):
+    """TypedDict representing a thought step dictionary from API response."""
     title: str
     description: Any
     props: dict[str, Any]
+
+
+# Type alias for both dataclass and dict representations
+ThoughtStep = Union[Any, ThoughtStepDict]  # Any to support dataclass without importing
 
 
 # Titles that contain system prompt or sensitive LLM internals
@@ -27,28 +35,57 @@ ADMIN_ONLY_THOUGHT_TITLES = {
 }
 
 
+def get_thought_attr(thought: ThoughtStep, attr: str, default: Any = None) -> Any:
+    """
+    Get attribute from thought, supporting both dataclass and dict.
+    
+    Args:
+        thought: A thought step (dataclass or dict)
+        attr: The attribute name to get
+        default: Default value if attribute doesn't exist
+        
+    Returns:
+        The attribute value or default
+    """
+    if thought is None:
+        return default
+    
+    # Try dataclass attribute access first
+    if hasattr(thought, attr):
+        return getattr(thought, attr, default)
+    
+    # Fall back to dict-style access
+    if isinstance(thought, dict):
+        return thought.get(attr, default)
+    
+    return default
+
+
 def is_admin_only_thought(thought: ThoughtStep) -> bool:
     """
     Check if a thought step contains admin-only (sensitive) information.
     
     Args:
-        thought: A thought step dictionary with 'title', 'description', and optional 'props'
+        thought: A thought step (dataclass or dict) with title, description, and optional props
         
     Returns:
         True if the thought is admin-only and should not be shown to regular users
     """
-    if not thought or "title" not in thought:
+    if thought is None:
         return False
     
-    title = thought.get("title", "")
+    # Get title using attribute-safe accessor
+    title = get_thought_attr(thought, "title", "")
+    if not title:
+        return False
     
     # Check if title matches admin-only thought types
     if title in ADMIN_ONLY_THOUGHT_TITLES:
         return True
     
-    # Check if description contains raw system messages
-    if "props" in thought and thought["props"]:
-        props = thought["props"]
+    # Check if props contains raw system messages
+    props = get_thought_attr(thought, "props", None)
+    if props and isinstance(props, dict):
         # Check for raw_messages which contain system prompts
         if "raw_messages" in props:
             return True
