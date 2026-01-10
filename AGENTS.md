@@ -42,6 +42,51 @@ cd evals
 * evals/test_legal_metrics.py: 41 unit tests for legal metrics
 * docs/legal_evaluation.md: Comprehensive evaluation documentation
 
+## Enhanced Feedback System (v1.0)
+
+This fork includes an enhanced feedback system that captures comprehensive diagnostic data while protecting sensitive system prompts from end users.
+
+### Feedback Capabilities
+
+**Deployment Tracking**: Automatically captures:
+- Deployment ID and version information
+- Git commit hash for version tracking
+- Model name (gpt-4, gpt-4-turbo, etc.)
+- Environment (production/development)
+
+**Thought Filtering**: Protects system prompts by:
+- Automatically filtering admin-only thoughts from API responses
+- Removing `raw_messages` containing system instructions
+- Preserving user-safe thoughts (search queries, retrieved documents)
+- Storing admin-only information separately for debugging
+
+**Data Storage**: Saves feedback with:
+- User-visible context (no system prompts)
+- Separate admin files containing full diagnostic data
+- Consent-based storage (respects user privacy choices)
+- Local and Azure Blob Storage support
+
+### Key Files
+
+* app/backend/customizations/thought_filter.py: Filters system prompts from thoughts
+* app/backend/customizations/routes/feedback.py: Enhanced feedback API endpoint with metadata
+* app/backend/customizations/config.py: Deployment metadata functions
+* tests/test_feedback.py: Comprehensive feedback endpoint tests
+* tests/test_thought_filter.py: Unit tests for thought filtering logic
+
+### Running Feedback Tests
+
+```bash
+# Run all feedback tests
+pytest tests/test_feedback.py tests/test_thought_filter.py -v
+
+# Run specific test
+pytest tests/test_feedback.py::test_feedback_filters_admin_only_thoughts -v
+
+# Run with coverage
+pytest tests/test_feedback.py tests/test_thought_filter.py --cov=customizations --cov=app/backend/customizations
+```
+
 ## Overall code layout
 
 * app: Contains the main application code, including frontend and backend.
@@ -55,8 +100,10 @@ cd evals
       * app/backend/approaches/prompts/chat_query_rewrite_tools.json: Tools used by the query rewriting prompt
       * app/backend/approaches/prompts/chat_answer_question.prompty: Prompt used by the Chat approach to actually answer the question based off sources (CUSTOMIZED for legal domain)
     * app/backend/customizations/: Custom features isolated for merge-safety
-      * app/backend/customizations/config.py: Feature flags
+      * app/backend/customizations/config.py: Feature flags and deployment metadata functions
+      * app/backend/customizations/thought_filter.py: Utility for filtering system prompts from thoughts
       * app/backend/customizations/routes/categories.py: Dynamic categories API endpoint
+      * app/backend/customizations/routes/feedback.py: Enhanced feedback endpoint with deployment tracking (CUSTOM)
     * app/backend/prepdocslib: Contains the document ingestion library used by both local and cloud ingestion
       * app/backend/prepdocslib/blobmanager.py: Manages uploads to Azure Blob Storage
       * app/backend/prepdocslib/cloudingestionstrategy.py: Builds the Azure AI Search indexer and skillset for the cloud ingestion pipeline

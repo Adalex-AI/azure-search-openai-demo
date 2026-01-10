@@ -249,21 +249,251 @@ export const CUSTOM_FEATURES = {
 
 ---
 
+## 🎁 Enhanced Feedback System (v1.0)
+
+**Files:** 
+- `app/backend/customizations/thought_filter.py` - Filters system prompts from thoughts
+- `app/backend/customizations/routes/feedback.py` - Enhanced feedback API with deployment tracking
+- `tests/test_feedback.py` - Feedback endpoint tests
+- `tests/test_thought_filter.py` - Thought filtering unit tests
+
+### Problem Solved
+The original feedback system exposed system prompts to end users because thoughts from API responses included "Prompt to generate answer" steps containing sensitive instructions. The system had no deployment version tracking for feedback correlation.
+
+### Security Model
+
+The enhanced system ensures **system prompts are never visible to users**:
+
+1. **User API Response** → Filtered thoughts (no system prompts)
+2. **User Submits Feedback** → Feedback only contains user-safe thoughts  
+3. **Admin Storage** → Separate `*_admin.json` files with full diagnostic data
+4. **Deployment Tracking** → Every feedback includes version/commit hash
+
+### Key Components
+
+#### ThoughtFilter Utility (`thought_filter.py`)
+Automatically classifies and filters thought steps:
+
+**Admin-Only Thoughts (Filtered from users):**
+- "Prompt to generate answer" - Contains system instructions
+- Any thought with `raw_messages` - Raw LLM message objects
+- "Prompt to rewrite query" - Internal reasoning
+- "Query rewrite" - System-level operations
+
+**User-Safe Thoughts (Preserved for users):**
+- "Search Query" - The actual search query executed
+- "Retrieved Documents" - Document summaries and counts
+- "Custom Analysis" - Custom user-visible analysis steps
+
+**Functions:**
+```python
+# Check if a thought contains sensitive info
+is_admin_only_thought(thought: ThoughtStep) -> bool
+
+# Get only user-safe thoughts
+filter_thoughts_for_user(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
+
+# Filter thoughts for feedback submission (same as above)
+filter_thoughts_for_feedback(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
+
+# Extract admin-only thoughts for backend storage
+extract_admin_only_thoughts(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
+
+# Split into both categories
+split_thoughts(thoughts: list[ThoughtStep]) -> tuple[list, list]
+```
+
+**Usage:**
+```python
+from customizations import filter_thoughts_for_user, extract_admin_only_thoughts
+
+# Filter for user-facing API response
+api_response["context"]["thoughts"] = filter_thoughts_for_user(thoughts)
+
+# Extract for admin storage
+admin_file["admin_only_thoughts"] = extract_admin_only_thoughts(thoughts)
+```
+
+#### Deployment Metadata (`config.py`)
+Captures version information automatically:
+
+```python
+from customizations import get_deployment_metadata
+
+metadata = get_deployment_metadata()
+# Returns:
+# {
+#     "deployment_id": "prod-v1",              # DEPLOYMENT_ID env var
+#     "app_version": "1.0.0",                  # APP_VERSION env var
+#     "git_sha": "abc123def456",               # GIT_SHA env var
+#     "model_name": "gpt-4",                   # AZURE_OPENAI_CHATGPT_MODEL
+#     "environment": "production"              # Based on RUNNING_IN_PRODUCTION
+# }
+```
+
+**Environment Variables:**
+- `DEPLOYMENT_ID` - Unique deployment identifier (optional, defaults to "unknown")
+- `APP_VERSION` - Semantic version string (optional, defaults to "0.0.0")
+- `GIT_SHA` - Git commit hash for exact version tracking (optional, defaults to "unknown")
+- `AZURE_OPENAI_CHATGPT_MODEL` - Model name for feedback correlation
+- `RUNNING_IN_PRODUCTION` - Environment indicator (set automatically by Bicep)
+
+#### Enhanced Feedback Route (`routes/feedback.py`)
+Processes feedback with security and metadata:
+
+**Features:**
+1. Filters system prompts from user-submitted context
+2. Includes deployment metadata in every feedback record
+3. Stores separate admin files with full diagnostic data
+4. Respects user consent for context sharing
+5. Logs to both local storage and Azure Blob Storage
+
+**Feedback Payload Structure:**
+```json
+{
+  "event_type": "legal_feedback",
+  "context_shared": true,
+  "payload": {
+    "message_id": "msg-id-123",
+    "rating": "helpful",
+    "issues": ["wrong_citation"],
+    "comment": "Citation was outdated"
+  },
+  "context": {
+    "user_prompt": "What is...",
+    "ai_response": "The answer is...",
+    "conversation_history": [...],
+    "thoughts": [...]  // FILTERED - no system prompts
+  },
+  "metadata": {
+    "deployment_id": "prod-v1",
+    "app_version": "1.0.0",
+    "git_sha": "abc123def456",
+    "model_name": "gpt-4",
+    "environment": "production"
+  }
+}
+```
+
+**Separate Admin File** (`*_admin.json`):
+```json
+{
+  "message_id": "msg-id-123",
+  "timestamp": "2026-01-10T12:00:00Z",
+  "admin_only_thoughts": [
+    {
+      "title": "Prompt to generate answer",
+      "description": "System prompt content",
+      "props": {"raw_messages": [...]}
+    }
+  ],
+  "metadata": { ... }
+}
+```
+
+### Integration Points
+
+#### Backend API Response Filtering
+In `app/backend/approaches/chatapproach.py`:
+```python
+# CUSTOM: Filter system prompts from response
+from customizations import filter_thoughts_for_user
+extra_info.thoughts = filter_thoughts_for_user(extra_info.thoughts)
+```
+
+This is called in both `run_without_streaming()` and `run_with_streaming()` to ensure system prompts are never sent to frontend.
+
+### Storage Structure
+
+**Local Development:**
+```
+feedback_data/
+├── local/
+│   ├── 2026-01-10t12-00-00_msg-id-123.json       # User-visible feedback
+│   ├── 2026-01-10t12-00-00_msg-id-123_admin.json # Admin-only thoughts
+│   └── ...
+└── prod-v1/
+    ├── 2026-01-10t12-00-00_msg-id-123.json
+    ├── 2026-01-10t12-00-00_msg-id-123_admin.json
+    └── ...
+```
+
+**Azure Blob Storage:**
+```
+feedback/<deployment_id>/<timestamp>_<message_id>.json         # User-visible
+feedback/<deployment_id>/<timestamp>_<message_id>_admin.json   # Admin-only
+```
+
+### Testing
+
+**Feedback Endpoint Tests:**
+```bash
+pytest tests/test_feedback.py -v
+```
+
+Tests cover:
+- Simple feedback without context
+- Feedback with context (verifies system prompts are filtered)
+- Deployment metadata inclusion
+- Consent-based storage
+- Multiple issue categories
+- Admin file creation
+
+**Thought Filtering Tests:**
+```bash
+pytest tests/test_thought_filter.py -v
+```
+
+Tests cover:
+- Identification of admin-only thoughts
+- User-safe thought preservation
+- Splitting thoughts into categories
+- Complete integration flow
+
+### Deployment Configuration
+
+**Bicep Variables** (`infra/main.bicep`):
+```bicep
+// CUSTOM: Deployment metadata for feedback tracking
+DEPLOYMENT_ID: environmentName
+APP_VERSION: 'v1.0.0'
+GIT_SHA: deployment().properties.template.metadata.version
+```
+
+**Azure.yaml Environment Setup:**
+```yaml
+# Optional: Override in environment or CI/CD pipeline
+DEPLOYMENT_ID: my-custom-id
+APP_VERSION: 1.2.3
+GIT_SHA: $(git rev-parse --short HEAD)
+```
+
+---
+
 ## 🔌 Integration Points
 
 These are the minimal changes made to upstream files to integrate customizations:
 
 ### Backend (`app/backend/app.py`)
 ```python
-# Line ~20: Import categories blueprint
-from customizations.routes import categories_bp
+# Line ~20: Import categories and feedback blueprints
+from customizations.routes import categories_bp, feedback_bp
 
-# Line ~850: Register blueprint
+# Line ~850: Register blueprints
 app.register_blueprint(categories_bp)
+app.register_blueprint(feedback_bp)
 
 # In config() function: Add showCategoryFilter
 from customizations.config import is_feature_enabled
 "showCategoryFilter": is_feature_enabled("category_filter"),
+```
+
+### Backend (`app/backend/approaches/chatapproach.py`)
+```python
+# In run_without_streaming() and run_with_streaming():
+# CUSTOM: Filter system prompts from response
+from customizations import filter_thoughts_for_user
+extra_info.thoughts = filter_thoughts_for_user(extra_info.thoughts)
 ```
 
 ### Frontend (`app/frontend/src/components/Answer/AnswerParser.tsx`)
@@ -291,8 +521,9 @@ const { categories, loading: categoriesLoading } = useCategories();
 
 ### Vite Config (`app/frontend/vite.config.ts`)
 ```typescript
-// CUSTOM: Category filter API route
-"/api/categories": "http://localhost:50505"
+// CUSTOM: Category filter and feedback API routes
+"/api/categories": "http://localhost:50505",
+"/api/feedback": "http://localhost:50505"
 ```
 
 ---
@@ -306,36 +537,50 @@ When pulling updates from `Azure-Samples/azure-search-openai-demo`:
    - Custom prompts in `/approaches/prompts/`
 
 2. **Integration points to re-add:**
-   - `app.py` - Re-add blueprint import and registration
+   - `app.py` - Re-add blueprint imports for feedback and categories
+   - `chatapproach.py` - Re-add thought filtering in `run_without_streaming()` and `run_with_streaming()`
    - `AnswerParser.tsx` - Re-add sanitizeCitations import and usage
    - `Settings.tsx` - Re-add useCategories hook usage
-   - `vite.config.ts` - Re-add `/api/` proxy
+   - `vite.config.ts` - Re-add `/api/` proxies (categories and feedback)
    - `Chat.tsx` - Re-add Search Depth dropdown (look for `// CUSTOM: Search Depth dropdown` comment)
    - `en/translation.json` - Re-add `agenticReasoningEffortOptions` labels if overwritten
 
-3. **Approaches file (`chatreadretrieveread.py`):**
-   - The main approach file imports from `customizations.approaches`
-   - Add the import: `from customizations.approaches import citation_builder, source_processor`
-   - Methods delegate to the customization modules
-   - If upstream changes these methods, the delegation pattern minimizes conflicts
+3. **Approaches files:**
+   - `chatreadretrieveread.py` - Imports from `customizations.approaches` (citation_builder, source_processor)
+   - Methods delegate to customization modules - minimizes conflicts during upgrades
 
-4. **Check prompts:** Review if upstream prompts have changed and merge any improvements into your custom prompts.
+4. **Feedback Integration (NEW):**
+   - `chatapproach.py` has 2 integration points in `run_without_streaming()` and `run_with_streaming()`
+   - Add: `from customizations import filter_thoughts_for_user` and apply filter to `extra_info.thoughts`
+   - This is critical for security - ensures system prompts never leak to frontend
+
+5. **Check prompts:** Review if upstream prompts have changed and merge any improvements into your custom prompts.
 
 ---
 
 ## 🧪 Testing
 
-### Run frontend tests:
+### Run all tests:
 ```bash
+cd . && python -m pytest tests/ -v
+```
+
+### Run specific test suites:
+```bash
+# Feedback system tests
+pytest tests/test_feedback.py tests/test_thought_filter.py -v
+
+# With coverage report
+pytest tests/test_feedback.py tests/test_thought_filter.py --cov=customizations -v
+
+# Frontend tests
 cd app/frontend && npm test
 ```
 
-### Run backend tests:
-```bash
-cd . && python -m pytest tests/
-```
-
-Expected: 4 tests will fail due to custom prompts (they expect default "Assistant helps company employees" text).
+### Expected Results:
+- **Backend**: 4 failures expected (custom prompts differ from default)
+- **Feedback**: All new tests passing (12 feedback tests, 14 thought filter tests)
+- **Frontend**: All passing (18+ tests)
 
 ---
 
@@ -344,7 +589,9 @@ Expected: 4 tests will fail due to custom prompts (they expect default "Assistan
 | Category | Passed | Failed | Notes |
 |----------|--------|--------|-------|
 | Backend Unit Tests | 486 | 4 | 4 failures are expected (custom prompts) |
-| Frontend Tests | 18 | 0 | Citation sanitizer tests |
+| Feedback Tests | 12 | 0 | New enhanced feedback tests |
+| Thought Filter Tests | 14 | 0 | System prompt filtering tests |
+| Frontend Tests | 18+ | 0 | Citation sanitizer + feedback tests |
 | Legal Metrics Tests | 41 | 0 | `test_legal_metrics.py` - all passing |
 | TypeScript | ✅ | - | No compilation errors |
 | **Legal RAG Evaluation** | **95%** | - | Precedent matching across 62 questions |
@@ -456,3 +703,10 @@ See [Deployment & Operations](./DEPLOYMENT_AND_OPERATIONS.md) for detailed confi
 - Added dynamic category filtering from Azure Search index
 - Added legal domain prompts for CPR/Court Rules
 - Implemented merge-safe architecture
+
+### Security & Ingestion Customizations (2026-01-06)
+- **Automatic Security Group Assignment**: 
+  - Modified `app/backend/prepdocslib/searchmanager.py` to automatically inject the "Civil Procedure Copilot Users" Security Group ID (`36094ff3-5c6d-49ef-b385-fa37118527e3`) into all document ACLs.
+  - This logic uses `CIVIL_PROCEDURE_COPILOT_SECURITY_GROUP_ID` from `app/backend/customizations/config.py` for centralized configuration.
+  - Includes a fallback mechanism for environments like Azure Functions where customizations might not be available.
+  - **Merge Note**: When updating `prepdocslib` from upstream, ensure the "Security Group Logic" block in `searchmanager.py` is preserved or re-applied. Unlike strictly isolated customizations, this change touches the core library to enforce security by default.

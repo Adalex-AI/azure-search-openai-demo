@@ -350,6 +350,9 @@ param webAppExists bool
 @allowed(['Consumption', 'D4', 'D8', 'D16', 'D32', 'E4', 'E8', 'E16', 'E32', 'NC24-A100', 'NC48-A100', 'NC96-A100'])
 param azureContainerAppsWorkloadProfile string
 
+@description('Minimum number of replicas for quantity of container apps. Set to 1 to prevent cold starts.')
+param containerMinReplicas int = 1
+
 @allowed(['appservice', 'containerapps'])
 param deploymentTarget string = 'appservice'
 
@@ -540,6 +543,10 @@ var appEnvVariables = {
   USE_MEDIA_DESCRIBER_AZURE_CU: useMediaDescriberAzureCU
   AZURE_CONTENTUNDERSTANDING_ENDPOINT: useMediaDescriberAzureCU ? contentUnderstanding!.outputs.endpoint : ''
   RUNNING_IN_PRODUCTION: 'true'
+  // CUSTOM: Deployment metadata for feedback tracking
+  DEPLOYMENT_ID: environmentName
+  APP_VERSION: 'v1.0.0'
+  GIT_SHA: deployment().properties.template.metadata.version
   // RAG Configuration
   RAG_SEARCH_TEXT_EMBEDDINGS: ragSearchTextEmbeddings
   RAG_SEARCH_IMAGE_EMBEDDINGS: ragSearchImageEmbeddings
@@ -625,7 +632,8 @@ module acaBackend 'core/host/container-app-upsert.bicep' = if (deploymentTarget 
     targetPort: 8000
     containerCpuCoreCount: '1.0'
     containerMemory: '2Gi'
-    containerMinReplicas: usePrivateEndpoint ? 1 : 0
+    // CUSTOM: Set min replicas to prevents cold starts (cost: ~$12/month if set to 1)
+    containerMinReplicas: containerMinReplicas
     allowedOrigins: allowedOrigins
     env: union(appEnvVariables, {
       // For using managed identity to access Azure resources. See https://github.com/microsoft/azure-container-apps/issues/442

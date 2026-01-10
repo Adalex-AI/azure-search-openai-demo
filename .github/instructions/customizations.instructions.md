@@ -38,8 +38,9 @@ When connecting customizations to upstream files:
 
 ```python
 # Backend: app.py
-from customizations.routes import categories_bp
+from customizations.routes import categories_bp, feedback_bp
 app.register_blueprint(categories_bp)
+app.register_blueprint(feedback_bp)
 ```
 
 ```typescript
@@ -47,8 +48,49 @@ app.register_blueprint(categories_bp)
 import { useCategories, sanitizeCitations } from "../../customizations";
 ```
 
+## Enhanced Feedback System (v1.0)
+
+The enhanced feedback system captures comprehensive deployment metadata and protects system prompts from end users.
+
+### Feedback Features
+- **Deployment Tracking**: Captures deployment ID, app version, Git commit hash
+- **Thought Filtering**: Automatically filters system prompts from API responses
+- **Separate Admin Storage**: Admin-only thoughts stored separately for debugging
+- **Consent-Based Context**: Only stores full context when users explicitly consent
+
+### Deployment Metadata
+The system automatically tracks:
+```python
+{
+    "deployment_id": "prod-v1",          # From environment or DEPLOYMENT_ID env var
+    "app_version": "1.0.0",              # From APP_VERSION env var
+    "git_sha": "abc123def456",           # From GIT_SHA env var
+    "model_name": "gpt-4",               # From AZURE_OPENAI_CHATGPT_MODEL
+    "environment": "production"          # Based on RUNNING_IN_PRODUCTION flag
+}
+```
+
+### Thought Filtering
+The `thought_filter.py` utility automatically:
+1. **Removes admin-only thoughts** from API responses sent to users:
+   - "Prompt to generate answer" (contains system instructions)
+   - Any thought with `raw_messages` (contains system prompts)
+2. **Preserves user-safe thoughts**:
+   - "Search Query"
+   - "Retrieved Documents"
+   - Custom analysis steps without system prompts
+3. **Maintains admin copies** in separate backend storage for debugging
+
+### Security Model
+- **User API Response**: Filtered thoughts, no system prompts
+- **Feedback Storage**: User-visible feedback has filtered thoughts, user cannot see system prompts
+- **Admin Storage**: Separate `*_admin.json` files contain full thoughts for backend analysis
+- **Never Exposed**: System prompts are never sent to users, even via consent flow
+
 ## Glossary
 - **Merge-safe**: Code that won't conflict when updating from upstream
 - **Feature flag**: Boolean configuration to enable/disable features
 - **Barrel export**: Re-exporting modules through index.ts/index.py
 - **Integration point**: Minimal code added to upstream files to connect customizations
+- **Admin-only thought**: Thought step containing sensitive system prompts or LLM internals
+- **User-safe thought**: Thought step that is appropriate to display to end users

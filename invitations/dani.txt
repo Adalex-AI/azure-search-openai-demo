@@ -1,0 +1,13 @@
+Subject: Access to Civil Procedure Copilot
+
+Email: d_rickett@hotmail.com
+Redeem link:
+https://login.microsoftonline.com/redeem?rd=https%3a%2f%2finvitations.microsoft.com%2fredeem%2f%3ftenant%3d3bfe16b2-5fcc-4565-b1f1-15271d20fecf%26user%3d5679e926-989a-4b66-abc5-82e36a31e65f%26ticket%3dOqAx%25252fNxmRhu6Cy9l%25252b46iYGHeUnubcUXe9UgRDjq71xc%25253d%26ver%3d2.0
+
+App URL:
+https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
+
+Instructions:
+1) Click the redeem link and accept the invitation
+2) Sign in with your Microsoft account
+3) Visit the app URL to start searching

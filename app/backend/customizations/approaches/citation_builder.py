@@ -39,6 +39,7 @@ class CitationBuilder:
         r'^([A-Z]\d+)\b',                # A1, B2, etc.
         r'^(Rule \d+(?:\.\d+)?)\b',      # Rule 1, Rule 1.1
         r'^(Para \d+(?:\.\d+)?)\b',      # Para 1.1
+        r'^(Part \d+)\b',                # Part 1, Part 2, etc.
         r'^(\d+\.\d+)$',                 # Standalone subsection number
     ]
 
@@ -134,6 +135,11 @@ class CitationBuilder:
         2. Encoded sourcepage (e.g., "PD3E-1.1")
         3. Direct sourcepage patterns
         
+        Handles markdown formatting like:
+        - # 1.1 Heading (markdown headings)
+        - **1.1** Bold text
+        - __1.1__ Underline bold
+        
         Returns:
             Subsection string (e.g., "1.1", "A4.1", "Rule 31.1") or empty string
         """
@@ -147,14 +153,31 @@ class CitationBuilder:
                 line = line.strip()
                 if not line or line == "---":
                     continue
-                    
+                
+                # Strip markdown formatting before pattern matching
+                # 1. Remove markdown heading prefixes (# ## ### etc.)
+                cleaned_line = re.sub(r'^#+\s*', '', line)
+                # 2. Remove bold markers (**text** or __text__)
+                cleaned_line = re.sub(r'^\*\*([^*]+)\*\*', r'\1', cleaned_line)
+                cleaned_line = re.sub(r'^__([^_]+)__', r'\1', cleaned_line)
+                # 3. Strip any remaining leading/trailing whitespace
+                cleaned_line = cleaned_line.strip()
+                
+                # Try matching with cleaned line first
                 for pattern in self.CONTENT_SUBSECTION_PATTERNS:
-                    match = re.match(pattern, line, re.IGNORECASE)
+                    match = re.match(pattern, cleaned_line, re.IGNORECASE)
                     if match:
                         return match.group(1)
                 
-                if re.match(r'^\d+\.\d+$', line):
-                    return line
+                # Also try original line in case cleaning removed something important
+                if cleaned_line != line:
+                    for pattern in self.CONTENT_SUBSECTION_PATTERNS:
+                        match = re.match(pattern, line, re.IGNORECASE)
+                        if match:
+                            return match.group(1)
+                
+                if re.match(r'^\d+\.\d+$', cleaned_line):
+                    return cleaned_line
         
         # Priority 2: Encoded sourcepage
         if sourcepage:
@@ -246,6 +269,11 @@ class CitationBuilder:
         Extract subsection from raw content text.
         
         Used when processing content outside of a Document object.
+        
+        Handles markdown formatting like:
+        - # 1.1 Heading (markdown headings)
+        - **1.1** Bold text
+        - __1.1__ Underline bold
         """
         if not content:
             return ""
@@ -255,10 +283,28 @@ class CitationBuilder:
             line = line.strip()
             if not line or line == "---":
                 continue
+            
+            # Strip markdown formatting before pattern matching
+            # 1. Remove markdown heading prefixes (# ## ### etc.)
+            cleaned_line = re.sub(r'^#+\s*', '', line)
+            # 2. Remove bold markers (**text** or __text__)
+            cleaned_line = re.sub(r'^\*\*([^*]+)\*\*', r'\1', cleaned_line)
+            cleaned_line = re.sub(r'^__([^_]+)__', r'\1', cleaned_line)
+            # 3. Strip any remaining leading/trailing whitespace
+            cleaned_line = cleaned_line.strip()
+            
+            # Try matching with cleaned line
             for pattern in self.CONTENT_SUBSECTION_PATTERNS:
-                match = re.match(pattern, line, re.IGNORECASE)
+                match = re.match(pattern, cleaned_line, re.IGNORECASE)
                 if match:
                     return match.group(1)
+            
+            # Also try original line in case cleaning removed something important
+            if cleaned_line != line:
+                for pattern in self.CONTENT_SUBSECTION_PATTERNS:
+                    match = re.match(pattern, line, re.IGNORECASE)
+                    if match:
+                        return match.group(1)
         return ""
 
     def get_subsection_sort_key(self, subsection_id: str) -> tuple:

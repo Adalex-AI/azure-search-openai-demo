@@ -1,0 +1,33 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": true,
+  "payload": {
+    "message_id": "local-test-001",
+    "rating": "helpful",
+    "issues": [],
+    "comment": "Great response on CPR rules"
+  },
+  "context": {
+    "user_prompt": "What are the main rules of CPR Part 52?",
+    "ai_response": "CPR Part 52 covers appeals to the Court of Appeal...",
+    "thoughts": [
+      {
+        "title": "Search Query",
+        "description": "civil procedure rules appeals",
+        "props": {}
+      },
+      {
+        "title": "Retrieved Documents",
+        "description": "CPR Part 52 section 1...",
+        "props": {}
+      }
+    ]
+  },
+  "metadata": {
+    "deployment_id": "test-local",
+    "app_version": "v1.0.0-local",
+    "git_sha": "abc123test",
+    "model_name": "gpt-4",
+    "environment": "development"
+  }
+}

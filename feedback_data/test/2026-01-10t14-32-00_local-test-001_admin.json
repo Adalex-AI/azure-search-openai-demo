@@ -1,0 +1,18 @@
+{
+  "message_id": "local-test-001",
+  "timestamp": "2026-01-10t14-32-00",
+  "admin_only_thoughts": [
+    {
+      "title": "Prompt to generate answer",
+      "description": "You are a legal expert. Answer based on retrieved documents...",
+      "props": {}
+    }
+  ],
+  "metadata": {
+    "deployment_id": "test-local",
+    "app_version": "v1.0.0-local",
+    "git_sha": "abc123test",
+    "model_name": "gpt-4",
+    "environment": "development"
+  }
+}

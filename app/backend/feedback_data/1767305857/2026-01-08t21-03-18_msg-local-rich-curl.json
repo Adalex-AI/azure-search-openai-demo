@@ -1,0 +1,38 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": true,
+  "payload": {
+    "message_id": "msg-local-rich-curl",
+    "rating": "unhelpful",
+    "issues": [
+      "wrong_citation",
+      "missing_info"
+    ],
+    "comment": "CURL TEST: The case law cited is from 1999, but it was overruled."
+  },
+  "context": {
+    "user_prompt": "What is the precedent for negligent misstatement?",
+    "ai_response": "The leading case is Hedley Byrne v Heller...",
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "Hello"
+      },
+      {
+        "role": "assistant",
+        "content": "Hi"
+      }
+    ],
+    "thoughts": [
+      {
+        "title": "Search",
+        "description": "Query: negligent misstatement"
+      }
+    ]
+  },
+  "metadata": {
+    "deployment_id": "1767305857",
+    "timestamp": "2026-01-08t21-03-18",
+    "environment": "cpr-rag"
+  }
+}

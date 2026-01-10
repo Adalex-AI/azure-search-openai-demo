@@ -10,6 +10,10 @@ See the individual files in this folder:
 - matthew_pimley.txt
 - c_wright.txt
 - mark_wing.txt
+- conor_johnston.txt
+- kung_kincheung.txt
+- dani.txt
+- abhinav_parameshwar.txt
 
 Template email: template_email.txt
 

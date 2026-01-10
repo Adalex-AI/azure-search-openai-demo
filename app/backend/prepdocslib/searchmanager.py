@@ -3,6 +3,15 @@ import logging
 import os
 from typing import Optional
 
+# CUSTOM: Security Group Logic
+# Try to import from customizations, cleanly fallback if module not found (e.g. in Functions)
+try:
+    # When running from app/backend/prepdocs.py, this import should work
+    from customizations.config import CIVIL_PROCEDURE_COPILOT_SECURITY_GROUP_ID as _DEFAULT_SECURITY_GROUP
+except ImportError:
+    # Fallback to hardcoded ID for Civil Procedure Copilot if customizations module is missing
+    _DEFAULT_SECURITY_GROUP = "36094ff3-5c6d-49ef-b385-fa37118527e3"
+
 from azure.search.documents.indexes.models import (
     AzureOpenAIVectorizer,
     AzureOpenAIVectorizerParameters,
@@ -449,7 +458,9 @@ class SearchManager:
                             )
                         ),
                         "sourcefile": section.content.filename(),
-                        **section.content.acls,
+                        # CUSTOM: Automatically add Civil Procedure Copilot Users group to all documents
+                        "groups": section.content.acls.get("groups", []) + [_DEFAULT_SECURITY_GROUP],
+                        **{k: v for k, v in section.content.acls.items() if k != "groups"},
                     }
                     for section_index, section in enumerate(batch)
                 ]

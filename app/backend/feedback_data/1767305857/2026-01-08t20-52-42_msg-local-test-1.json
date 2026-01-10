@@ -1,0 +1,15 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": false,
+  "payload": {
+    "message_id": "msg-local-test-1",
+    "rating": "helpful",
+    "issues": [],
+    "comment": "This is a local test."
+  },
+  "metadata": {
+    "deployment_id": "1767305857",
+    "timestamp": "2026-01-08t20-52-42",
+    "environment": "cpr-rag"
+  }
+}

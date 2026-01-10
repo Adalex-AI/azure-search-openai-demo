@@ -1,0 +1,46 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": true,
+  "payload": {
+    "message_id": "msg-local-rich-context",
+    "rating": "unhelpful",
+    "issues": [
+      "wrong_citation",
+      "missing_info"
+    ],
+    "comment": "The case law cited is from 1999, but it was overruled in 2005. Also missing the specific clause."
+  },
+  "context": {
+    "user_prompt": "What is the precedent for negligent misstatement?",
+    "ai_response": "The leading case is Hedley Byrne v Heller [1964] AC 465. It established that a duty of care can arise...",
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "Hello"
+      },
+      {
+        "role": "assistant",
+        "content": "How can I help with legal queries?"
+      },
+      {
+        "role": "user",
+        "content": "What is the precedent for negligent misstatement?"
+      }
+    ],
+    "thoughts": [
+      {
+        "title": "Search Query",
+        "description": "negligent misstatement precedent UK law"
+      },
+      {
+        "title": "Retrieved Documents",
+        "description": "[doc1] Hedley Byrne v Heller.pdf (Score: 0.95)\n[doc2] Caparo v Dickman.pdf (Score: 0.88)"
+      }
+    ]
+  },
+  "metadata": {
+    "deployment_id": "1767305857",
+    "timestamp": "2026-01-08t21-20-00",
+    "environment": "cpr-rag"
+  }
+}
