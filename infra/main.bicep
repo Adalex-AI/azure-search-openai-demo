@@ -372,6 +372,8 @@ param ragSendImageSources bool = true
 param useWebSource bool = false
 @description('Whether to enable SharePoint sources for agentic retrieval')
 param useSharePointSource bool = false
+@description('Whether to enable agentic retrieval features')
+param useAgenticRetrieval bool = true
 
 param acaIdentityName string = deploymentTarget == 'containerapps' ? '${environmentName}-aca-identity' : ''
 param acaManagedEnvironmentName string = deploymentTarget == 'containerapps' ? '${environmentName}-aca-env' : ''
@@ -557,6 +559,7 @@ var appEnvVariables = {
   RAG_SEND_IMAGE_SOURCES: ragSendImageSources
   USE_WEB_SOURCE: useWebSource
   USE_SHAREPOINT_SOURCE: useSharePointSource
+  USE_AGENTIC_RETRIEVAL: useAgenticRetrieval
 }
 
 // App Service for the web application (Python Quart app with JS frontend)
