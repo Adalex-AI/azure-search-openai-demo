@@ -1,5 +1,5 @@
 <!--
----
+***
 name: RAG chat app with your data (Python)
 description: Chat with your domain data using Azure OpenAI and Azure AI Search.
 languages:
@@ -14,7 +14,7 @@ products:
 - azure
 page_type: sample
 urlFragment: azure-search-openai-demo
----
+***
 -->
 
 # RAG chat app with Azure OpenAI and Azure AI Search (Python)

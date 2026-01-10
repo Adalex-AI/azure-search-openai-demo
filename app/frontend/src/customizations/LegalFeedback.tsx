@@ -92,21 +92,6 @@ export const LegalFeedback = ({ messageId, userPrompt, aiResponse, conversationH
 
     const canSubmit = shareContext !== undefined; // Must choose yes or no
 
-    // Format thoughts for display
-    const formatThoughts = () => {
-        if (!thoughts || thoughts.length === 0) return null;
-        return thoughts.map((thought, idx) => (
-            <div key={idx} style={{ marginBottom: 8 }}>
-                <Text block style={{ fontWeight: 600 }}>
-                    {thought.title}
-                </Text>
-                <Text block style={{ fontSize: 12, color: "#666", whiteSpace: "pre-wrap" }}>
-                    {typeof thought.description === "string" ? thought.description : JSON.stringify(thought.description, null, 2)}
-                </Text>
-            </div>
-        ));
-    };
-
     return (
         <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
             <IconButton
@@ -217,26 +202,6 @@ export const LegalFeedback = ({ messageId, userPrompt, aiResponse, conversationH
                                                     </Text>
                                                 </div>
                                             ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Thought Process / Search Details */}
-                                {thoughts && thoughts.length > 0 && (
-                                    <div>
-                                        <Text style={{ fontWeight: 600 }}>Search & Thought Process:</Text>
-                                        <div
-                                            style={{
-                                                backgroundColor: "#fff",
-                                                padding: 8,
-                                                borderRadius: 4,
-                                                marginTop: 4,
-                                                border: "1px solid #ddd",
-                                                maxHeight: 150,
-                                                overflowY: "auto"
-                                            }}
-                                        >
-                                            {formatThoughts()}
                                         </div>
                                     </div>
                                 )}

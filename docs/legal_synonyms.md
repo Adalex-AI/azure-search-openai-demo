@@ -228,7 +228,7 @@ python evals/test_terminology_gaps.py --verbose
 - [Azure AI Search Synonym Maps](https://learn.microsoft.com/en-us/azure/search/search-synonyms)
 - [Solr Synonym Filter](https://cwiki.apache.org/confluence/display/solr/Filter+Descriptions#FilterDescriptions-SynonymGraphFilter)
 
----
+***
 
 ## Expansion Roadmap & Implementation Status
 
@@ -304,7 +304,7 @@ This section documents the strategic expansion from 87 to 146+ synonym rules imp
 - After quarterly review cycle validates Phase 2-3 performance
 - To normalize abbreviation handling across all CPR parts
 
----
+***
 
 ## Testing & Validation Framework
 
@@ -351,7 +351,7 @@ When validating new synonyms, add test cases to `evals/test_search_quality.py`:
 ("RTA claim", ["road traffic accident claim"]),
 ```
 
----
+***
 
 ## Implementation Checklist
 
@@ -368,7 +368,7 @@ When validating new synonyms, add test cases to `evals/test_search_quality.py`:
 - [ ] Quarterly: Review new CPR updates and add to synonym map
 - [ ] Monthly: Monitor user search logs for new terminology gaps
 
----
+***
 
 ## CPR Update Tracking
 
@@ -383,7 +383,7 @@ When validating new synonyms, add test cases to `evals/test_search_quality.py`:
 
 **Monitoring**: Subscribe to Master of the Rolls announcements and legislation.gov.uk
 
----
+***
 
 ## References
 

@@ -168,7 +168,7 @@ Verify your deployment exists in Azure Portal:
 - [Quick Fix Guide](./QUICK_FIX_GUIDE.md)
 - [Evaluation Status](./EVALUATION_STATUS.md)
 
----
+***
 
 **Last Updated**: 2025-11-17  
 **Current Model**: GPT-4.1-mini (recommended for evaluation)

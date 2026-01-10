@@ -2,7 +2,7 @@
 
 This guide covers the key AI engineering concepts and Python theory required to understand, manage, and maintain this Legal RAG (Retrieval-Augmented Generation) codebase.
 
----
+***
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ This guide covers the key AI engineering concepts and Python theory required to 
 6. [Evaluation & Metrics](#evaluation--metrics)
 7. [Production Best Practices](#production-best-practices)
 
----
+***
 
 ## RAG Architecture Overview
 
@@ -49,7 +49,7 @@ This application implements a **Chat-Read-Retrieve-Read** pattern:
 - [approaches/chatreadretrieveread.py](../app/backend/approaches/chatreadretrieveread.py) - Main chat approach
 - [approaches/retrievethenread.py](../app/backend/approaches/retrievethenread.py) - Single-turn ask approach
 
----
+***
 
 ## Core AI/ML Concepts
 
@@ -150,7 +150,7 @@ class SentenceTextSplitter(TextSplitter):
 | Recursive | Tries multiple separators hierarchically |
 | Document structure | Uses headings, paragraphs as natural boundaries |
 
----
+***
 
 ## Python Theory & Patterns
 
@@ -363,7 +363,7 @@ async def create_embedding_with_retry(self, text: str) -> list[float]:
             return await self._create_embedding(text)
 ```
 
----
+***
 
 ## Azure AI Services Integration
 
@@ -449,7 +449,7 @@ for page in result.pages:
         print(line.content)
 ```
 
----
+***
 
 ## Prompt Engineering
 
@@ -513,7 +513,7 @@ class PromptyManager:
 3. **Context awareness**: Handle court-specific vs. general rules
 4. **Citation format**: Enforce consistent citation style `[1][2][3]`
 
----
+***
 
 ## Evaluation & Metrics
 
@@ -558,7 +558,7 @@ cd evals
 python run_direct_evaluation.py
 ```
 
----
+***
 
 ## Production Best Practices
 
@@ -658,7 +658,7 @@ def sanitize_query(query: str) -> str:
     return query
 ```
 
----
+***
 
 ## Key Files Reference
 
@@ -672,7 +672,7 @@ def sanitize_query(query: str) -> str:
 | `evals/*.py` | Evaluation scripts and metrics |
 | `infra/*.bicep` | Azure infrastructure as code |
 
----
+***
 
 ## Learning Resources
 
@@ -691,7 +691,7 @@ def sanitize_query(query: str) -> str:
 - [Azure AI Search](https://learn.microsoft.com/azure/search/)
 - [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/)
 
----
+***
 
 ## Quick Command Reference
 

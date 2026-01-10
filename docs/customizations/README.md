@@ -113,7 +113,7 @@ These files are intentionally NOT in `/customizations/` because they are the cor
 - `chat_answer_question.prompty` - Legal domain prompt for "Chat" approach
 - `chat_query_rewrite.prompty` - Query rewriting for legal context
 
----
+***
 
 ## ✨ Custom Features
 
@@ -247,7 +247,7 @@ export const CUSTOM_FEATURES = {
 };
 ```
 
----
+***
 
 ## 🎁 Enhanced Feedback System (v1.0)
 
@@ -260,59 +260,7 @@ export const CUSTOM_FEATURES = {
 ### Problem Solved
 The original feedback system exposed system prompts to end users because thoughts from API responses included "Prompt to generate answer" steps containing sensitive instructions. The system had no deployment version tracking for feedback correlation.
 
-### Security Model
-
-The enhanced system ensures **system prompts are never visible to users**:
-
-1. **User API Response** → Filtered thoughts (no system prompts)
-2. **User Submits Feedback** → Feedback only contains user-safe thoughts  
-3. **Admin Storage** → Separate `*_admin.json` files with full diagnostic data
-4. **Deployment Tracking** → Every feedback includes version/commit hash
-
 ### Key Components
-
-#### ThoughtFilter Utility (`thought_filter.py`)
-Automatically classifies and filters thought steps:
-
-**Admin-Only Thoughts (Filtered from users):**
-- "Prompt to generate answer" - Contains system instructions
-- Any thought with `raw_messages` - Raw LLM message objects
-- "Prompt to rewrite query" - Internal reasoning
-- "Query rewrite" - System-level operations
-
-**User-Safe Thoughts (Preserved for users):**
-- "Search Query" - The actual search query executed
-- "Retrieved Documents" - Document summaries and counts
-- "Custom Analysis" - Custom user-visible analysis steps
-
-**Functions:**
-```python
-# Check if a thought contains sensitive info
-is_admin_only_thought(thought: ThoughtStep) -> bool
-
-# Get only user-safe thoughts
-filter_thoughts_for_user(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
-
-# Filter thoughts for feedback submission (same as above)
-filter_thoughts_for_feedback(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
-
-# Extract admin-only thoughts for backend storage
-extract_admin_only_thoughts(thoughts: list[ThoughtStep]) -> list[ThoughtStep]
-
-# Split into both categories
-split_thoughts(thoughts: list[ThoughtStep]) -> tuple[list, list]
-```
-
-**Usage:**
-```python
-from customizations import filter_thoughts_for_user, extract_admin_only_thoughts
-
-# Filter for user-facing API response
-api_response["context"]["thoughts"] = filter_thoughts_for_user(thoughts)
-
-# Extract for admin storage
-admin_file["admin_only_thoughts"] = extract_admin_only_thoughts(thoughts)
-```
 
 #### Deployment Metadata (`config.py`)
 Captures version information automatically:
@@ -468,7 +416,7 @@ APP_VERSION: 1.2.3
 GIT_SHA: $(git rev-parse --short HEAD)
 ```
 
----
+***
 
 ## 🔌 Integration Points
 
@@ -526,7 +474,7 @@ const { categories, loading: categoriesLoading } = useCategories();
 "/api/feedback": "http://localhost:50505"
 ```
 
----
+***
 
 ## 🔄 Upgrading from Upstream
 
@@ -556,7 +504,7 @@ When pulling updates from `Azure-Samples/azure-search-openai-demo`:
 
 5. **Check prompts:** Review if upstream prompts have changed and merge any improvements into your custom prompts.
 
----
+***
 
 ## 🧪 Testing
 
@@ -582,7 +530,7 @@ cd app/frontend && npm test
 - **Feedback**: All new tests passing (12 feedback tests, 14 thought filter tests)
 - **Frontend**: All passing (18+ tests)
 
----
+***
 
 ## 📋 Test Status
 
@@ -596,7 +544,7 @@ cd app/frontend && npm test
 | TypeScript | ✅ | - | No compilation errors |
 | **Legal RAG Evaluation** | **95%** | - | Precedent matching across 62 questions |
 
----
+***
 
 ## 📊 Legal Evaluation Results
 
@@ -630,7 +578,7 @@ cd evals
 
 For detailed evaluation documentation, see [Legal Evaluation Guide](docs/legal_evaluation.md).
 
----
+***
 
 ## 🚀 Deployment
 
@@ -640,7 +588,7 @@ Use `azd up` as normal. The customizations are included in the standard deployme
 azd up
 ```
 
----
+***
 
 ## � Phase 2: Automated Scraper Pipeline
 
@@ -669,7 +617,7 @@ https://github.com/adalex-ai/azure-search-openai-demo/actions
 
 See [Deployment & Operations](./DEPLOYMENT_AND_OPERATIONS.md) for detailed configuration, monitoring, and troubleshooting.
 
----
+***
 
 ## 📝 Changelog
 

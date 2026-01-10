@@ -83,7 +83,7 @@ class DocumentAnalysisParser(Parser):
                 try:
                     poller = await document_intelligence_client.begin_analyze_document(
                         model_id="prebuilt-layout",
-                        analyze_request=AnalyzeDocumentRequest(bytes_source=content_bytes),
+                        body=AnalyzeDocumentRequest(bytes_source=content_bytes),
                         output=["figures"],
                         features=["ocrHighResolution"],
                         output_content_format="markdown",
@@ -104,7 +104,7 @@ class DocumentAnalysisParser(Parser):
 
             if file_analyzed is False:
                 poller = await document_intelligence_client.begin_analyze_document(
-                    model_id=self.model_id, analyze_request=content, content_type="application/octet-stream"
+                    model_id=self.model_id, body=content, content_type="application/octet-stream"
                 )
             analyze_result: AnalyzeResult = await poller.result()
 

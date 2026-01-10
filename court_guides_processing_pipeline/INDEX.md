@@ -4,7 +4,7 @@
 **Status:** ✅ Organized (January 4, 2026)  
 **Ready For:** Stakeholder review and Phase 1 implementation
 
----
+***
 
 ## 📖 Start Here Based on Your Role
 
@@ -30,7 +30,7 @@
 → Step-by-step validation process  
 → Then: `README_OVERVIEW.md` (Testing & Quality section)
 
----
+***
 
 ## 📚 Documentation Files
 
@@ -53,7 +53,7 @@
 | **CHECKLIST.md** | Step-by-step validation checklist | 1.8 KB | Validating changes, ensuring quality |
 | **mapping.json** | Azure Search field mappings | 3.8 KB | Understanding JSON structure, schema details |
 
----
+***
 
 ## 🎯 How to Use This Documentation
 
@@ -81,7 +81,7 @@
 3. Consult: `docs/IMPLEMENTATION_PLAN.md` → Risk Assessment section
 4. Escalate: Contact folder owner
 
----
+***
 
 ## 🗂️ Folder Structure Overview
 
@@ -122,7 +122,7 @@ court_guides_processing_pipeline/
     └── [Test results, validation reports, error logs]
 ```
 
----
+***
 
 ## ⏭️ Next Steps
 
@@ -141,7 +141,7 @@ court_guides_processing_pipeline/
 - See `docs/IMPLEMENTATION_PLAN.md` → Implementation Timeline section
 - Expected: 7-10 weeks total (depending on parallelization)
 
----
+***
 
 ## 🔗 Related Documentation in Main Repo
 
@@ -155,7 +155,7 @@ These documents reference or are related to the court guides pipeline:
 | `docs/legal_evaluation.md` | Uses court guides data for RAG evaluation |
 | `evals/` | Ground truth and evaluation for legal RAG |
 
----
+***
 
 ## 📞 Questions & Support
 
@@ -168,7 +168,7 @@ These documents reference or are related to the court guides pipeline:
 | What if guides change during implementation? | See docs/CHECKLIST.md for validation process |
 | Where are the scripts? | Being recovered in Phase 1; see IMPLEMENTATION_PLAN.md Phase 1 |
 
----
+***
 
 ## 📊 Document Statistics
 
@@ -182,7 +182,7 @@ These documents reference or are related to the court guides pipeline:
 | Implementation phases | 6 |
 | Estimated duration | 7-10 weeks |
 
----
+***
 
 ## ✅ Document Checklist (What's Complete)
 
@@ -196,7 +196,7 @@ These documents reference or are related to the court guides pipeline:
 - ✅ Main repo docs updated (data_ingestion.md, monitoring.md)
 - ✅ Original docs preserved (README.md, CHECKLIST.md, etc.)
 
----
+***
 
 ## 📝 Version & Maintenance
 
@@ -208,6 +208,6 @@ These documents reference or are related to the court guides pipeline:
 | Owner | [To be assigned] |
 | Next Review | When Phase 1 begins |
 
----
+***
 
 **End of Index.** [Back to README_OVERVIEW.md](README_OVERVIEW.md) or [To Main IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md)

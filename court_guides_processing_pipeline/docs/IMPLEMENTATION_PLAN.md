@@ -4,7 +4,7 @@
 **Last Updated:** January 4, 2026  
 **Priority:** Low (Court guides update ~annually)
 
----
+***
 
 ## Executive Summary
 
@@ -24,7 +24,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 - 🎯 **Integrated validation** in CI/CD to ensure quality before indexing
 - 🎯 **Clear handoff documentation** for future maintenance
 
----
+***
 
 ## Phase 1: Script Recovery & Documentation (2-3 weeks)
 
@@ -53,7 +53,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 - Scripts have clear docstrings and argument documentation
 - Each script has a corresponding test/validation
 
----
+***
 
 ## Phase 2: Evaluate PDF Parsing Strategy (1-2 weeks)
 
@@ -84,7 +84,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 3. Document findings in `docs/PARSER_COMPARISON.md`
 4. Make final decision based on results
 
----
+***
 
 ## Phase 3: Consolidate Processing Pipeline (3-4 weeks)
 
@@ -125,7 +125,7 @@ process_court_guides_pipeline.py
 - Can be scheduled as a cron job or triggered manually
 - Full audit trail and error logging
 
----
+***
 
 ## Phase 4: Add Change Monitoring (2-3 weeks)
 
@@ -182,7 +182,7 @@ compare_extracted_content()
 - Low false positive rate
 - Clear diff reports for manual review
 
----
+***
 
 ## Phase 5: Validation & Integration (2-3 weeks)
 
@@ -215,7 +215,7 @@ Create `docs/OPERATOR_RUNBOOK.md`:
 - How to roll back if issues detected
 - Emergency contacts
 
----
+***
 
 ## Phase 6: Knowledge Transfer & Maintenance (1 week)
 
@@ -238,7 +238,7 @@ Update main `docs/` folder:
 - Identify future improvement opportunities
 - Create low-priority tech debt items
 
----
+***
 
 ## Implementation Timeline
 
@@ -254,7 +254,7 @@ Update main `docs/` folder:
 **Total Duration:** ~10 weeks (if done sequentially)  
 **With Parallelization:** ~7-8 weeks
 
----
+***
 
 ## Architecture Overview
 
@@ -317,7 +317,7 @@ Update main `docs/` folder:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Risk Assessment & Mitigation
 
@@ -329,7 +329,7 @@ Update main `docs/` folder:
 | Schema changes incompatible with Azure Search | Low | Medium | Test with staging index first |
 | Performance issues with automation | Low | Medium | Profile with production-size data |
 
----
+***
 
 ## Success Metrics
 
@@ -342,7 +342,7 @@ Update main `docs/` folder:
 | Content retention | ≥95% | Compare character/word counts before/after |
 | Documentation completeness | 100% | All phases documented with runbooks |
 
----
+***
 
 ## Future Improvements (Post-Implementation)
 
@@ -352,7 +352,7 @@ Update main `docs/` folder:
 4. **Real-time indexing** — Stream updates to Azure Search instead of batch uploads
 5. **Version control for JSONs** — Git-track processed outputs for audit trail
 
----
+***
 
 ## Appendix: Current Folder Structure
 
@@ -385,7 +385,7 @@ court_guides_processing_pipeline/
     └── (To be populated as phase progresses)
 ```
 
----
+***
 
 ## Questions for Stakeholders
 
@@ -394,7 +394,7 @@ court_guides_processing_pipeline/
 3. **Ownership:** Who will maintain this after implementation?
 4. **SLA:** What's the acceptable delay for court guide updates (24h, 1 week, monthly)?
 
----
+***
 
 **Document Owner:** [To be assigned]  
 **Last Reviewed:** January 4, 2026  

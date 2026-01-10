@@ -4,7 +4,7 @@
 **Last Updated:** December 2024  
 **Audience:** Lawyers and legal professionals using the Civil Procedure Copilot
 
----
+***
 
 ## Executive Summary
 
@@ -19,7 +19,7 @@ This Civil Procedure Copilot uses **Microsoft Azure OpenAI Service** to provide 
 | Access control & authentication | Your data is NOT available to other customers |
 | Stateless AI processing | The AI does NOT remember your previous queries |
 
----
+***
 
 ## 1. What This Application Searches
 
@@ -37,7 +37,7 @@ This Civil Procedure Copilot indexes the following publicly available legal docu
 
 These are all publicly available court documents. The AI uses these indexed sources to answer your questions about procedural rules, court practices, and litigation procedures.
 
----
+***
 
 ## 2. How Your Query is Processed
 
@@ -61,7 +61,7 @@ When you ask a question about CPR or court procedures:
 
 **Important:** The AI can only answer based on the indexed documents. It does not have access to external legal databases, your firm's documents, or real-time court information.
 
----
+***
 
 ## 3. Microsoft Azure OpenAI Data Commitments
 
@@ -96,7 +96,7 @@ This means:
 | Compliance | ✅ SOC 2, ISO 27001, GDPR | Variable |
 | Data residency | ✅ Configurable | ❌ OpenAI servers |
 
----
+***
 
 ## 4. What Data is Stored
 
@@ -116,7 +116,7 @@ This means:
 | Your prompts in OpenAI systems | Azure OpenAI doesn't retain prompts after processing |
 | Training data derived from your usage | Microsoft contractually prohibits this |
 
----
+***
 
 ## 5. Content Safety & Abuse Monitoring
 
@@ -152,7 +152,7 @@ Organizations handling highly sensitive data can apply to Microsoft for modified
 
 Contact your IT administrator if this is a concern.
 
----
+***
 
 ## 6. Data Residency
 
@@ -170,7 +170,7 @@ Contact your IT administrator if this is a concern.
 | Data Zone | Within the specified data zone (e.g., EU) |
 | Global | May be processed in any region with the model |
 
----
+***
 
 ## 7. Compliance & Certifications
 
@@ -184,7 +184,7 @@ Azure OpenAI Service inherits Azure's compliance certifications:
 | HIPAA | Healthcare data protection (if configured) |
 | UK G-Cloud | UK government cloud certification |
 
----
+***
 
 ## 8. Best Practices for Lawyers Using the CPR Research Assistant
 
@@ -222,7 +222,7 @@ Azure OpenAI Service inherits Azure's compliance certifications:
 - Check with your supervising solicitor about firm policies on AI use
 - The AI may make mistakes—professional judgment is essential
 
----
+***
 
 ## 9. Frequently Asked Questions
 
@@ -265,7 +265,7 @@ The AI provides source citations (e.g., "CPR Part 24", "Commercial Court Guide �
 - **Commercial Court Guide:** [judiciary.uk](https://www.judiciary.uk/guidance-and-resources/commercial-court-guide/)
 - **Other Court Guides:** Check the relevant court's page on judiciary.uk
 
----
+***
 
 ## 10. Official Microsoft Documentation
 
@@ -276,7 +276,7 @@ For authoritative and up-to-date information:
 - **Content Filtering:** https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/content-filter
 - **Microsoft Trust Center:** https://www.microsoft.com/trust-center
 
----
+***
 
 ## 11. Contact & Support
 
@@ -286,6 +286,6 @@ If you have questions about data privacy or security:
 - **Privacy Concerns:** Contact your organization's Data Protection Officer
 - **Usage Questions:** Refer to the application help or contact the system administrator
 
----
+***
 
 *This document is provided for informational purposes. For binding legal commitments, refer to your organization's Microsoft Enterprise Agreement and Azure service terms.*

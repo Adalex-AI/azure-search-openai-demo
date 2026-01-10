@@ -13,7 +13,7 @@ Deployed system for automating the scraping, validation, embedding, and indexing
 - [Maintenance](#maintenance)
 - [Troubleshooting](#troubleshooting)
 
----
+***
 
 ## Overview
 
@@ -34,7 +34,7 @@ The legal RAG scraper is a **fully automated GitHub Actions workflow** that main
 - **Index Size**: ~768 documents, 5000+ chunks with 3072-dimension embeddings
 - **Update Frequency**: Weekly (Sundays, 00:00 UTC) or manual dispatch
 
----
+***
 
 ## What Was Deployed
 
@@ -104,7 +104,7 @@ AZURE_OPENAI_EMB_DEPLOYMENT  (text-embedding-3-large)
 - Skips upload if documents are unchanged (no redundant operations)
 - Dry-run mode always shows what would be uploaded without uploading
 
----
+***
 
 ## Local Development
 
@@ -185,7 +185,7 @@ gh run list --workflow legal-scraper.yml --repo adalex-ai/azure-search-openai-de
 gh run download <run-id> --name artifacts
 ```
 
----
+***
 
 ## Operations & Monitoring
 
@@ -216,7 +216,7 @@ curl -X POST "https://<search-service>.search.windows.net/indexes/cpr-index/docs
   }'
 ```
 
----
+***
 
 ## Maintenance
 
@@ -256,7 +256,7 @@ git push origin main
 gh workflow run legal-scraper.yml --repo adalex-ai/azure-search-openai-demo
 ```
 
----
+***
 
 ## Troubleshooting
 

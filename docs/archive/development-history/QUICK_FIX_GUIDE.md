@@ -3,7 +3,7 @@
 ## 🎯 ROOT CAUSE
 **GPT-5-nano model has strict API parameter requirements causing OpenAI calls to fail**
 
----
+***
 
 ## ✅ What We Know
 
@@ -22,7 +22,7 @@
 - ✅ Temperature fix (`scripts/fix_gpt5_temperature.py`)
 - ✅ Backend code modified to skip temperature for GPT-5
 
----
+***
 
 ## 🚀 Quick Commands
 
@@ -58,7 +58,7 @@ curl -X POST http://localhost:50505/chat \
 ./scripts/run_full_diagnostic.sh
 ```
 
----
+***
 
 ## 🔧 Quick Workaround: Switch to GPT-4o
 
@@ -82,7 +82,7 @@ curl -X POST http://localhost:50505/chat \
 
 **Note**: Check your `.env` for actual GPT-4 deployment name. May be `gpt-4`, `gpt-4o`, `gpt-4-turbo`, etc.
 
----
+***
 
 ## 📊 Diagnostic Scripts Created
 
@@ -94,7 +94,7 @@ curl -X POST http://localhost:50505/chat \
 | `check_azure_deployment.sh` | Check deployment status | ✅ Ready |
 | `run_full_diagnostic.sh` | Master diagnostic suite | ✅ Ready |
 
----
+***
 
 ## 🔍 Where It Hangs
 
@@ -112,7 +112,7 @@ python scripts/add_diagnostic_logging.py
 # Look for last 🔍 DIAGNOSTIC message before hang
 ```
 
----
+***
 
 ## 📝 Next Investigation Steps
 
@@ -122,7 +122,7 @@ python scripts/add_diagnostic_logging.py
 4. **Direct API test** → Bypass backend with curl
 5. **Switch model temporarily** → Test with GPT-4o to confirm issue is GPT-5-specific
 
----
+***
 
 ## 📚 Documentation
 
@@ -131,7 +131,7 @@ python scripts/add_diagnostic_logging.py
 - **Backend Code**: `app/backend/approaches/chatreadretrieveread.py`
 - **Model Registry**: `app/backend/approaches/approach.py:153-162`
 
----
+***
 
 ## ⚡ For Immediate Evaluation
 
@@ -148,7 +148,7 @@ python evals/generate_ground_truth.py --numquestions=50
 python evals/evaluate.py --numquestions=10
 ```
 
----
+***
 
 **Updated**: 2025-11-11  
 **Status**: Root cause identified, partial fix applied, diagnostics ready

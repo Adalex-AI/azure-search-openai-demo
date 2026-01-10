@@ -4,7 +4,7 @@
 > **Purpose:** AI-powered legal research assistant for CPR, Practice Directions, and Court Guides  
 > **URL:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
----
+***
 
 ## 📚 Available Documents in the System
 
@@ -20,7 +20,7 @@ Before sending invitations, note the documents available to users:
 | **Technology & Construction Court Guide** | October 2022 |
 | **Circuit Commercial Court Guide** | August 2023 |
 
----
+***
 
 ## 🔒 Data Privacy & Security Summary
 
@@ -47,13 +47,13 @@ Before sending invitations, note the documents available to users:
 - [Azure OpenAI Data, Privacy & Security](https://learn.microsoft.com/en-gb/legal/cognitive-services/openai/data-privacy)
 - [Microsoft Trust Center (UK)](https://www.microsoft.com/en-gb/trust-center)
 
----
+***
 
 ## Email Option 1: Internal Organization Users (Full Details)
 
 **Subject:** 🔨 Access Civil Procedure Copilot – AI-Powered Legal Research Assistant
 
----
+***
 
 Dear [Name],
 
@@ -153,13 +153,13 @@ Best regards,
 [Your Title]  
 [Your Contact Information]
 
----
+***
 
 ## Email Option 2: External Guest Users (Lawyers Outside Your Organization)
 
 **Subject:** Invitation: Access Civil Procedure Copilot – AI Legal Research Assistant
 
----
+***
 
 Dear [Name],
 
@@ -245,13 +245,13 @@ Kind regards,
 [Your Email]  
 [Your Phone]
 
----
+***
 
 ## Email Option 3: Brief Internal Announcement
 
 **Subject:** 🔨 New Tool: Civil Procedure Copilot – AI Legal Research Assistant
 
----
+***
 
 Hi Team,
 
@@ -298,13 +298,13 @@ Questions or feedback? Reply to this email!
 
 [Your Name]
 
----
+***
 
 ## Email Option 4: One-Paragraph Quick Invite
 
 **Subject:** Access to Civil Procedure Copilot
 
----
+***
 
 Hi [Name],
 
@@ -312,7 +312,7 @@ You now have access to **Civil Procedure Copilot**, our AI-powered research tool
 
 [Your Name]
 
----
+***
 
 ## 📋 Administrator Checklist
 
@@ -353,7 +353,7 @@ python ./scripts/manageacl.py -v --acl-type groups --acl-action add \
   --url https://stgz2m4s637t5me.blob.core.windows.net/content/
 ```
 
----
+***
 
 ## Related Documentation
 

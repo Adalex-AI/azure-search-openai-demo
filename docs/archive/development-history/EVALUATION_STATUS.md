@@ -4,7 +4,7 @@
 
 All evaluation infrastructure is **ready** for testing the new `[1][2][3]` citation format. The backend accepts requests but hangs during Azure API calls (Azure OpenAI or Azure Search). This is an **Azure infrastructure issue**, not an evaluation framework issue.
 
----
+***
 
 ## ✅ Completed Work
 
@@ -65,7 +65,7 @@ All 5 metrics implemented and validated:
 - **evaluate.py**: Metrics registered and configured
 - **load_azd_env.py**: Patched with fallback to scan `.azure/` directories
 
----
+***
 
 ## ⏳ Current Blocker
 
@@ -108,7 +108,7 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 - **Deployment**: `gpt-5-nano` (version `2024-12-01-preview`)
 - **Search Index**: `legal-court-rag-index`
 
----
+***
 
 ## 📋 Next Steps
 
@@ -157,7 +157,7 @@ Create ground truth manually without backend:
 3. Save as `ground_truth_manual.jsonl`
 4. Run evaluation: `python evals/evaluate.py --data ground_truth_manual.jsonl`
 
----
+***
 
 ## 🚀 Running Evaluation (Once Backend Responds)
 
@@ -181,7 +181,7 @@ Check `evals/results/` directory for:
 - Per-question breakdown
 - Aggregate statistics
 
----
+***
 
 ## 📊 Expected Metrics Output
 
@@ -217,7 +217,7 @@ Based on validation tests, expected output format:
 }
 ```
 
----
+***
 
 ## 📁 Key Files Reference
 
@@ -232,7 +232,7 @@ Based on validation tests, expected output format:
 | `app/backend/main.py` | Backend service | ⏳ Running but hanging |
 | `.azure/cpr-rag/.env` | Azure resource config | ✅ Configured |
 
----
+***
 
 ## 🔍 Validation Results
 
@@ -269,7 +269,7 @@ TEST CASE 4: Multi-category Coverage
 FINAL: 20/20 assertions passed (100% success rate)
 ```
 
----
+***
 
 ## 💡 Recommendations
 
@@ -278,7 +278,7 @@ FINAL: 20/20 assertions passed (100% success rate)
 3. **Fallback**: Create manual ground truth for 10-20 questions to validate evaluation pipeline
 4. **Long-term**: Add timeout handling to Azure API calls in backend code
 
----
+***
 
 ## 📞 Support Information
 
@@ -287,7 +287,7 @@ FINAL: 20/20 assertions passed (100% success rate)
 - **Backend PID**: 68573 (port 50505)
 - **azd Location**: `/usr/local/bin/azd`
 
----
+***
 
 **Document Updated**: 2025-11-11  
 **Status**: Evaluation infrastructure complete, awaiting Azure backend connectivity resolution

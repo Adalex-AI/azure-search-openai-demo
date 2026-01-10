@@ -11,7 +11,7 @@ The Legal RAG system consists of two main phases:
 
 Together, these create a complete production system for legal document retrieval and analysis.
 
----
+***
 
 ## 📊 End-to-End System Architecture
 
@@ -111,7 +111,7 @@ Together, these create a complete production system for legal document retrieval
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## 🔄 Data Flow Sequence Diagram
 
@@ -202,7 +202,7 @@ User Query
 └──────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## 📦 Component Architecture
 
@@ -296,7 +296,7 @@ app/backend/
             └── Structured source metadata
 ```
 
----
+***
 
 ## 🚀 Phase 2 Scraping Pipeline Architecture
 
@@ -386,7 +386,7 @@ app/backend/
     └─────────────────────────────────┘
 ```
 
----
+***
 
 ## 🔐 Authentication & Security
 
@@ -439,7 +439,7 @@ Production Environment
 └── AZURE_OPENAI_EMB_DEPLOYMENT  → Embedding model (text-embedding-3-large)
 ```
 
----
+***
 
 ## 📊 Key Metrics
 
@@ -481,7 +481,7 @@ Production Environment
 | **Storage (Blob)** | ~$2-3 | Processed documents |
 | **Total** | ~$55-110/mo | Fully operational system |
 
----
+***
 
 ## 🔗 Integration Points Summary
 
@@ -509,7 +509,7 @@ Production Environment
 | `config.py` | Feature flags (backend) | Configuration |
 | `config.ts` | Feature flags (frontend) | Configuration |
 
----
+***
 
 ## 🎓 What Was Accomplished
 
@@ -586,7 +586,7 @@ Production Environment
 - Troubleshooting reference
 - Integration point documentation
 
----
+***
 
 ## 📈 Future Capability
 
@@ -601,7 +601,7 @@ The system is designed to support:
 | Monitoring dashboards | Not implemented | Application Insights integration |
 | Webhook notifications | Not implemented | Teams/Slack integration |
 
----
+***
 
 ## 🏗️ Technology Stack
 
@@ -629,7 +629,7 @@ The system is designed to support:
 - **Validation** before upload
 - **Artifact storage** for debugging
 
----
+***
 
 ## 📚 Related Documentation
 

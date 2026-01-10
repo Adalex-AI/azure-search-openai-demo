@@ -20,7 +20,7 @@ This document provides comprehensive documentation for the legal-specific evalua
 - [Interpreting Results](#interpreting-results)
 - [Extending the Framework](#extending-the-framework)
 
----
+***
 
 ## Overview
 
@@ -42,7 +42,7 @@ Standard RAG metrics like groundedness and relevance don't capture legal-specifi
 | Relevance | ✅ Answer addresses question | ❌ Doesn't check if case citations are valid |
 | Citations Matched | ✅ Documents cited | ❌ Doesn't verify legal reference format |
 
----
+***
 
 ## Architecture
 
@@ -99,7 +99,7 @@ register_metric(CitationFormatComplianceMetric)
 register_metric(PrecedentMatchingMetric)
 ```
 
----
+***
 
 ## Legal Metrics
 
@@ -121,7 +121,7 @@ STATUTE_REGEX = r'(?:section|s\.?)\s*(\d+(?:\([a-z0-9]+\))?)\s+(?:of the\s+)?([A
 CASE_CITATION_REGEX = r'\[(\d{4})\]\s*(?:UKSC|UKHL|EWCA|EWHC|UKPC)(?:\s+(?:Civ|Crim))?\s*(\d+)'
 ```
 
----
+***
 
 ### Statute Citation Accuracy
 
@@ -147,7 +147,7 @@ Score: 1.0 (perfect match)
 | 0.0 | No statutory citations matched |
 | -1.0 | Error or null response |
 
----
+***
 
 ### Case Law Citation Accuracy
 
@@ -173,7 +173,7 @@ Response: "The Court of Appeal in [2023] EWCA Civ 456 established..."
 Score: 1.0
 ```
 
----
+***
 
 ### Legal Terminology Accuracy
 
@@ -204,7 +204,7 @@ Response: "The plaintiff must provide discovery..."
 Score: 0.0 (uses US terms)
 ```
 
----
+***
 
 ### Citation Format Compliance
 
@@ -233,7 +233,7 @@ Score: 0.0 (uses US terms)
 | 0.5 | Contains both valid and invalid formats |
 | 0.0 | All citations malformed |
 
----
+***
 
 ### Precedent Matching
 
@@ -259,7 +259,7 @@ Response: "Under Part 36, a party may make an offer..."
 Score: 0.0 (source not cited)
 ```
 
----
+***
 
 ## Ground Truth Data
 
@@ -312,7 +312,7 @@ Create entries following this template:
 5. **Use UK terminology**: "claimant" not "plaintiff"
 6. **Cover multiple court guides**: CPR, Commercial Court, TCC, etc.
 
----
+***
 
 ## Configuration
 
@@ -366,7 +366,7 @@ Create entries following this template:
 | `query_rewriting` | Rewrite queries | `true` |
 | `reasoning_effort` | LLM reasoning depth | `medium` or `high` |
 
----
+***
 
 ## Running Evaluations
 
@@ -447,7 +447,7 @@ python evals/evaluate.py --config evaluate_config_court_guides.json
 | `--numquestions` | Limit number of questions to evaluate |
 | `--resultsdir` | Override results directory |
 
----
+***
 
 ## Testing the Framework
 
@@ -491,7 +491,7 @@ python -m pytest evals/test_legal_metrics.py -v
 8. QOCS and other legal acronyms
 9. Track allocation terminology
 
----
+***
 
 ## Azure Search Index Testing
 
@@ -529,7 +529,7 @@ python test_search_index.py --action export --query "summary judgment"
 | `test` | Run predefined legal test queries |
 | `export` | Export results to JSON for ground truth creation |
 
----
+***
 
 ## Interpreting Results
 
@@ -567,7 +567,7 @@ python -m evaltools summary evals/results/legal-domain
 python -m evaltools diff evals/results/legal-domain/baseline/ evals/results/legal-domain/experiment/
 ```
 
----
+***
 
 ## Extending the Framework
 
@@ -645,7 +645,7 @@ def generate_ground_truth_for_topic(topic, num_questions=10):
         yield {"question": question, "truth": truth}
 ```
 
----
+***
 
 ## Troubleshooting
 
@@ -674,7 +674,7 @@ Check individual question results:
 cat evals/results/legal-domain/TIMESTAMP/eval_results.jsonl | jq '.statute_citation_accuracy'
 ```
 
----
+***
 
 ## References
 
@@ -683,7 +683,7 @@ cat evals/results/legal-domain/TIMESTAMP/eval_results.jsonl | jq '.statute_citat
 - [UK Civil Procedure Rules](https://www.justice.gov.uk/courts/procedure-rules/civil)
 - [Neutral Citation Format (UK Courts)](https://www.judiciary.uk/guidance-and-resources/practice-direction-citation-of-authorities-2024/)
 
----
+***
 
 ## Latest Evaluation Results
 
@@ -780,7 +780,7 @@ cd evals
 
 Expected: 41 tests passing
 
----
+***
 
 ## Why Evaluate Legal RAG Systems?
 
@@ -810,7 +810,7 @@ In legal RAG, citing the **correct source document** is critical because:
 - **Updates**: Court guides are updated regularly; citing outdated sources is problematic
 - **Liability**: Incorrect citations can lead to procedural errors in real cases
 
----
+***
 
 ## Evaluation Process
 
@@ -888,7 +888,7 @@ Overall Metrics:
 └────────────────────────────┴───────┴────────┘
 ```
 
----
+***
 
 ## Next Steps
 
@@ -943,7 +943,7 @@ Overall Metrics:
    - Add support for Scottish and Northern Irish procedure rules
    - Consider EU/international court procedures
 
----
+***
 
 ## Changelog
 

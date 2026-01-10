@@ -3,7 +3,7 @@
 **Folder Status:** Organized and documented (Planning phase)  
 **Last Updated:** January 4, 2026
 
----
+***
 
 ## What Is This Folder?
 
@@ -19,7 +19,7 @@ This folder contains the **complete documentation, source files, and outputs** f
 | **Integration** | Feeds into `legal-court-rag-index` in Azure AI Search |
 | **Maintenance** | Low effort; can be fully automated |
 
----
+***
 
 ## Folder Structure
 
@@ -54,7 +54,7 @@ court_guides_processing_pipeline/
     └── [To be populated during implementation]
 ```
 
----
+***
 
 ## The Pipeline at a Glance
 
@@ -88,7 +88,7 @@ Azure AI Search Index (legal-court-rag-index)
 
 **Total:** 5 guides, 698 indexed sections, 100% searchable
 
----
+***
 
 ## Key Documents to Read
 
@@ -112,7 +112,7 @@ Azure AI Search Index (legal-court-rag-index)
 5. **[mapping.json](docs/mapping.json)**
    - Field mappings: PDF → Processed JSON → Azure Search schema
 
----
+***
 
 ## Current Status: Not Yet Automated ⚠️
 
@@ -129,7 +129,7 @@ Azure AI Search Index (legal-court-rag-index)
 - **No scheduled pipeline** — currently manual, one-off process
 - **No CI/CD integration** — not part of deployment workflow
 
----
+***
 
 ## When You Need to Use This
 
@@ -148,7 +148,7 @@ Azure AI Search Index (legal-court-rag-index)
 2. Review logs in `validation/` directory
 3. Contact maintainer (see IMPLEMENTATION_PLAN.md for escalation)
 
----
+***
 
 ## Integration with Main Application
 
@@ -168,7 +168,7 @@ The processed outputs feed directly into:
 | `category` | `category` | Category-based filtering |
 | `embedding` | `embedding` | Semantic similarity search |
 
----
+***
 
 ## Maintenance Philosophy
 
@@ -185,7 +185,7 @@ The processed outputs feed directly into:
 4. Validate output in staging index
 5. Promote to production
 
----
+***
 
 ## Next Steps
 
@@ -197,7 +197,7 @@ The processed outputs feed directly into:
 ### For Implementation (Pending Decision)
 See [IMPLEMENTATION_PLAN.md - Implementation Timeline](docs/IMPLEMENTATION_PLAN.md#implementation-timeline)
 
----
+***
 
 ## Questions & Resources
 
@@ -209,7 +209,7 @@ See [IMPLEMENTATION_PLAN.md - Implementation Timeline](docs/IMPLEMENTATION_PLAN.
 | What's the full plan? | [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) |
 | What fields are in the JSON? | [docs/mapping.json](docs/mapping.json) |
 
----
+***
 
 ## Related Documentation in Main Repo
 
@@ -218,7 +218,7 @@ See [IMPLEMENTATION_PLAN.md - Implementation Timeline](docs/IMPLEMENTATION_PLAN.
 - 📈 **Monitoring:** `docs/monitoring.md` (Application Insights setup)
 - 🏗️ **Architecture:** `docs/architecture.md` (system overview)
 
----
+***
 
 **Folder Owner:** [To be assigned]  
 **Last Reviewed:** January 4, 2026  

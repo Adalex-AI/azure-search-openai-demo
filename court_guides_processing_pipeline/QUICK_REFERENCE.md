@@ -4,7 +4,7 @@
 **Status:** Organized (Jan 2026) — Ready for implementation  
 **Key Doc:** `docs/IMPLEMENTATION_PLAN.md`
 
----
+***
 
 ## The 5-Minute Summary
 
@@ -33,7 +33,7 @@ UK court guide PDFs are converted to JSON and indexed in Azure AI Search for leg
 - Monitoring gaps → miss important updates
 - Scripts missing → can't reproduce
 
----
+***
 
 ## Folder Organization
 
@@ -51,7 +51,7 @@ court_guides_processing_pipeline/
 └── validation/                     # (For test results)
 ```
 
----
+***
 
 ## Key Decisions Pending
 
@@ -62,7 +62,7 @@ court_guides_processing_pipeline/
 | **Ownership** | Who maintains after implementation? | Support model |
 | **SLA** | Same-day updates OR weekly batch? | Operational load |
 
----
+***
 
 ## Implementation Phases at a Glance
 
@@ -75,7 +75,7 @@ court_guides_processing_pipeline/
 | 5 | CI/CD + tests | 2-3w | DevOps | 🚧 Pending |
 | 6 | Handoff + docs | 1w | Team | 🚧 Pending |
 
----
+***
 
 ## Success Metrics
 
@@ -86,7 +86,7 @@ court_guides_processing_pipeline/
 ✅ Full CI/CD integration  
 ✅ Complete operator runbook  
 
----
+***
 
 ## Next Steps
 
@@ -96,7 +96,7 @@ court_guides_processing_pipeline/
 4. **Schedule** Phase 1 kickoff
 5. **Monitor** progress against timeline
 
----
+***
 
 ## Contact Points
 
@@ -107,7 +107,7 @@ court_guides_processing_pipeline/
 | "What do I do if a guide updates?" | `docs/CHECKLIST.md` |
 | "Why is something missing?" | `docs/SCRIPTS_USED.md` |
 
----
+***
 
 **Last Updated:** January 4, 2026  
 **Reviewed By:** [TBD]  

@@ -106,6 +106,6 @@ azd provision
 
 This will create a separate `gpt-4o` deployment specifically for running evaluations.
 
----
+***
 
 **Bottom Line**: Switch from `gpt-5-nano` to `gpt-4.1-mini` (searchagent deployment) and everything should work as designed.

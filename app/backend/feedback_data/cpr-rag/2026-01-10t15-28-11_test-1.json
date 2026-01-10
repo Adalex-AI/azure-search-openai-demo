@@ -1,0 +1,17 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": false,
+  "payload": {
+    "message_id": "test-1",
+    "rating": "5",
+    "issues": [],
+    "comment": ""
+  },
+  "metadata": {
+    "deployment_id": "cpr-rag",
+    "app_version": "0.0.0",
+    "git_sha": "unknown",
+    "model_name": "gpt-5-nano",
+    "environment": "development"
+  }
+}

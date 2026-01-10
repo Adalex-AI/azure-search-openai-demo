@@ -13,7 +13,8 @@ In **Terminal 1**, run:
 ```
 
 You should see:
-```
+
+```bash
 ✓ Virtual environment activated
 ✓ Environment loaded
 🏃 Starting Quart backend server...
@@ -21,6 +22,7 @@ Backend will be available at: http://127.0.0.1:50505
 ```
 
 The server will start with:
+
 - **URL**: http://127.0.0.1:50505
 - **Hot reload**: Enabled (changes auto-reload)
 - **Authentication**: Disabled (for testing)
@@ -37,7 +39,8 @@ In **Terminal 2**, run:
 ```
 
 You should see:
-```
+
+```bash
 ✅ Test 1 PASSED: Feedback accepted
 ✅ Test 2 PASSED: Feedback with thoughts accepted
 ✅ Test 3 PASSED: Verification local storage
@@ -47,18 +50,21 @@ You should see:
 ### Step 3: Check Saved Feedback Files
 
 The feedback is automatically saved to:
-```
+
+```bash
 feedback_data/local/
 ├── 2026-01-10t14-32-00_test-001.json          # User-visible feedback
 └── 2026-01-10t14-32-00_test-002.json          # User-visible feedback
 ```
 
 Check the contents:
+
 ```bash
 cat feedback_data/local/*.json | jq
 ```
 
 Expected output shows:
+
 - ✅ User prompt and AI response
 - ✅ Safe thoughts only (no system prompts)
 - ✅ Deployment metadata
@@ -79,6 +85,7 @@ curl -X POST http://127.0.0.1:50505/api/feedback \
 ```
 
 Expected response:
+
 ```json
 {"status": "received"}
 ```
@@ -120,6 +127,7 @@ curl -X POST http://127.0.0.1:50505/api/feedback \
 ```
 
 Then verify the system prompt was filtered:
+
 ```bash
 cat feedback_data/local/2026-01-10t*_manual-test-003.json | jq '.context.thoughts'
 ```
@@ -139,6 +147,7 @@ Should show **empty array** (system prompt removed).
 ## Troubleshooting
 
 ### Backend won't start
+
 ```bash
 # Check if port 50505 is in use
 lsof -i :50505
@@ -148,6 +157,7 @@ kill -9 <PID>
 ```
 
 ### Azure credentials not loaded
+
 ```bash
 # Manually load environment
 azd auth login
@@ -155,6 +165,7 @@ azd env select cpr-rag
 ```
 
 ### Import errors
+
 ```bash
 # Reinstall dependencies
 source .venv-upgrade/bin/activate
@@ -162,6 +173,7 @@ pip install -r app/backend/requirements.txt
 ```
 
 ### No feedback files created
+
 ```bash
 # Check if directory was created
 ls -la feedback_data/

@@ -3,7 +3,7 @@
 **Date**: 2025-11-17  
 **Status**: ✅ READY FOR EVALUATION
 
----
+***
 
 ## Active Configuration
 
@@ -30,7 +30,7 @@ Dimensions: 3072
 Status: ✅ Tested and Working
 ```
 
----
+***
 
 ## Test Results
 
@@ -55,7 +55,7 @@ python -c "import azure.ai.evaluation"
 ```
 **Result**: ✅ Package installed and ready
 
----
+***
 
 ## Why GPT-4.1-mini for Evaluation?
 
@@ -64,7 +64,7 @@ python -c "import azure.ai.evaluation"
 3. **Proven Reliability**: All evaluation scripts tested and working
 4. **Faster Responses**: No reasoning overhead
 
----
+***
 
 ## When to Switch to GPT-5-nano
 
@@ -79,7 +79,7 @@ Consider switching to GPT-5-nano only when:
 - Temperature must be `1` (cannot be set to `0`)
 - Some parameters (`seed`, `n`, `tools`) may not be fully supported
 
----
+***
 
 ## Running Evaluation Now
 
@@ -113,7 +113,7 @@ python evals/evaluate.py --numquestions=10
 ls -lh evals/results/
 ```
 
----
+***
 
 ## Quick Health Check Commands
 
@@ -131,7 +131,7 @@ curl -X POST http://localhost:50505/chat \
 grep "AZURE_OPENAI_CHATGPT_MODEL" .azure/cpr-rag/.env
 ```
 
----
+***
 
 ## Configuration Files
 
@@ -140,7 +140,7 @@ grep "AZURE_OPENAI_CHATGPT_MODEL" .azure/cpr-rag/.env
 - **Test Questions**: `evals/practical_test_questions.json`
 - **Ground Truth**: `evals/ground_truth.jsonl`
 
----
+***
 
 ## Related Documentation
 
@@ -149,6 +149,6 @@ grep "AZURE_OPENAI_CHATGPT_MODEL" .azure/cpr-rag/.env
 - [Evaluation Status](./EVALUATION_STATUS.md) - Evaluation setup details
 - [Upstream Reasoning Docs](./docs/reasoning.md) - Original GPT-5 guidance
 
----
+***
 
 **Summary**: System is currently configured with GPT-4.1-mini and fully operational. All Azure services tested and responding correctly. Ready to run evaluation.

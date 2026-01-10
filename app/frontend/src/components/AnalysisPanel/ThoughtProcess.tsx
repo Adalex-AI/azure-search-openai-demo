@@ -28,26 +28,30 @@ export const ThoughtProcess = ({ thoughts }: Props) => {
         );
     };
 
+    const blockedTitles = ["Prompt to generate answer", "Prompt to rewrite query", "Query rewrite", "Thought step"];
+
     return (
         <ul className={styles.tList}>
-            {thoughts.map((t, ind) => {
-                return (
-                    <li className={styles.tListItem} key={ind}>
-                        <div className={styles.tStep}>{t.title}</div>
-                        <Stack horizontal tokens={{ childrenGap: 5 }}>
-                            {t.props &&
-                                (Object.keys(t.props).filter(k => k !== "token_usage" && k !== "query_plan") || []).map((k: any) => (
-                                    <span className={styles.tProp} key={k}>
-                                        {k}: {JSON.stringify(t.props?.[k])}
-                                    </span>
-                                ))}
-                        </Stack>
-                        {t.props?.token_usage && <TokenUsageGraph tokenUsage={t.props.token_usage} reasoningEffort={t.props.reasoning_effort} />}
-                        {t.props?.query_plan && <AgentPlan query_plan={t.props.query_plan} description={t.description} />}
-                        {Array.isArray(t.description) ? renderCode(t.description) : <div>{t.description}</div>}
-                    </li>
-                );
-            })}
+            {thoughts
+                .filter(t => !blockedTitles.includes(t.title))
+                .map((t, ind) => {
+                    return (
+                        <li className={styles.tListItem} key={ind}>
+                            <div className={styles.tStep}>{t.title}</div>
+                            <Stack horizontal tokens={{ childrenGap: 5 }}>
+                                {t.props &&
+                                    (Object.keys(t.props).filter(k => k !== "token_usage" && k !== "query_plan") || []).map((k: any) => (
+                                        <span className={styles.tProp} key={k}>
+                                            {k}: {JSON.stringify(t.props?.[k])}
+                                        </span>
+                                    ))}
+                            </Stack>
+                            {t.props?.token_usage && <TokenUsageGraph tokenUsage={t.props.token_usage} reasoningEffort={t.props.reasoning_effort} />}
+                            {t.props?.query_plan && <AgentPlan query_plan={t.props.query_plan} description={t.description} />}
+                            {Array.isArray(t.description) ? renderCode(t.description) : <div>{t.description}</div>}
+                        </li>
+                    );
+                })}
         </ul>
     );
 };

@@ -1,46 +1,40 @@
 # Enhanced Feedback System Implementation - Summary
 
 ## Overview
+
 Successfully implemented a comprehensive feedback enhancement system that:
-1. **Protects system prompts** from end users
-2. **Captures deployment metadata** (version, commit hash, model)
-3. **Stores feedback separately** (user-visible + admin-only)
-4. **Maintains merge-safe architecture** for public repo
+
+1. **Captures deployment metadata** (version, commit hash, model)
+2. **Maintains merge-safe architecture** for public repo
 
 ## Implementation Completed
 
-### Backend Code (5 files modified/created)
+### Backend Code
 
-#### 1. `app/backend/customizations/thought_filter.py` (NEW)
-- **Purpose**: Filter system prompts from thought steps
-- **Functions**: 
-  - `is_admin_only_thought()` - Detect sensitive thoughts
-  - `filter_thoughts_for_user()` - Return only user-safe thoughts
-  - `extract_admin_only_thoughts()` - Get admin content
-  - `split_thoughts()` - Separate into both categories
-- **Admin-only titles**: "Prompt to generate answer", any with `raw_messages`
-- **User-safe titles**: "Search Query", "Retrieved Documents"
+#### 1. `app/backend/customizations/config.py` (ENHANCED)
 
-#### 2. `app/backend/customizations/config.py` (ENHANCED)
 - **Added**: `get_deployment_metadata()` function
 - **Returns**: deployment_id, app_version, git_sha, model_name, environment
 - **Uses environment variables**: DEPLOYMENT_ID, APP_VERSION, GIT_SHA
 - **Feature flag**: enhanced_feedback set to True
 
 #### 3. `app/backend/customizations/__init__.py` (ENHANCED)
+
 - **Exports**: All thought filtering functions
 - **Exports**: get_deployment_metadata()
 - **Pattern**: Barrel export for clean imports
 
 #### 4. `app/backend/customizations/routes/feedback.py` (ENHANCED)
+
 - **Filtering**: Uses `filter_thoughts_for_feedback()` before storing
 - **Metadata**: Adds `get_deployment_metadata()` to every feedback record
-- **Dual storage**: 
+- **Dual storage**:
   - User-visible feedback (filtered thoughts)
   - Admin file with `*_admin.json` (full diagnostic data)
 - **Storage**: Local files + Azure Blob Storage
 
 #### 5. `app/backend/approaches/chatapproach.py` (ENHANCED)
+
 - **Integration point 1**: `run_without_streaming()` - Filters thoughts before return
 - **Integration point 2**: `run_with_streaming()` - Filters thoughts for streaming
 - **Import**: `from customizations import filter_thoughts_for_user`
@@ -49,17 +43,20 @@ Successfully implemented a comprehensive feedback enhancement system that:
 ### Infrastructure (2 files modified)
 
 #### 1. `infra/main.bicep` (ENHANCED)
+
 - **Added environment variables** to appEnvVariables object:
   - DEPLOYMENT_ID: environmentName
   - APP_VERSION: 'v1.0.0'
   - GIT_SHA: deployment().properties.template.metadata.version
 
 #### 2. `infra/main.parameters.json`
+
 - **Note**: Parameters already support DEPLOYMENT_ID, APP_VERSION, GIT_SHA through defaults
 
 ### Tests (2 files created)
 
 #### 1. `tests/test_feedback.py` (NEW)
+
 - **12 tests** covering:
   - Simple feedback without context
   - Feedback with context + system prompt filtering
@@ -71,6 +68,7 @@ Successfully implemented a comprehensive feedback enhancement system that:
 - **Uses**: Async client fixture, mocking patterns from conftest.py
 
 #### 2. `tests/test_thought_filter.py` (NEW)
+
 - **14 tests** covering:
   - Admin-only thought detection (6 tests)
   - User-safe thought filtering (4 tests)
@@ -82,22 +80,25 @@ Successfully implemented a comprehensive feedback enhancement system that:
 ### Documentation (3 files enhanced)
 
 #### 1. `.github/instructions/customizations.instructions.md` (ENHANCED)
+
 - **Added**: Enhanced Feedback System v1.0 section
-- **Documents**: 
+- **Documents**:
   - Feedback features and security model
   - Deployment metadata structure
   - Thought filtering behavior
   - Admin storage separation
 
 #### 2. `AGENTS.md` (ENHANCED)
+
 - **Updated**: Customizations file listing with new files
 - **Added**: Enhanced Feedback System section (v1.0)
-- **Documents**: 
+- **Documents**:
   - Feedback capabilities
   - Key files and their purposes
   - Testing commands and coverage
 
 #### 3. `docs/customizations/README.md` (ENHANCED)
+
 - **Added**: Major section on Enhanced Feedback System
 - **Includes**:
   - Problem solved
@@ -114,7 +115,8 @@ Successfully implemented a comprehensive feedback enhancement system that:
 ## Security Architecture
 
 ### System Prompt Protection Flow
-```
+
+```bash
 1. Backend generates response with all thoughts (including system prompts)
 2. ChatApproach filters thoughts via filter_thoughts_for_user()
 3. User receives API response with ONLY user-safe thoughts
@@ -126,6 +128,7 @@ Successfully implemented a comprehensive feedback enhancement system that:
 ```
 
 ### Thought Classification
+
 | Thought | Classification | User Sees? | Admin File? |
 |---------|----------------|------------|------------|
 | "Search Query" | User-safe | ✅ Yes | N/A |
@@ -136,6 +139,7 @@ Successfully implemented a comprehensive feedback enhancement system that:
 ## Deployment Metadata
 
 ### Environment Variables (Optional)
+
 ```bash
 DEPLOYMENT_ID=prod-v1          # Unique deployment identifier
 APP_VERSION=1.0.0              # Semantic version
@@ -143,12 +147,14 @@ GIT_SHA=abc123def456           # Git commit hash
 ```
 
 ### Automatic Values
+
 ```bash
 AZURE_OPENAI_CHATGPT_MODEL     # Model being used
 RUNNING_IN_PRODUCTION          # Environment indicator
 ```
 
 ### Feedback Metadata Example
+
 ```json
 {
   "deployment_id": "prod-v1",
@@ -162,11 +168,13 @@ RUNNING_IN_PRODUCTION          # Environment indicator
 ## Merge-Safe Integration Points
 
 ### Files with Minimal Changes (Easy Upgrades)
+
 1. `app/backend/approaches/chatapproach.py` - 2 lines per method (filtering)
 2. `infra/main.bicep` - 3 new env vars
 3. `.github/instructions/customizations.instructions.md` - Documentation only
 
 ### No Changes Required (Fully Isolated)
+
 - `app/backend/customizations/thought_filter.py` ✅
 - `tests/test_feedback.py` ✅
 - `tests/test_thought_filter.py` ✅
@@ -174,11 +182,13 @@ RUNNING_IN_PRODUCTION          # Environment indicator
 ## Testing Coverage
 
 ### Unit Tests
+
 - ✅ 14 thought_filter.py tests (100% coverage)
 - ✅ 12 feedback endpoint tests
 - ✅ Integration test for complete flow
 
 ### Test Commands
+
 ```bash
 # All feedback tests
 pytest tests/test_feedback.py tests/test_thought_filter.py -v
@@ -212,8 +222,9 @@ pytest tests/test_feedback.py::test_feedback_includes_deployment_metadata -v
 **Documentation Pages Updated**: 3
 
 ### By Category
+
 - Backend Code: 5 files
-- Infrastructure: 2 files  
+- Infrastructure: 2 files
 - Tests: 2 files
 - Documentation: 3 files
 - Instructions: 1 file

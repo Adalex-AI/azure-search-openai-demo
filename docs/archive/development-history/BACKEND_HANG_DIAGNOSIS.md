@@ -6,7 +6,7 @@
 
 **STATUS**: Fix applied but backend still hanging - likely additional parameter compatibility issues.
 
----
+***
 
 ## 🔍 Diagnostic Process
 
@@ -29,7 +29,7 @@
    - Model responded: `gpt-5-nano-2025-08-07`
    - Used `max_completion_tokens=50`, no temperature override
 
----
+***
 
 ## 🐛 Backend Code Issues
 
@@ -82,7 +82,7 @@ return self.openai_client.chat.completions.create(
 )
 ```
 
----
+***
 
 ## 📊 Test Results Summary
 
@@ -94,7 +94,7 @@ return self.openai_client.chat.completions.create(
 | Backend /chat endpoint | ❌ HANG | Still hangs after temperature fix |
 | AzureDeveloperCliCredential | ✅ PASS | Token acquisition working |
 
----
+***
 
 ## 🛠️ Diagnostic Tools Created
 
@@ -121,7 +121,7 @@ return self.openai_client.chat.completions.create(
 - Checks Search service status
 - Reviews quota/rate limits
 
----
+***
 
 ## 🔬 Backend Execution Flow
 
@@ -149,7 +149,7 @@ run_until_final_call()
 1. **STEP 1 Query Rewrite** - Line 457-467 (passes `temperature=0.0`, `tools`, `reasoning_effort="low"`)
 2. **STEP 3 Final Completion** - Line 351-361 (large token limit, may include unsupported params)
 
----
+***
 
 ## 📝 GPT-5-nano API Requirements
 
@@ -171,7 +171,7 @@ Based on testing, GPT-5-nano requires:
 - `reasoning_effort`: May have restricted values
 - `stream`: Streaming support (supposedly supported per `GPT_REASONING_MODELS`)
 
----
+***
 
 ## 🎯 Next Steps
 
@@ -215,7 +215,7 @@ Based on testing, GPT-5-nano requires:
      -d '{"messages":[{"role":"user","content":"test"}],"max_completion_tokens":50}'
    ```
 
----
+***
 
 ## 📚 Reference Documentation
 
@@ -233,7 +233,7 @@ Based on testing, GPT-5-nano requires:
   - `AZURE_OPENAI_CHATGPT_DEPLOYMENT="gpt-5-nano"`
   - `AZURE_OPENAI_ENDPOINT="https://cog-gz2m4s637t5me-us2.openai.azure.com/"`
 
----
+***
 
 ## 🔄 Timeline
 
@@ -245,7 +245,7 @@ Based on testing, GPT-5-nano requires:
 6. **Current Status**: Still hanging - investigating additional parameters
 7. **Next**: Apply diagnostic logging to pinpoint exact failure
 
----
+***
 
 **Document Updated**: 2025-11-11  
 **Status**: Root cause identified, partial fix applied, further investigation needed  

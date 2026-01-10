@@ -18,7 +18,7 @@ This document describes the current documentation organization and what each fil
 
 **When to Use**: Starting point for new developers, understanding feature scope
 
----
+***
 
 ### 2. **SYSTEM_ARCHITECTURE.md** - As-Built Architecture & Design
 **Purpose**: Comprehensive system design documentation with diagrams
@@ -35,7 +35,7 @@ This document describes the current documentation organization and what each fil
 
 **When to Use**: Understanding overall system design, integration points, data flow
 
----
+***
 
 ### 3. **DEPLOYMENT_AND_OPERATIONS.md** - What Was Deployed & How to Operate
 **Status**: ✅ **DEPLOYED & OPERATIONAL**
@@ -65,7 +65,7 @@ This document describes the current documentation organization and what each fil
 
 **When to Use**: Setting up production, monitoring, maintenance, troubleshooting issues
 
----
+***
 
 ## 🏛️ Archived Documentation
 
@@ -83,7 +83,7 @@ This document describes the current documentation organization and what each fil
 
 **To Access**: If historical reference needed: `docs/customizations/.archive/PHASE_2_SCRAPER_AUTOMATION.md`
 
----
+***
 
 ## 📚 Related Documentation
 
@@ -96,7 +96,7 @@ These documents are in other locations but referenced by customizations docs:
 | Architectural Details | `docs/architecture.md` | Overall application architecture |
 | Legal Customizations | `docs/customizations/README.md` | This folder - all custom features |
 
----
+***
 
 ## 🎯 Documentation Philosophy
 
@@ -118,7 +118,7 @@ Alternative deployment options that weren't implemented:
 
 **Rationale**: Single source of truth. When you read the docs, you see what's actually running in production, not theoretical options.
 
----
+***
 
 ## 🔍 Finding Information
 
@@ -135,7 +135,7 @@ Alternative deployment options that weren't implemented:
 | Check evaluation metrics | README.md | "📊 Legal Evaluation Results" |
 | Learn about features | README.md | "✨ Custom Features" |
 
----
+***
 
 ## 📊 Documentation Statistics
 
@@ -149,7 +149,7 @@ Alternative deployment options that weren't implemented:
 | **Troubleshooting Issues** | 6 with solutions |
 | **Deployment Status** | ✅ Fully Deployed |
 
----
+***
 
 ## 🔄 When to Update Documentation
 
@@ -176,7 +176,7 @@ Alternative deployment options that weren't implemented:
 - Feature no longer in use
 - Documented only as historical reference
 
----
+***
 
 ## 📝 Version History
 
@@ -186,7 +186,7 @@ Alternative deployment options that weren't implemented:
 | 2026-01-04 | Added as-built system architecture documentation | 3cc6702 |
 | 2025-12-24 | Initial Legal Evaluation Framework v2.0 | Earlier |
 
----
+***
 
 ## 💡 Key Takeaways
 

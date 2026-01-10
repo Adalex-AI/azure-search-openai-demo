@@ -2,26 +2,29 @@
 
 This document provides complete instructions for granting security access to new users of the Civil Procedure Copilot application. It is designed so anyone unfamiliar with the setup can understand and execute the process.
 
----
+***
 
 ## 📋 Overview
 
 **What this process does:**
+
 1. Invites an external user as a **Guest** in the Azure Entra ID tenant
 2. Adds them to the **Civil Procedure Copilot Users** security group
 3. Creates an email draft with their unique redeem link
 
 **Why we use this approach:**
+
 - ✅ **Azure Best Practice**: Uses Security Groups for scalable access management ([Microsoft recommendation](https://learn.microsoft.com/en-us/entra/identity/conditional-access/plan-conditional-access#minimize-the-number-of-conditional-access-policies))
 - ✅ **Principle of Least Privilege**: Users only gain access to this specific application
 - ✅ **B2B Collaboration**: Standard Microsoft Entra External ID pattern for guest users
 - ✅ **Auditable**: All access is tracked via group membership
 
----
+***
 
 ## 🔐 Security Architecture
 
 ### Tenant Information
+
 | Property | Value |
 |----------|-------|
 | **Tenant ID** | `3bfe16b2-5fcc-4565-b1f1-15271d20fecf` |
@@ -29,6 +32,7 @@ This document provides complete instructions for granting security access to new
 | **Admin Account** | `hbalapatabendi@gmail.com` |
 
 ### Application Details
+
 | Property | Value |
 |----------|-------|
 | **Application Name** | Civil Procedure Copilot |
@@ -37,6 +41,7 @@ This document provides complete instructions for granting security access to new
 | **Client App ID** | `1d382868-51d6-4200-a4ba-3a7b94ecb2d3` |
 
 ### Security Group
+
 | Property | Value |
 |----------|-------|
 | **Group Name** | `Civil Procedure Copilot Users` |
@@ -45,6 +50,7 @@ This document provides complete instructions for granting security access to new
 | **Purpose** | Controls access to the application and documents |
 
 ### Document Access Configuration
+
 | Setting | Value | Meaning |
 |---------|-------|---------|
 | `AZURE_USE_AUTHENTICATION` | `true` | Users must sign in |
@@ -53,13 +59,13 @@ This document provides complete instructions for granting security access to new
 
 **Current Document ACL Strategy**: All documents in the search index have the security group (`36094ff3-5c6d-49ef-b385-fa37118527e3`) assigned to their `groups` field. Any member of the group automatically has access to all documents.
 
----
+***
 
 ## 👥 Current Authorized Users
 
 As of January 2026, the following users are members of the security group:
 
-| Name | Email | Status | 
+| Name | Email | Status |
 |------|-------|--------|
 | Matthew Pimley | matthewpimley1@gmail.com | Active |
 | C Wright | cwright@st-philips.com | Active |
@@ -68,15 +74,17 @@ As of January 2026, the following users are members of the security group:
 | Kung Kincheung | kung.kincheung@gmail.com | Active |
 
 **To get the current list**, run:
+
 ```bash
 az ad group member list --group "Civil Procedure Copilot Users" --query "[].{Name:displayName, Email:mail}" -o table
 ```
 
----
+***
 
 ## 🚀 Phase 1: Grant Security Access (Azure CLI)
 
 ### Prerequisites
+
 - Azure CLI installed and logged in (`az login`)
 - Sufficient permissions (Guest Inviter role or User Administrator)
 
@@ -95,10 +103,12 @@ az rest --method post --url https://graph.microsoft.com/v1.0/invitations \
 ```
 
 **Replace:**
+
 - `<USER_EMAIL>` with the user's email address
 - `<USER_DISPLAY_NAME>` with their full name
 
 **Example:**
+
 ```bash
 az rest --method post --url https://graph.microsoft.com/v1.0/invitations \
   --body '{
@@ -117,6 +127,7 @@ The command returns JSON output. **Save these two values:**
 2. **User Object ID** (`invitedUser.id`): The unique ID needed to add them to the group
 
 **Example output:**
+
 ```json
 {
   "inviteRedeemUrl": "https://login.microsoftonline.com/redeem?rd=...",
@@ -135,11 +146,12 @@ az ad group member add --group "Civil Procedure Copilot Users" --member-id <USER
 ```
 
 **Example:**
+
 ```bash
 az ad group member add --group "Civil Procedure Copilot Users" --member-id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
----
+***
 
 ## 📧 Phase 2: Create Invitation Email Draft
 
@@ -150,6 +162,7 @@ Create a text file in the `invitations/` folder for record-keeping and to provid
 Create a new file named `firstname_lastname.txt` (lowercase, snake_case):
 
 **Content Template:**
+
 ```text
 Subject: Access to Civil Procedure Copilot
 
@@ -174,7 +187,7 @@ Add the new filename to `invitations/email_drafts.txt`:
 - firstname_lastname.txt
 ```
 
----
+***
 
 ## ✅ Phase 3: Verification and Reporting
 
@@ -192,7 +205,7 @@ az ad group member list --group "Civil Procedure Copilot Users" --query "[].{Nam
 - Confirm the draft email file is ready in `invitations/`
 - **Present the updated list of authorized users**
 
----
+***
 
 ## 🔄 Adding New Documents
 
@@ -205,26 +218,29 @@ No manual scripts are required after ingestion. The system ensures rigorous grou
 
 *(Note: The `scripts/add_group_to_all_docs.py` script remains available as a backup mechanism if needed).*
 
----
+***
 
 ## 🗑️ Removing User Access
 
 ### Remove from Security Group
+
 ```bash
 az ad group member remove --group "Civil Procedure Copilot Users" --member-id <USER_OBJECT_ID>
 ```
 
 ### Find User Object ID
+
 ```bash
 az ad user show --id "<USER_EMAIL>" --query id -o tsv
 ```
 
 ### Delete Guest User (Optional)
+
 ```bash
 az ad user delete --id <USER_OBJECT_ID>
 ```
 
----
+***
 
 ## 📚 References
 

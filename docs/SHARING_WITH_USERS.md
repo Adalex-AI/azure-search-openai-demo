@@ -5,6 +5,7 @@ This guide explains how to share the **Civil Procedure Copilot** (AI-powered leg
 ## 📚 Application Overview
 
 **Civil Procedure Copilot** is an AI-powered research assistant for searching:
+
 - Civil Procedure Rules (Parts 1-89) and Practice Directions
 - Commercial Court Guide (11th Edition, July 2023)
 - King's Bench Division Guide (2025 Edition)
@@ -25,7 +26,7 @@ Your application is configured with the following security settings:
 
 **Application URL:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
----
+***
 
 ## Option 1: Add Users to Your Azure AD Tenant (Recommended for Controlled Access)
 
@@ -41,7 +42,9 @@ This is the most secure option for sharing with specific lawyers or team members
    - **Email:** The user's email address
    - **Display name:** Their name
    - **Send invite message:** ✅ Check this box and customize:
+
      > "You've been invited to access Civil Procedure Copilot, our AI-powered legal research assistant for CPR, Practice Directions, and Court Guides. After accepting, visit https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io"
+
 6. Click **Review + invite**
 
 The user will receive an email invitation to join your tenant.
@@ -62,6 +65,7 @@ First-time users may see "Consent Required" or "Admin approval required" errors.
 Since `AZURE_ENFORCE_ACCESS_CONTROL=true`, users can only see documents they have explicit access to.
 
 **Option A: Grant Access to ALL Documents (Simplest)**
+
 ```bash
 source .venv/bin/activate
 python ./scripts/manageacl.py --acl-action enable_global_access
@@ -81,11 +85,12 @@ python ./scripts/manageacl.py -v --acl-type oids --acl-action add \
 ```
 
 To find a user's Object ID:
+
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com) → **Users**
 2. Click on the user
 3. Copy the **Object ID** from the Overview page
 
----
+***
 
 ## Option 2: Create a Security Group for Multiple Users
 
@@ -119,7 +124,7 @@ python ./scripts/manageacl.py -v --acl-type groups --acl-action add \
   --url https://stgz2m4s637t5me.blob.core.windows.net/content/
 ```
 
----
+***
 
 ## Option 3: Enable Global Document Access (Simplest)
 
@@ -132,7 +137,7 @@ python ./scripts/manageacl.py --acl-action enable_global_access
 
 This sets the special `["all"]` value on documents, making them available to any authenticated user.
 
----
+***
 
 ## User Experience Flow
 
@@ -168,7 +173,7 @@ Common issues and solutions:
 | "No access to documents" | Add user/group to document ACLs or enable global access |
 | "AADSTS65001 consent error" | Grant admin consent in Enterprise Applications |
 
----
+***
 
 ## Quick Reference: Azure Portal URLs
 
@@ -180,7 +185,7 @@ Common issues and solutions:
 | **App Registrations** | https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/Overview/appId/1d382868-51d6-4200-a4ba-3a7b94ecb2d3 |
 | **Storage Account** | https://portal.azure.com/#resource/subscriptions/0d1ec78c-510f-4a29-b851-be9a980219cb/resourceGroups/rg-cpr-rag/providers/Microsoft.Storage/storageAccounts/stgz2m4s637t5me |
 
----
+***
 
 ## Security Best Practices
 
@@ -190,7 +195,7 @@ Common issues and solutions:
 4. **Monitor Sign-In Logs** - Check Microsoft Entra sign-in logs for unusual activity
 5. **Rotate App Secrets** - Periodically rotate `AZURE_SERVER_APP_SECRET` and `AZURE_CLIENT_APP_SECRET`
 
----
+***
 
 ## Revoking Access
 
@@ -222,7 +227,7 @@ python ./scripts/manageacl.py -v --acl-type oids --acl-action remove_all \
   --url https://stgz2m4s637t5me.blob.core.windows.net/content/<document.pdf>
 ```
 
----
+***
 
 ## Appendix: Environment Variable Reference
 
@@ -235,7 +240,7 @@ python ./scripts/manageacl.py -v --acl-type oids --acl-action remove_all \
 | `AZURE_ENFORCE_ACCESS_CONTROL` | `true` | Document ACLs enforced |
 | `AZURE_ENABLE_UNAUTHENTICATED_ACCESS` | `true` | Allows browsing without login |
 
----
+***
 
 ## Related Documentation
 

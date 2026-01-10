@@ -69,9 +69,7 @@ class ChatApproach(Approach, ABC):
         # Assume last thought is for generating answer
         if self.include_token_usage and extra_info.thoughts and chat_completion_response.usage:
             extra_info.thoughts[-1].update_token_usage(chat_completion_response.usage)
-        # CUSTOM: Filter system prompts from response to protect from user exposure
-        from customizations import filter_thoughts_for_user
-        extra_info.thoughts = filter_thoughts_for_user(extra_info.thoughts)
+        
         chat_app_response = {
             "message": {"content": content, "role": role},
             "context": extra_info,
@@ -89,9 +87,7 @@ class ChatApproach(Approach, ABC):
         extra_info, chat_coroutine = await self.run_until_final_call(
             messages, overrides, auth_claims, should_stream=True
         )
-        # CUSTOM: Filter system prompts from response to protect from user exposure
-        from customizations import filter_thoughts_for_user
-        extra_info.thoughts = filter_thoughts_for_user(extra_info.thoughts)
+        
         chat_coroutine = cast(Awaitable[AsyncStream[ChatCompletionChunk]], chat_coroutine)
         yield {"delta": {"role": "assistant"}, "context": extra_info, "session_state": session_state}
 

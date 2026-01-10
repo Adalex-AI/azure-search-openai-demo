@@ -9,7 +9,7 @@ This document provides comprehensive implementation guides for deploying your Le
 
 Both approaches share the same core components (prompts, citation logic, source processing) while adapting to platform-specific requirements.
 
----
+***
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ Both approaches share the same core components (prompts, citation logic, source 
 23. [Declarative Agent Manifest for Foundry](#declarative-agent-manifest-for-foundry)
 24. [Testing Foundry Agent in M365](#testing-foundry-agent-in-m365)
 
----
+***
 
 ## Architecture Overview
 
@@ -108,7 +108,7 @@ Both approaches share the same core components (prompts, citation logic, source 
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Comparison: Web App vs M365 Agent
 
@@ -125,7 +125,7 @@ Both approaches share the same core components (prompts, citation logic, source 
 | **Prompt Control** | Full custom prompty files | Instructions field (8000 char limit) |
 | **Integration** | Standalone web app | Teams, Word, PowerPoint, Outlook |
 
----
+***
 
 ## Shared Components Strategy
 
@@ -177,7 +177,7 @@ The key to maintaining both solutions is a **shared core** with **platform-speci
 | **Knowledge Source** | Azure AI Search via SDK | API Plugin or SharePoint grounding |
 | **Instructions Delivery** | Prompty files (unlimited) | `instructions` field (8000 chars) |
 
----
+***
 
 ## Implementation Architecture
 
@@ -216,7 +216,7 @@ m365-legal-agent/
     └── test_m365_integration.py
 ```
 
----
+***
 
 ## Project Structure
 
@@ -261,7 +261,7 @@ azure-search-openai-demo-2/
     └── M365_AGENT_IMPLEMENTATION.md  # This document
 ```
 
----
+***
 
 ## Step-by-Step Implementation
 
@@ -721,7 +721,7 @@ async def health_check():
     return {"status": "healthy"}
 ```
 
----
+***
 
 ## Prompt Sharing Strategy
 
@@ -825,7 +825,7 @@ if __name__ == "__main__":
     update_declarative_agent(agent_path, instructions)
 ```
 
----
+***
 
 ## Citation Handling in M365
 
@@ -902,7 +902,7 @@ class M365CitationAdapter:
         return ", ".join(parts) if parts else "Source"
 ```
 
----
+***
 
 ## Knowledge Sources Configuration
 
@@ -990,7 +990,7 @@ Combine SharePoint grounding for general documents with API Plugin for specializ
 }
 ```
 
----
+***
 
 ## Testing Strategy
 
@@ -1107,7 +1107,7 @@ def test_ask_endpoint():
     assert "[1]" in data["answer"]
 ```
 
----
+***
 
 ## Deployment Guide
 
@@ -1197,7 +1197,7 @@ AZURE_OPENAI_DEPLOYMENT=gpt-4o
 M365_APP_ID=your-app-guid
 ```
 
----
+***
 
 ## Summary: What You Get
 
@@ -1215,7 +1215,7 @@ M365_APP_ID=your-app-guid
 | **Word/PowerPoint integration** | ❌ | ✅ |
 | **Native M365 experience** | ❌ | ✅ |
 
----
+***
 
 ## Next Steps
 
@@ -1224,13 +1224,13 @@ M365_APP_ID=your-app-guid
 3. **Phase 3 (Week 3):** Implement API Plugin backend with shared components
 4. **Phase 4 (Week 4):** Testing and deployment
 
----
+***
 
----
+***
 
 # Part 2: Azure AI Foundry Agent
 
----
+***
 
 ## Azure AI Foundry Overview
 
@@ -1280,7 +1280,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 | **Security** | Microsoft Entra ID, RBAC, content filters, encryption |
 | **VS Code Integration** | Build and test agents directly from VS Code |
 
----
+***
 
 ## Foundry vs M365 Comparison
 
@@ -1319,7 +1319,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Foundry Agent Architecture
 
@@ -1359,7 +1359,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## VS Code Extension Setup
 
@@ -1402,7 +1402,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Foundry Agent Implementation
 
@@ -1678,7 +1678,7 @@ conversation_starters:
   - "When can a party apply for summary judgment?"
 ```
 
----
+***
 
 ## Azure AI Search Tool Integration
 
@@ -1786,7 +1786,7 @@ def create_filtered_search_tool(
     )
 ```
 
----
+***
 
 ## Foundry Agent Deployment
 
@@ -1890,7 +1890,7 @@ AGENT_ID=your-created-agent-id
 SEARCH_CONNECTION_NAME=legal-search-connection
 ```
 
----
+***
 
 ## Summary: Three Platforms Compared
 
@@ -1910,7 +1910,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 | **Full observability/tracing** | Limited | Limited | ✅ |
 | **VS Code development** | ✅ | ✅ | ✅ |
 
----
+***
 
 ## Combined Implementation Timeline
 
@@ -1922,7 +1922,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 | **Phase 4** | 4 | Test shared components | Test in Teams | Test in playground |
 | **Phase 5** | 5 | - | Deploy to org | Deploy agent |
 
----
+***
 
 ## References
 
@@ -1947,7 +1947,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 - [Bot Framework SDK](https://github.com/microsoft/botbuilder-python)
 - [Teams Bot Samples](https://github.com/OfficeDev/Microsoft-Teams-Samples)
 
----
+***
 
 # Part 2.5: Converting Foundry Agent to M365 Agent
 
@@ -1955,7 +1955,7 @@ This section shows how to **expose your Azure AI Foundry Agent as an M365 Copilo
 
 > **🎯 Important**: Microsoft has **officially released native integration** between Azure AI Foundry Agents and Microsoft 365 Copilot/Teams. This is now a **first-class supported path**, not a workaround.
 
----
+***
 
 ## Microsoft's Official Position on Foundry + M365
 
@@ -1984,7 +1984,7 @@ From the official docs:
 >
 > **Recommendation**: *"Use Foundry because it allows the firm to maintain custom AI logic and orchestration while making the agent accessible in Microsoft 365."*
 
----
+***
 
 ## Two Official Integration Methods
 
@@ -2044,7 +2044,7 @@ Microsoft provides **two officially supported methods** to publish Foundry Agent
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Method 1: Native Foundry Portal Publish (Recommended for Quick Start)
 
@@ -2133,7 +2133,7 @@ When you publish via Foundry Portal, Microsoft automatically creates:
 - [Publish agents to Microsoft 365 Copilot and Microsoft Teams](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/publish-copilot)
 - [C# Sample for Programmatic Publishing](https://github.com/OfficeDev/microsoft-365-agents-toolkit-samples/tree/dev/ProxyAgent-CSharp)
 
----
+***
 
 ## Method 2: M365 Agents Toolkit Proxy (Advanced)
 
@@ -2152,9 +2152,9 @@ For scenarios requiring more control, use the Microsoft 365 Agents Toolkit to cr
 - [Integrate your Foundry agent with Microsoft Agent Toolkit](https://aka.ms/aif2m365-procode)
 - [Microsoft 365 Agents Toolkit](https://aka.ms/M365AgentsToolkit)
 
----
+***
 
----
+***
 
 ## Method 3: Custom API Wrapper (Full Control)
 
@@ -2567,7 +2567,7 @@ az containerapp create \
     FOUNDRY_AGENT_ID=your-agent-id
 ```
 
----
+***
 
 ## M365 API Plugin for Foundry
 
@@ -2789,7 +2789,7 @@ paths:
 }
 ```
 
----
+***
 
 ## Declarative Agent Manifest for Foundry
 
@@ -2872,7 +2872,7 @@ paths:
 }
 ```
 
----
+***
 
 ## Testing Foundry Agent in M365
 
@@ -2906,7 +2906,7 @@ az containerapp logs show \
 # Go to: ai.azure.com → Your Project → Traces
 ```
 
----
+***
 
 ## Comparison: Direct M365 vs Foundry-Backed M365
 
@@ -2920,7 +2920,7 @@ az containerapp logs show \
 | **Latency** | Lower | Slightly higher (extra hop) |
 | **Best for** | Simple Q&A scenarios | Complex orchestration needs |
 
----
+***
 
 # Part 3: Teams Bot Integration
 
@@ -2935,7 +2935,7 @@ There are **two approaches** to integrating your Legal RAG solution into Teams:
 | **M365 Declarative Agent** | Extension of M365 Copilot (Part 1) | Organizations using M365 Copilot licenses |
 | **Standalone Azure Bot** | Custom bot using Bot Framework | Organizations without M365 Copilot, or needing custom control |
 
----
+***
 
 ## Teams Bot Architecture
 
@@ -2990,7 +2990,7 @@ There are **two approaches** to integrating your Legal RAG solution into Teams:
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+***
 
 ## Approach 1: M365 Declarative Agent in Teams
 
@@ -3044,7 +3044,7 @@ The M365 Declarative Agent from Part 1 appears in Teams when:
 }
 ```
 
----
+***
 
 ## Approach 2: Standalone Azure Bot Service
 
@@ -3665,7 +3665,7 @@ az containerapp create \
     LEGAL_RAG_BACKEND_URL=https://your-backend.azurewebsites.net
 ```
 
----
+***
 
 ## Approach 3: Foundry Agent + Teams Bot (Hybrid)
 
@@ -3756,7 +3756,7 @@ class FoundryTeamsBot(TeamsActivityHandler):
         )
 ```
 
----
+***
 
 ## Comparison: Bot Approaches
 
@@ -3771,7 +3771,7 @@ class FoundryTeamsBot(TeamsActivityHandler):
 | **Deployment target** | M365 Copilot | Azure Bot Service | Azure Bot + Foundry |
 | **Best for** | M365 orgs | Non-M365 orgs | Complex orchestration |
 
----
+***
 
 ## Teams Bot Best Practices
 
@@ -3794,7 +3794,7 @@ class FoundryTeamsBot(TeamsActivityHandler):
 2. **Retry logic** - Use exponential backoff for backend calls
 3. **Logging** - Application Insights for monitoring
 
----
+***
 
 ## Environment Variables Summary
 
@@ -3815,7 +3815,7 @@ AZURE_AI_PROJECT_NAME=your-project
 FOUNDRY_AGENT_ID=your-agent-id
 ```
 
----
+***
 
 ## Four Platforms Compared (Updated)
 

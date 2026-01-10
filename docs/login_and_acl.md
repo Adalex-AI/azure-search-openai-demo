@@ -1,5 +1,5 @@
 <!--
----
+***
 name: RAG chat with document security
 description: This guide demonstrates how to add an optional login and document level access control system to a RAG chat app for your domain data. This system can be used to restrict access to indexed data to specific users.
 languages:
@@ -14,7 +14,7 @@ products:
 - azure
 page_type: sample
 urlFragment: azure-search-openai-demo-document-security
----
+***
 -->
 
 # RAG chat: Setting up optional login and document level access control

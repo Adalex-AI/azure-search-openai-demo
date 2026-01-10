@@ -4,7 +4,7 @@
 
 **Current state:** The application has **optional authentication** that is **disabled by default** in test/development environments. This is intentional and normal, but the security posture changes significantly when deployed to production.
 
----
+***
 
 ## 1. Is It Normal to Use Without Login in Test Environment?
 
@@ -27,7 +27,7 @@ The documentation explicitly states this behavior:
 3. **Demos**: Can quickly show functionality to stakeholders
 4. **Optional**: Security can be enabled when needed via environment variables
 
----
+***
 
 ## 2. Will This Change When Deployed to Production?
 
@@ -69,7 +69,7 @@ true                     | true                         | Local       | ✅ Requ
 true                     | true                         | App Service | ✅ Required login + ACL
 ```
 
----
+***
 
 ## 3. Is the Current Security Approach Best Practice?
 
@@ -133,7 +133,7 @@ true                     | true                         | App Service | ✅ Requ
    - **Use Case**: Public-facing knowledge bases (OK)
    - **Risk**: Legal documents should probably NOT be public
 
----
+***
 
 ## 4. How to Securely Share the Solution
 
@@ -235,7 +235,7 @@ Use: Publicly available legal information
   - Audit user access patterns
   - Check for orphaned access rights
 
----
+***
 
 ## 5. Comparison: Best Practices for Secure Document Sharing
 
@@ -252,7 +252,7 @@ Use: Publicly available legal information
 
 **Verdict**: Azure Search + OpenAI + Entra ID = **Best for custom RAG legal assistant**
 
----
+***
 
 ## 6. Critical Security Recommendations
 
@@ -275,7 +275,7 @@ Use: Publicly available legal information
 - Enable MFA for Entra ID accounts
 - Set up regular backup/disaster recovery
 
----
+***
 
 ## Summary Table
 
@@ -288,7 +288,7 @@ Use: Publicly available legal information
 | **Data safe with Azure OpenAI?** | ✅ YES - industry leading commitments |
 | **Better alternatives?** | ❌ NO - Azure Search + OpenAI is optimal |
 
----
+***
 
 ## Next Steps
 

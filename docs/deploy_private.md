@@ -1,5 +1,5 @@
 <!--
----
+***
 name: RAG chat with private endpoints
 description: Configure access to a chat app so that it's only accessible from private endpoints.
 languages:
@@ -14,7 +14,7 @@ products:
 - azure
 page_type: sample
 urlFragment: azure-search-openai-demo-private-access
----
+***
 -->
 
 # RAG chat: Deploying with private access

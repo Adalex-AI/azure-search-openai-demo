@@ -6,8 +6,8 @@ import os
 from datetime import datetime, timezone
 from azure.storage.blob.aio import ContainerClient
 from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
-# CUSTOM: Import deployment metadata and thought filtering utilities
-from customizations import get_deployment_metadata, filter_thoughts_for_feedback, extract_admin_only_thoughts
+# CUSTOM: Import deployment metadata
+from customizations import get_deployment_metadata
 
 feedback_bp = Blueprint("feedback", __name__)
 tracer = trace.get_tracer(__name__)
@@ -43,13 +43,7 @@ async def submit_feedback():
 
         span.add_event("feedback_submitted", event_data)
 
-    # CUSTOM: Filter thoughts to remove system prompts from user-visible feedback
-    raw_thoughts = data.get("thoughts", [])
-    user_safe_thoughts = filter_thoughts_for_feedback(raw_thoughts)
-    admin_only_thoughts = extract_admin_only_thoughts(raw_thoughts)
-
     # Log full JSON for Blob Storage/Log Analytics ingestion
-    # This log contains user-visible data (no system prompts exposed to users)
     log_payload = {
         "event_type": "legal_feedback",
         "context_shared": context_shared,
@@ -67,8 +61,7 @@ async def submit_feedback():
             "user_prompt": data.get("user_prompt", ""),
             "ai_response": data.get("ai_response", ""),
             "conversation_history": data.get("conversation_history", []),
-            # CUSTOM: Use filtered thoughts (system prompts removed)
-            "thoughts": user_safe_thoughts
+            "thoughts": data.get("thoughts", [])
         }
 
     # Save to Azure Blob Storage (Persistent "Folder") or Local Disk
@@ -104,19 +97,6 @@ async def submit_feedback():
             with open(local_path, "w", encoding="utf-8") as f:
                 f.write(json_content)
             logger.info(f"Feedback saved locally: {local_path}")
-            
-            # CUSTOM: Save admin-only feedback separately for backend analysis
-            if admin_only_thoughts:
-                admin_feedback = {
-                    "message_id": message_id,
-                    "timestamp": timestamp,
-                    "admin_only_thoughts": admin_only_thoughts,
-                    "metadata": deployment_metadata
-                }
-                admin_path = os.path.join(local_folder, f"{timestamp}_{message_id}_admin.json")
-                with open(admin_path, "w", encoding="utf-8") as f:
-                    json.dump(admin_feedback, f, indent=2)
-                logger.info(f"Admin feedback saved locally: {admin_path}")
         
         # 2. Upload to blob storage (if configured)
         container_client = current_app.config.get(CONFIG_USER_BLOB_CONTAINER_CLIENT)
@@ -125,19 +105,6 @@ async def submit_feedback():
             file_client = container_client.get_file_client(blob_name)
             await file_client.upload_data(json_content, overwrite=True)
             logger.info(f"Feedback saved to blob storage: {blob_name}")
-            
-            # CUSTOM: Upload admin-only feedback to separate location
-            if admin_only_thoughts:
-                admin_blob_name = f"feedback/{deployment_id}/{timestamp}_{message_id}_admin.json"
-                admin_feedback = {
-                    "message_id": message_id,
-                    "timestamp": timestamp,
-                    "admin_only_thoughts": admin_only_thoughts,
-                    "metadata": deployment_metadata
-                }
-                admin_file_client = container_client.get_file_client(admin_blob_name)
-                await admin_file_client.upload_data(json.dumps(admin_feedback, indent=2), overwrite=True)
-                logger.info(f"Admin feedback saved to blob storage: {admin_blob_name}")
             
     except Exception as e:
         logger.error(f"Failed to save feedback: {e}")

@@ -13,7 +13,7 @@ This guide covers how to scale up your Legal RAG solution in Azure and test it w
 - [Cost Management](#cost-management)
 - [Common Bottlenecks & Solutions](#common-bottlenecks--solutions)
 
----
+***
 
 ## Current Configuration Summary
 
@@ -41,7 +41,7 @@ Your Civil Procedure Copilot is currently deployed with:
 
 > **Capacity Assessment**: With **1.5M TPM** on gpt-5-nano, you can support **~1,500 concurrent conversations** (assuming 1K tokens per exchange). Your model deployment is ready for enterprise-scale testing.
 
----
+***
 
 ## Pre-Testing Checklist
 
@@ -66,7 +66,7 @@ azd env get-values
 # DEPLOYMENT_TARGET=containerapps
 ```
 
----
+***
 
 ## Azure Resource Scaling
 
@@ -195,7 +195,7 @@ containerMemory: '4Gi'        // Increase from 2Gi
 
 Then redeploy: `azd provision`
 
----
+***
 
 ## Load Testing with Locust
 
@@ -312,7 +312,7 @@ locust -f locustfile.py LegalChatUser
 # Then use http://localhost:50505
 ```
 
----
+***
 
 ## Monitoring During Tests
 
@@ -371,7 +371,7 @@ dependencies
 | render timechart
 ```
 
----
+***
 
 ## Scaling Recommendations by User Count
 
@@ -409,7 +409,7 @@ Use the following table to plan your infrastructure based on the number of **con
     azd provision
     ```
 
----
+***
 
 ## Cost Management
 
@@ -472,7 +472,7 @@ azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-mini  # Better quality
 azd provision
 ```
 
----
+***
 
 ## Common Bottlenecks & Solutions
 
@@ -547,7 +547,7 @@ containerCpuCoreCount: '2.0'  # Increase from 1.0
 - Check user is invited to the tenant
 - Verify API permissions are configured
 
----
+***
 
 ## Testing Workflow Checklist
 
@@ -575,7 +575,7 @@ containerCpuCoreCount: '2.0'  # Increase from 1.0
 - [ ] Scale down resources to save costs
 - [ ] Plan improvements for next phase
 
----
+***
 
 ## Quick Reference Commands
 
@@ -618,7 +618,7 @@ locust -f locustfile.py LegalChatUser
 # Enter: https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 ```
 
----
+***
 
 ## Related Documentation
 
