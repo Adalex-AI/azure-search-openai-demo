@@ -15,7 +15,7 @@ Together, these create a complete production system for legal document retrieval
 
 ## 📊 End-to-End System Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        LEGAL RAG APPLICATION                            │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -115,7 +115,7 @@ Together, these create a complete production system for legal document retrieval
 
 ## 🔄 Data Flow Sequence Diagram
 
-```
+```text
 User Query
     │
     ▼
@@ -208,7 +208,7 @@ User Query
 
 ### Frontend Components
 
-```
+```text
 app/frontend/src/
 ├── components/
 │   ├── Answer/
@@ -252,7 +252,7 @@ app/frontend/src/
 
 ### Backend Components
 
-```
+```text
 app/backend/
 ├── app.py
 │   ├── Imports: categories_bp (blueprint)
@@ -302,7 +302,7 @@ app/backend/
 
 ### Workflow Execution Flow
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │  GitHub Actions Trigger                                  │
 │  ├─ Weekly Schedule (Sundays 00:00 UTC)                 │
@@ -392,7 +392,7 @@ app/backend/
 
 ### GitHub Actions OIDC Flow
 
-```
+```text
 GitHub Actions
     │
     ├─ Token Request (OIDC)
@@ -428,7 +428,7 @@ GitHub Actions
 
 GitHub Production Environment Secrets (7 total):
 
-```
+```text
 Production Environment
 ├── AZURE_CLIENT_ID              → Service principal ID
 ├── AZURE_TENANT_ID              → Entra ID tenant
@@ -514,72 +514,87 @@ Production Environment
 ## 🎓 What Was Accomplished
 
 ### Phase 1: Legal Domain Customization
+
 ✅ **Citation System**
+
 - Enforces [1][2][3] format (not [1,2,3])
 - Sanitizes malformed citations automatically
 - Legal references properly formatted
 
 ✅ **Source Filtering**
+
 - Dynamic categories fetched from Azure Search
 - Filter results by document type
 - Friendly display names for sources
 
 ✅ **Legal Prompts**
+
 - Customized for CPR/court rules
 - Explicit citation format guidance
 - UK legal terminology emphasis
 
 ✅ **Evaluation Framework**
+
 - 41 legal-specific unit tests
 - 95% precedent matching accuracy
 - 62 ground truth questions
 - Legal metrics: statute citations, terminology, formatting
 
 ### Phase 2: Automation & Scaling
+
 ✅ **GitHub Actions Workflow**
+
 - Weekly automated scraping (configurable schedule)
 - Manual dispatch with dry-run option
 - Service principal OIDC authentication
 - 7 production secrets configured
 
 ✅ **Scraping Pipeline**
+
 - ~768 documents fetched weekly
 - Selenium-based web scraper
 - JSON document output
 - Metadata preservation
 
 ✅ **Validation System**
+
 - Legal terminology checks
 - Content quality validation
 - UTF-8 encoding verification
 - Duplicate detection
 
 ✅ **Embedding Generation**
+
 - On-demand vector generation
 - Rate-limited batch processing (3 docs/batch)
 - Exponential backoff retry (5 attempts)
 - 3072-dimension vectors (text-embedding-3-large)
 
 ✅ **Azure Search Integration**
+
 - Automated index updates
 - Maintains embeddings
 - Hybrid search capability (keyword + vector)
 - ~3-4 hour total pipeline
 
 ### System Reliability
+
 ✅ **Error Handling**
+
 - Graceful degradation (skips failed docs)
 - Detailed logging
 - Validation reports
 - Exponential backoff retries
 
 ✅ **Security**
+
 - Federated OIDC credentials (no stored secrets)
 - Service principal-based auth
 - GitHub Production environment isolation
 - Least privilege access
 
 ✅ **Documentation**
+
 - Complete architecture diagrams
 - Deployment & operations guide
 - Phase 2 automation guide
@@ -606,24 +621,28 @@ The system is designed to support:
 ## 🏗️ Technology Stack
 
 ### Frontend
+
 - **React** 18+ with TypeScript
 - **Fluent UI** for components
 - **Custom hooks** for API integration
 - **Vite** for build tooling
 
 ### Backend
+
 - **Python 3.10+** with Quart framework
 - **Azure SDK** for service integration
 - **Tenacity** for retry logic
 - **Selenium** for web scraping
 
 ### Cloud Services
+
 - **Azure AI Search** (Hybrid search with semantic ranking)
 - **Azure OpenAI** (GPT-4 for generation, text-embedding-3-large for vectors)
 - **GitHub Actions** (Workflow orchestration)
 - **Azure Key Vault** (Secret management)
 
 ### Data Pipeline
+
 - **Batch processing** with rate limiting
 - **Error recovery** with exponential backoff
 - **Validation** before upload

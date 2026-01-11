@@ -12,44 +12,44 @@ This document tracks all files created and modified for the enhanced feedback sy
    - Added: `import os` for environment variable access
    - **Lines changed**: +30 lines (feature flag + function)
 
-2. **app/backend/customizations/__init__.py**
+1. **app/backend/customizations/__init__.py**
    - Added: Imports for thought_filter module
    - Added: Barrel exports for all thought filtering functions
    - Added: Export for get_deployment_metadata()
    - **Lines changed**: +15 lines (added exports)
 
-3. **app/backend/customizations/routes/feedback.py**
+1. **app/backend/customizations/routes/feedback.py**
    - Added: Import for thought filtering utilities
    - Enhanced: Filters thoughts in log_payload before storage
    - Enhanced: Separates admin-only thoughts to separate file
    - Enhanced: Adds comprehensive deployment metadata
    - **Lines changed**: +50 lines (added ~30, modified ~20)
 
-4. **app/backend/approaches/chatapproach.py**
+1. **app/backend/approaches/chatapproach.py**
    - Modified: `run_without_streaming()` - added thought filtering
    - Modified: `run_with_streaming()` - added thought filtering
    - Added: Import statement with CUSTOM comment
    - **Lines changed**: +7 lines (3 lines per method + import)
 
-5. **app/backend/approaches/approach.py**
+1. **app/backend/approaches/approach.py**
    - No changes required (filtering already integrated in ChatApproach)
    - Note: Imports available via customizations.__init__.py
 
 ### Infrastructure
 
-6. **infra/main.bicep**
+1. **infra/main.bicep**
    - Added: DEPLOYMENT_ID to appEnvVariables
    - Added: APP_VERSION to appEnvVariables
    - Added: GIT_SHA to appEnvVariables
    - Added: CUSTOM comment
    - **Lines changed**: +4 lines (3 env vars + comment)
 
-7. **infra/main.parameters.json**
+1. **infra/main.parameters.json**
    - No changes required (parameters already support these env vars with defaults)
 
 ### Documentation & Instructions
 
-8. **.github/instructions/customizations.instructions.md**
+1. **.github/instructions/customizations.instructions.md**
    - Added: "Enhanced Feedback System (v1.0)" section
    - Added: Feedback features explanation
    - Added: Deployment metadata documentation
@@ -58,7 +58,7 @@ This document tracks all files created and modified for the enhanced feedback sy
    - Added: Glossary entries for new concepts
    - **Lines changed**: +70 lines (new section)
 
-9. **AGENTS.md**
+1. **AGENTS.md**
    - Updated: Customizations folder listing with new files
    - Added: "Enhanced Feedback System (v1.0)" section
    - Added: Feedback capabilities documentation
@@ -66,7 +66,8 @@ This document tracks all files created and modified for the enhanced feedback sy
    - Added: Running feedback tests instructions
    - **Lines changed**: +70 lines (new section + updates)
 
-10. **docs/customizations/README.md**
+1. **docs/customizations/README.md**
+
     - Added: Major section "🎁 Enhanced Feedback System (v1.0)"
     - Added: Subsections for all feedback components
     - Added: Thought filtering documentation
@@ -160,8 +161,8 @@ This document tracks all files created and modified for the enhanced feedback sy
 ## Next Steps
 
 1. Run test suite to verify all 26 tests pass
-2. Deploy to dev environment
-3. Test feedback flow end-to-end
-4. Monitor feedback storage for version tracking
-5. Verify admin files are created for debugging
-6. Consider Phase 2: Admin UI for viewing feedback
+1. Deploy to dev environment
+1. Test feedback flow end-to-end
+1. Monitor feedback storage for version tracking
+1. Verify admin files are created for debugging
+1. Consider Phase 2: Admin UI for viewing feedback

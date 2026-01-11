@@ -111,7 +111,8 @@ const Chat = () => {
     const [showChatHistoryBrowser, setShowChatHistoryBrowser] = useState<boolean>(false);
     const [showChatHistoryCosmos, setShowChatHistoryCosmos] = useState<boolean>(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
+    // CUSTOM: Default to off; only enable when explicitly configured and selected.
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
     const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const audio = useRef(new Audio()).current;
@@ -155,6 +156,9 @@ const Chat = () => {
             setShowChatHistoryBrowser(config.showChatHistoryBrowser);
             setShowChatHistoryCosmos(config.showChatHistoryCosmos);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
+            // CUSTOM: Auto-enable agentic retrieval when server supports it (no toggle needed).
+            // If server doesn't support it, ensure it's disabled.
+            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
             setShowCategoryFilter(!!config.showCategoryFilter);
         });
     };
@@ -293,7 +297,8 @@ const Chat = () => {
                         use_gpt4v: useGPT4V,
                         gpt4v_input: gpt4vInput,
                         language: i18n.language,
-                        use_agentic_retrieval: useAgenticRetrieval,
+                        // CUSTOM: Only send agentic retrieval override when the server advertises it.
+                        use_agentic_retrieval: showAgenticRetrievalOption ? useAgenticRetrieval : false,
                         ...(seed !== null ? { seed: seed } : {})
                     }
                 },

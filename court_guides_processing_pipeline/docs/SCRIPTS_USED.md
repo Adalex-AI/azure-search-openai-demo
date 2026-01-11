@@ -28,6 +28,7 @@ This is a short reference to the scripts involved in processing and verifying th
   - `scripts/validate_missing_is_in_titles.py` and `scripts/validate_against_markdown.py` — run these after any move.
 
 If a script fails:
+
 - Re-run with `--log-level DEBUG` and capture stdout/stderr into a log file.
 - Check for malformed input JSONs in `court_guides_parsed` or missing TOC `*.toc.json` files.
 - For rebuild scripts, ensure the Markdown source exists in `SOURCE_FILES/03_Markdown_Output`.

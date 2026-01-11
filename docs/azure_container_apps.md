@@ -9,13 +9,13 @@ To deploy to Azure Container Apps, please follow the following steps:
 
 1. Comment out `host: appservice` and uncomment `host: containerapp` in the [azure.yaml](../azure.yaml) file.
 
-2. Login to your Azure account:
+1. Login to your Azure account:
 
     ```bash
     azd auth login
     ```
 
-3. Create a new `azd` environment to store the deployment parameters:
+1. Create a new `azd` environment to store the deployment parameters:
 
     ```bash
     azd env new
@@ -24,14 +24,14 @@ To deploy to Azure Container Apps, please follow the following steps:
     Enter a name that will be used for the resource group.
     This will create a new folder in the `.azure` folder, and set it as the active environment for any calls to `azd` going forward.
 
-4. Set the deployment target to `containerapps`:
+1. Set the deployment target to `containerapps`:
 
     ```bash
     azd env set DEPLOYMENT_TARGET containerapps
     ```
 
-5. (Optional) This is the point where you can customize the deployment by setting other `azd1 environment variables, in order to [use existing resources](docs/deploy_existing.md), [enable optional features (such as auth or vision)](docs/deploy_features.md), or [deploy to free tiers](docs/deploy_lowcost.md).
-6. Provision the resources and deploy the code:
+1. (Optional) This is the point where you can customize the deployment by setting other `azd1 environment variables, in order to [use existing resources](docs/deploy_existing.md), [enable optional features (such as auth or vision)](docs/deploy_features.md), or [deploy to free tiers](docs/deploy_lowcost.md).
+1. Provision the resources and deploy the code:
 
     ```bash
     azd up

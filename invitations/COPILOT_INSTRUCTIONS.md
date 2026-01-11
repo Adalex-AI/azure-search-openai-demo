@@ -9,8 +9,8 @@ This document provides complete instructions for granting security access to new
 **What this process does:**
 
 1. Invites an external user as a **Guest** in the Azure Entra ID tenant
-2. Adds them to the **Civil Procedure Copilot Users** security group
-3. Creates an email draft with their unique redeem link
+1. Adds them to the **Civil Procedure Copilot Users** security group
+1. Creates an email draft with their unique redeem link
 
 **Why we use this approach:**
 
@@ -124,7 +124,7 @@ az rest --method post --url https://graph.microsoft.com/v1.0/invitations \
 The command returns JSON output. **Save these two values:**
 
 1. **Redeem URL** (`inviteRedeemUrl`): The link the user clicks to accept the invitation
-2. **User Object ID** (`invitedUser.id`): The unique ID needed to add them to the group
+1. **User Object ID** (`invitedUser.id`): The unique ID needed to add them to the group
 
 **Example output:**
 

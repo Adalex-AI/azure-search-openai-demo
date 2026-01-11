@@ -69,9 +69,9 @@ var appEnvVariables = {
 This is a **defense-in-depth** approach:
 
 1. Backend filters on response
-2. User receives only user-safe thoughts
-3. User submits feedback with safe thoughts
-4. Backend filters again on storage (safety layer)
+1. User receives only user-safe thoughts
+1. User submits feedback with safe thoughts
+1. Backend filters again on storage (safety layer)
 
 ## Custom Files (No Upstream Changes Needed)
 
@@ -106,7 +106,7 @@ pytest tests/test_thought_filter.py tests/test_feedback.py --cov=customizations 
    python -m quart --app=app:app --debug run
    ```
 
-2. **Send feedback with thoughts:**
+1. **Send feedback with thoughts:**
 
 ```bash
    curl -X POST http://localhost:5000/api/feedback \
@@ -126,7 +126,7 @@ pytest tests/test_thought_filter.py tests/test_feedback.py --cov=customizations 
      }'
    ```
 
-3. **Check feedback file was created:**
+1. **Check feedback file was created:**
 
 ```bash
    ls -la feedback_data/local/
@@ -134,7 +134,7 @@ pytest tests/test_thought_filter.py tests/test_feedback.py --cov=customizations 
    #            2026-01-10t*_test-msg-123_admin.json (admin-only)
    ```
 
-4. **Verify filtering:**
+1. **Verify filtering:**
 
 ```bash
    cat feedback_data/local/2026-01-10t*_test-msg-123.json | jq '.context.thoughts'
@@ -156,7 +156,7 @@ If you need to remove the feedback enhancement:
    app.register_blueprint(feedback_bp)
    ```
 
-2. **Remove from chatapproach.py:**
+1. **Remove from chatapproach.py:**
 
 ```bash
    # Remove these lines (they're optional):
@@ -164,7 +164,7 @@ If you need to remove the feedback enhancement:
    extra_info.thoughts = filter_thoughts_for_user(extra_info.thoughts)
    ```
 
-3. **Remove from main.bicep:**
+1. **Remove from main.bicep:**
 
 ```bash
    # Remove these lines:
@@ -173,7 +173,7 @@ If you need to remove the feedback enhancement:
    GIT_SHA: deployment().properties.template.metadata.version
    ```
 
-4. **Keep customizations folder intact:**
+1. **Keep customizations folder intact:**
 
 ```bash
    # These are safe to keep, they won't cause issues:

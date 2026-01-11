@@ -5,7 +5,7 @@
 This document provides comprehensive implementation guides for deploying your Legal RAG solution as:
 
 1. **Microsoft 365 Copilot Declarative Agent** - Integration into Teams, Word, PowerPoint, Outlook
-2. **Azure AI Foundry Agent** - Standalone agent with Azure AI Search integration via VS Code extension
+1. **Azure AI Foundry Agent** - Standalone agent with Azure AI Search integration via VS Code extension
 
 Both approaches share the same core components (prompts, citation logic, source processing) while adapting to platform-specific requirements.
 
@@ -14,34 +14,37 @@ Both approaches share the same core components (prompts, citation logic, source 
 ## Table of Contents
 
 ### Part 1: M365 Copilot Agent
+
 1. [Architecture Overview](#architecture-overview)
-2. [Comparison: Web App vs M365 Agent](#comparison-web-app-vs-m365-agent)
-3. [Shared Components Strategy](#shared-components-strategy)
-4. [Implementation Architecture](#implementation-architecture)
-5. [Project Structure](#project-structure)
-6. [Step-by-Step Implementation](#step-by-step-implementation)
-7. [Prompt Sharing Strategy](#prompt-sharing-strategy)
-8. [Citation Handling in M365](#citation-handling-in-m365)
-9. [Knowledge Sources Configuration](#knowledge-sources-configuration)
-10. [API Plugin Development](#api-plugin-development)
-11. [Testing Strategy](#testing-strategy)
-12. [Deployment Guide](#deployment-guide)
+1. [Comparison: Web App vs M365 Agent](#comparison-web-app-vs-m365-agent)
+1. [Shared Components Strategy](#shared-components-strategy)
+1. [Implementation Architecture](#implementation-architecture)
+1. [Project Structure](#project-structure)
+1. [Step-by-Step Implementation](#step-by-step-implementation)
+1. [Prompt Sharing Strategy](#prompt-sharing-strategy)
+1. [Citation Handling in M365](#citation-handling-in-m365)
+1. [Knowledge Sources Configuration](#knowledge-sources-configuration)
+1. [API Plugin Development](#api-plugin-development)
+1. [Testing Strategy](#testing-strategy)
+1. [Deployment Guide](#deployment-guide)
 
 ### Part 2: Azure AI Foundry Agent
-13. [Azure AI Foundry Overview](#azure-ai-foundry-overview)
-14. [Foundry vs M365 Comparison](#foundry-vs-m365-comparison)
-15. [Foundry Agent Architecture](#foundry-agent-architecture)
-16. [VS Code Extension Setup](#vs-code-extension-setup)
-17. [Foundry Agent Implementation](#foundry-agent-implementation)
-18. [Azure AI Search Tool Integration](#azure-ai-search-tool-integration)
-19. [Foundry Agent Deployment](#foundry-agent-deployment)
+
+1. [Azure AI Foundry Overview](#azure-ai-foundry-overview)
+1. [Foundry vs M365 Comparison](#foundry-vs-m365-comparison)
+1. [Foundry Agent Architecture](#foundry-agent-architecture)
+1. [VS Code Extension Setup](#vs-code-extension-setup)
+1. [Foundry Agent Implementation](#foundry-agent-implementation)
+1. [Azure AI Search Tool Integration](#azure-ai-search-tool-integration)
+1. [Foundry Agent Deployment](#foundry-agent-deployment)
 
 ### Part 2.5: Converting Foundry Agent to M365 Agent
-20. [Foundry-to-M365 Integration Overview](#foundry-to-m365-integration-overview)
-21. [API Wrapper for Foundry Agent](#api-wrapper-for-foundry-agent)
-22. [M365 API Plugin for Foundry](#m365-api-plugin-for-foundry)
-23. [Declarative Agent Manifest for Foundry](#declarative-agent-manifest-for-foundry)
-24. [Testing Foundry Agent in M365](#testing-foundry-agent-in-m365)
+
+1. [Foundry-to-M365 Integration Overview](#foundry-to-m365-integration-overview)
+1. [API Wrapper for Foundry Agent](#api-wrapper-for-foundry-agent)
+1. [M365 API Plugin for Foundry](#m365-api-plugin-for-foundry)
+1. [Declarative Agent Manifest for Foundry](#declarative-agent-manifest-for-foundry)
+1. [Testing Foundry Agent in M365](#testing-foundry-agent-in-m365)
 
 ***
 
@@ -49,7 +52,7 @@ Both approaches share the same core components (prompts, citation logic, source 
 
 ### High-Level Architecture Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                              SHARED INFRASTRUCTURE                                        │
 │  ┌──────────────────────────────────────────────────────────────────────────────────┐   │
@@ -133,7 +136,7 @@ Both approaches share the same core components (prompts, citation logic, source 
 
 The key to maintaining both solutions is a **shared core** with **platform-specific adapters**:
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────┐
 │                     SHARED CORE (Python Package)                  │
 │                                                                   │
@@ -183,7 +186,7 @@ The key to maintaining both solutions is a **shared core** with **platform-speci
 
 ### M365 Agent Package Structure
 
-```
+```text
 m365-legal-agent/
 ├── appPackage/
 │   ├── manifest.json              # App manifest (Teams/M365)
@@ -222,7 +225,7 @@ m365-legal-agent/
 
 ### Recommended Monorepo Layout
 
-```
+```text
 azure-search-openai-demo-2/
 ├── app/
 │   ├── backend/                   # Existing web app backend
@@ -628,17 +631,14 @@ app.add_middleware(
 citation_builder = CitationBuilder()
 source_processor = SourceProcessor(citation_builder)
 
-
 class SearchRequest(BaseModel):
     query: str
     category: Optional[str] = None
     top: int = 5
 
-
 class AskRequest(BaseModel):
     question: str
     category: Optional[str] = None
-
 
 class SearchResult(BaseModel):
     index: int
@@ -647,21 +647,18 @@ class SearchResult(BaseModel):
     source: str
     category: str
 
-
 class SearchResponse(BaseModel):
     results: List[SearchResult]
-
 
 class AskResponse(BaseModel):
     answer: str
     sources: List[SearchResult]
 
-
 @app.post("/api/legal/search", response_model=SearchResponse)
 async def search_legal_documents(request: SearchRequest):
     """
     Search the legal knowledge base.
-    
+
     Uses the same Azure AI Search index as the web application.
     """
     try:
@@ -672,7 +669,7 @@ async def search_legal_documents(request: SearchRequest):
             category=request.category,
             top=request.top
         )
-        
+
         # Format results using shared SourceProcessor
         formatted = []
         for i, doc in enumerate(results):
@@ -684,18 +681,17 @@ async def search_legal_documents(request: SearchRequest):
                 source=doc.sourcefile,
                 category=doc.category
             ))
-        
+
         return SearchResponse(results=formatted)
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/legal/ask", response_model=AskResponse)
 async def ask_legal_question(request: AskRequest):
     """
     Answer a legal question with citations.
-    
+
     Uses the same prompty files and approach as the web application.
     """
     try:
@@ -703,17 +699,16 @@ async def ask_legal_question(request: AskRequest):
         # 1. Search for relevant documents
         # 2. Load prompty and generate answer
         # 3. Return answer with inline citations
-        
+
         answer, sources = await generate_answer(
             question=request.question,
             category=request.category
         )
-        
+
         return AskResponse(answer=answer, sources=sources)
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # Health check endpoint
 @app.get("/health")
@@ -727,7 +722,7 @@ async def health_check():
 
 ### How Prompts Are Used in Each Platform
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                            PROMPT FLOW                                        │
 ├──────────────────────────────────────────────────────────────────────────────┤
@@ -782,7 +777,7 @@ MAX_INSTRUCTIONS_LENGTH = 8000
 def extract_core_instructions(prompty_path: Path) -> str:
     """Extract and condense instructions from prompty file."""
     content = prompty_path.read_text()
-    
+
     # Parse YAML front matter
     parts = content.split('---')
     if len(parts) >= 3:
@@ -790,37 +785,35 @@ def extract_core_instructions(prompty_path: Path) -> str:
         template = '---'.join(parts[2:]).strip()
     else:
         template = content
-    
+
     # Remove Jinja conditionals for M365 (use default behavior)
     template = re.sub(r'{%.*?%}', '', template)
     template = re.sub(r'{{.*?}}', '', template)
-    
+
     # Remove sections that don't apply to M365
     # (e.g., override_prompt handling, vision-specific content)
-    
+
     # Condense to fit within limit
     if len(template) > MAX_INSTRUCTIONS_LENGTH:
         # Prioritize core content
         # Remove examples, keep rules
         template = condense_instructions(template)
-    
-    return template[:MAX_INSTRUCTIONS_LENGTH]
 
+    return template[:MAX_INSTRUCTIONS_LENGTH]
 
 def update_declarative_agent(agent_path: Path, instructions: str):
     """Update the declarativeAgent.json with new instructions."""
     import json
-    
+
     agent = json.loads(agent_path.read_text())
     agent['instructions'] = instructions
     agent_path.write_text(json.dumps(agent, indent=2))
     print(f"Updated {agent_path} with {len(instructions)} character instructions")
 
-
 if __name__ == "__main__":
     prompty_path = Path("shared/prompts/chat_answer_question.prompty")
     agent_path = Path("m365-agent/appPackage/declarativeAgent.json")
-    
+
     instructions = extract_core_instructions(prompty_path)
     update_declarative_agent(agent_path, instructions)
 ```
@@ -848,16 +841,15 @@ Adapter to format citations for M365 Copilot responses.
 
 from typing import List, Dict, Any
 
-
 class M365CitationAdapter:
     """
     Converts full citation objects to M365-compatible format.
-    
+
     M365 Copilot expects:
     - Inline numbered citations [1], [2], [3]
     - Sources returned separately for reference
     """
-    
+
     def format_response(
         self, 
         answer: str, 
@@ -865,11 +857,11 @@ class M365CitationAdapter:
     ) -> Dict[str, Any]:
         """
         Format answer and sources for M365 API response.
-        
+
         Args:
             answer: The generated answer text with citations
             sources: List of source documents
-            
+
         Returns:
             M365-compatible response structure
         """
@@ -885,20 +877,20 @@ class M365CitationAdapter:
                 for i, src in enumerate(sources)
             ]
         }
-    
+
     def _build_title(self, source: Dict[str, Any]) -> str:
         """Build a readable title from source metadata."""
         parts = []
-        
+
         if source.get("subsection"):
             parts.append(source["subsection"])
-        
+
         if source.get("sourcepage"):
             parts.append(source["sourcepage"])
-        
+
         if source.get("sourcefile"):
             parts.append(source["sourcefile"])
-        
+
         return ", ".join(parts) if parts else "Source"
 ```
 
@@ -929,11 +921,13 @@ Upload legal documents to SharePoint and configure grounding:
 ```
 
 **Pros:**
+
 - No API backend needed
 - Microsoft handles indexing and search
 - Automatic updates when documents change
 
 **Cons:**
+
 - Less control over chunking/embeddings
 - Limited to SharePoint document formats
 - No custom search ranking
@@ -955,12 +949,14 @@ Use the existing Azure AI Search index via API Plugin:
 ```
 
 **Pros:**
+
 - Reuse existing Azure AI Search index
 - Full control over search and ranking
 - Consistent results with web app
 - Custom citation building
 
 **Cons:**
+
 - Requires hosting API backend
 - Additional infrastructure cost
 - More complex deployment
@@ -996,7 +992,7 @@ Combine SharePoint grounding for general documents with API Plugin for specializ
 
 ### Test Matrix
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          TESTING STRATEGY                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -1034,29 +1030,28 @@ Combine SharePoint grounding for general documents with API Plugin for specializ
 import pytest
 from shared.legal import CitationBuilder
 
-
 class TestCitationBuilder:
     @pytest.fixture
     def builder(self):
         return CitationBuilder()
-    
+
     def test_extract_subsection_from_content(self, builder):
         """Test subsection extraction from document content."""
         class MockDoc:
             content = "1.1 Filing requirements for disclosure..."
             sourcepage = "PD31-1.1"
             sourcefile = "Practice Direction 31"
-        
+
         subsection = builder.extract_subsection(MockDoc())
         assert subsection == "1.1"
-    
+
     def test_build_enhanced_citation(self, builder):
         """Test full citation building."""
         class MockDoc:
             content = "A4.1 The Commercial Court requires..."
             sourcepage = "A4.1"
             sourcefile = "Commercial Court Guide"
-        
+
         citation = builder.build_enhanced_citation(MockDoc(), 1)
         assert "A4.1" in citation
         assert "Commercial Court Guide" in citation
@@ -1070,9 +1065,7 @@ import pytest
 from fastapi.testclient import TestClient
 from m365_agent.api.app import app
 
-
 client = TestClient(app)
-
 
 def test_search_endpoint():
     """Test the search endpoint returns properly formatted results."""
@@ -1080,29 +1073,28 @@ def test_search_endpoint():
         "query": "disclosure requirements fast track",
         "top": 3
     })
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "results" in data
     assert len(data["results"]) <= 3
-    
+
     for result in data["results"]:
         assert "index" in result
         assert "title" in result
         assert "content" in result
-
 
 def test_ask_endpoint():
     """Test the ask endpoint returns answer with citations."""
     response = client.post("/api/legal/ask", json={
         "question": "What are the disclosure requirements?"
     })
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "answer" in data
     assert "sources" in data
-    
+
     # Verify citations are present
     assert "[1]" in data["answer"]
 ```
@@ -1114,13 +1106,13 @@ def test_ask_endpoint():
 ### Prerequisites
 
 1. **Microsoft 365 Copilot License** - Required for testing and deployment
-2. **Azure Subscription** - For hosting API Plugin backend
-3. **Teams Admin Access** - For sideloading during development
-4. **Microsoft 365 Agents Toolkit** - VS Code extension for development
+1. **Azure Subscription** - For hosting API Plugin backend
+1. **Teams Admin Access** - For sideloading during development
+1. **Microsoft 365 Agents Toolkit** - VS Code extension for development
 
 ### Deployment Steps
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         DEPLOYMENT WORKFLOW                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -1220,9 +1212,9 @@ M365_APP_ID=your-app-guid
 ## Next Steps
 
 1. **Phase 1 (Week 1):** Extract shared components and restructure repository
-2. **Phase 2 (Week 2):** Create M365 agent package structure and manifests
-3. **Phase 3 (Week 3):** Implement API Plugin backend with shared components
-4. **Phase 4 (Week 4):** Testing and deployment
+1. **Phase 2 (Week 2):** Create M365 agent package structure and manifests
+1. **Phase 3 (Week 3):** Implement API Plugin backend with shared components
+1. **Phase 4 (Week 4):** Testing and deployment
 
 ***
 
@@ -1238,7 +1230,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 
 ### What is Foundry Agent Service?
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                           AZURE AI FOUNDRY AGENT SERVICE                                 │
 │                                                                                          │
@@ -1299,7 +1291,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 
 ### When to Choose Each Platform
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                        DECISION MATRIX: WHICH PLATFORM?                                  │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -1325,7 +1317,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 
 ### Architecture with Shared Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                              SHARED INFRASTRUCTURE                                        │
 │  ┌──────────────────────────────────────────────────────────────────────────────────┐   │
@@ -1366,18 +1358,18 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 ### Prerequisites
 
 1. **Azure Subscription** with appropriate permissions
-2. **VS Code** with Azure AI Foundry extension
-3. **Python 3.10+** (for SDK development)
-4. **Existing Azure AI Search index** (from your current deployment)
+1. **VS Code** with Azure AI Foundry extension
+1. **Python 3.10+** (for SDK development)
+1. **Existing Azure AI Search index** (from your current deployment)
 
 ### Installing the Azure AI Foundry Extension
 
 1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
-3. Search for "Azure AI Foundry" or "Azure AI"
-4. Install the extension
+1. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
+1. Search for "Azure AI Foundry" or "Azure AI"
+1. Install the extension
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                         VS CODE AZURE AI FOUNDRY EXTENSION                               │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -1408,7 +1400,7 @@ Azure AI Foundry (formerly Azure AI Studio) provides a unified platform for buil
 
 ### Project Structure for Foundry Agent
 
-```
+```text
 azure-search-openai-demo-2/
 ├── shared/                        # Shared with Web App & M365 Agent
 │   ├── prompts/
@@ -1434,15 +1426,16 @@ azure-search-openai-demo-2/
 ### Step 1: Create Foundry Project and Agent (Portal Method)
 
 1. **Go to Azure AI Foundry Portal**: https://ai.azure.com
-2. **Create an Agent**:
+1. **Create an Agent**:
    - Click "Create an agent" from the home page
    - Enter project name: "Legal-CPR-Agent"
    - Wait for resources to provision (gpt-4o will be auto-deployed)
 
-3. **Configure Agent Instructions**:
+1. **Configure Agent Instructions**:
+
    Paste the condensed version of your legal prompts:
 
-```
+```text
 You are an expert legal assistant helping lawyers and legal professionals in England and Wales with questions about the Civil Procedure Rules (CPR), Practice Directions, and Court Guides.
 
 DOCUMENT STRUCTURE AWARENESS:
@@ -1480,15 +1473,15 @@ LEGAL TERMINOLOGY:
 ### Step 2: Add Azure AI Search Tool
 
 1. In the agent playground, click **Knowledge > Add**
-2. Select **Azure AI Search**
-3. Choose **Indexes that are not part of this project**
-4. Enter your existing search connection:
+1. Select **Azure AI Search**
+1. Choose **Indexes that are not part of this project**
+1. Enter your existing search connection:
    - Azure AI Search resource connection: Create new or select existing
    - Endpoint: `https://your-search.search.windows.net`
    - API Key: Your admin key
-5. Select your index (e.g., `gptkbindex`)
-6. Configure search type: **Hybrid + Semantic** (recommended)
-7. Click **Connect**
+1. Select your index (e.g., `gptkbindex`)
+1. Configure search type: **Hybrid + Semantic** (recommended)
+1. Click **Connect**
 
 ### Step 3: Python SDK Implementation
 
@@ -1529,7 +1522,7 @@ SEARCH_CONNECTION_NAME = os.environ.get("AZURE_SEARCH_CONNECTION", "legal-search
 def load_instructions():
     """Load and condense instructions from shared prompty files."""
     prompty_path = Path(__file__).parent.parent / "shared" / "prompts" / "chat_answer_question.prompty"
-    
+
     # For Foundry, we need condensed instructions (keep under 8000 chars for optimal performance)
     instructions = """You are an expert legal assistant helping lawyers and legal professionals in England and Wales with questions about the Civil Procedure Rules (CPR), Practice Directions, and Court Guides.
 
@@ -1556,19 +1549,18 @@ CITATION REQUIREMENTS:
 If the user asks about a specific court, prioritize information specific to that court.
 If no specific court is mentioned, focus on general Civil Procedure Rules.
 Always note when rules or procedures are court-specific versus generally applicable."""
-    
-    return instructions
 
+    return instructions
 
 def create_legal_agent(client: AIProjectClient) -> Agent:
     """Create the Legal CPR agent with Azure AI Search tool."""
-    
+
     # Configure Azure AI Search tool
     search_tool = AzureAISearchTool(
         index_connection_id=SEARCH_CONNECTION_NAME,
         index_name=SEARCH_INDEX,
     )
-    
+
     # Create agent
     agent = client.agents.create_agent(
         model="gpt-4o",  # Or your deployed model name
@@ -1576,42 +1568,40 @@ def create_legal_agent(client: AIProjectClient) -> Agent:
         instructions=load_instructions(),
         tools=[search_tool],
     )
-    
+
     print(f"Created agent: {agent.id}")
     return agent
 
-
 def run_conversation(client: AIProjectClient, agent: Agent, user_message: str):
     """Run a single conversation turn with the agent."""
-    
+
     # Create thread
     thread = client.agents.create_thread()
-    
+
     # Add user message
     client.agents.create_message(
         thread_id=thread.id,
         role="user",
         content=user_message,
     )
-    
+
     # Run agent
     run = client.agents.create_and_process_run(
         thread_id=thread.id,
         agent_id=agent.id,
     )
-    
+
     # Get response
     messages = client.agents.list_messages(thread_id=thread.id)
-    
+
     # Process with shared citation builder
     citation_builder = CitationBuilder()
-    
+
     for message in messages:
         if message.role == "assistant":
             return message.content[0].text.value
-    
-    return None
 
+    return None
 
 def main():
     """Main entry point."""
@@ -1620,30 +1610,29 @@ def main():
         endpoint=PROJECT_ENDPOINT,
         credential=DefaultAzureCredential(),
     )
-    
+
     # Create or get agent
     agent = create_legal_agent(client)
-    
+
     # Interactive loop
     print("Legal CPR Assistant Ready. Type 'quit' to exit.")
     print("-" * 50)
-    
+
     while True:
         user_input = input("\nYou: ").strip()
-        
+
         if user_input.lower() in ('quit', 'exit', 'q'):
             break
-        
+
         if not user_input:
             continue
-        
+
         response = run_conversation(client, agent, user_input)
         print(f"\nAssistant: {response}")
-    
+
     # Cleanup
     client.agents.delete_agent(agent.id)
     print("\nAgent deleted. Goodbye!")
-
 
 if __name__ == "__main__":
     main()
@@ -1668,7 +1657,7 @@ tools:
     index: gptkbindex
     search_type: hybrid_semantic
     top_k: 5
-    
+
 instructions_file: ../shared/prompts/chat_answer_question.prompty
 
 conversation_starters:
@@ -1686,7 +1675,7 @@ conversation_starters:
 
 Your Legal RAG already has an Azure AI Search index. Here's how to connect it to Foundry:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                    CONNECTING EXISTING AZURE AI SEARCH INDEX                             │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -1743,15 +1732,14 @@ from azure.ai.projects.models import (
     AzureAISearchQueryType,
 )
 
-
 def create_legal_search_tool(connection_id: str, index_name: str) -> AzureAISearchTool:
     """
     Create Azure AI Search tool configured for legal documents.
-    
+
     Args:
         connection_id: The Foundry connection ID for Azure AI Search
         index_name: Name of the search index (e.g., 'gptkbindex')
-        
+
     Returns:
         Configured AzureAISearchTool instance
     """
@@ -1764,7 +1752,6 @@ def create_legal_search_tool(connection_id: str, index_name: str) -> AzureAISear
         # filter="category eq 'Commercial Court'"
     )
 
-
 def create_filtered_search_tool(
     connection_id: str, 
     index_name: str,
@@ -1772,11 +1759,11 @@ def create_filtered_search_tool(
 ) -> AzureAISearchTool:
     """
     Create search tool with optional category filter.
-    
+
     This allows creating court-specific search experiences.
     """
     filter_expr = f"category eq '{category}'" if category else None
-    
+
     return AzureAISearchTool(
         index_connection_id=connection_id,
         index_name=index_name,
@@ -1792,7 +1779,7 @@ def create_filtered_search_tool(
 
 ### Deployment Options
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                         FOUNDRY AGENT DEPLOYMENT OPTIONS                                 │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -1832,12 +1819,12 @@ AGENT_ID = os.environ["AGENT_ID"]
 
 def query_legal_agent(question: str, session_id: str = None):
     """Query the Legal CPR agent via REST API."""
-    
+
     headers = {
         "Authorization": f"Bearer {get_access_token()}",
         "Content-Type": "application/json",
     }
-    
+
     # Create thread if new session
     if not session_id:
         thread_response = requests.post(
@@ -1845,26 +1832,26 @@ def query_legal_agent(question: str, session_id: str = None):
             headers=headers,
         )
         session_id = thread_response.json()["id"]
-    
+
     # Send message
     message_response = requests.post(
         f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/messages",
         headers=headers,
         json={"role": "user", "content": question},
     )
-    
+
     # Run agent
     run_response = requests.post(
         f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/runs",
         headers=headers,
     )
-    
+
     # Get response
     messages_response = requests.get(
         f"{PROJECT_ENDPOINT}/agents/{AGENT_ID}/threads/{session_id}/messages",
         headers=headers,
     )
-    
+
     return messages_response.json()
 ```
 
@@ -1927,6 +1914,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 ## References
 
 ### M365 Copilot
+
 - [Microsoft 365 Copilot Extensibility Documentation](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/)
 - [Declarative Agent Manifest Schema v1.2](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.2)
 - [API Plugin Development](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-api-plugins)
@@ -1934,6 +1922,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 - [Build Declarative Agents Tutorial](https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/build-declarative-agents)
 
 ### Azure AI Foundry
+
 - [What is Foundry Agent Service?](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview)
 - [Foundry Agent Quickstart](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/quickstart)
 - [Azure AI Search Tool](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools-classic/azure-ai-search)
@@ -1941,6 +1930,7 @@ SEARCH_CONNECTION_NAME=legal-search-connection
 - [Environment Setup](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/environment-setup)
 
 ### Teams Bot
+
 - [Teams Bot Concepts](https://learn.microsoft.com/en-us/microsoftteams/platform/bots/bot-basics)
 - [Teams Bot Conversations](https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/conversation-basics)
 - [Register a Bot with Azure](https://learn.microsoft.com/en-us/azure/bot-service/bot-service-quickstart-registration)
@@ -2012,7 +2002,7 @@ Microsoft provides **two officially supported methods** to publish Foundry Agent
 | **Debugging** | Portal only | ✅ VS Code | ✅ Any IDE |
 | **Best For** | Quick demos, POCs | Production M365 apps | Complex integrations |
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                    FOUNDRY → M365 INTEGRATION METHODS                                    │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -2052,7 +2042,7 @@ This is the **simplest path** - publish directly from the Foundry Portal with on
 
 ### Step-by-Step Guide
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                    FOUNDRY PORTAL PUBLISH WORKFLOW                                       │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
@@ -2171,7 +2161,7 @@ For maximum flexibility, create a custom API wrapper around your Foundry Agent a
 
 ### Architecture: Custom API Wrapper
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                     FOUNDRY AGENT → M365 COPILOT INTEGRATION                             │
 │                                                                                          │
@@ -2228,7 +2218,7 @@ For maximum flexibility, create a custom API wrapper around your Foundry Agent a
 
 ### Project Structure (API Wrapper)
 
-```
+```text
 foundry-m365-wrapper/
 ├── app.py                    # Main Flask/FastAPI application
 ├── foundry_client.py         # Foundry Agent client
@@ -2256,7 +2246,6 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import MessageRole
 from azure.identity import DefaultAzureCredential
 
-
 @dataclass
 class LegalResponse:
     """Response from the Foundry Agent."""
@@ -2264,26 +2253,25 @@ class LegalResponse:
     citations: list
     thread_id: str
 
-
 class FoundryAgentClient:
     """
     Client for interacting with the Foundry Legal Agent.
-    
+
     Manages threads and conversations with the Foundry Agent Service.
     """
-    
+
     def __init__(self):
         self.project_endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
         self.agent_id = os.environ["FOUNDRY_AGENT_ID"]
-        
+
         self.client = AIProjectClient(
             endpoint=self.project_endpoint,
             credential=DefaultAzureCredential(),
         )
-        
+
         # Thread cache (in production, use Redis/CosmosDB)
         self._threads: dict = {}
-    
+
     async def ask(
         self, 
         question: str, 
@@ -2291,37 +2279,37 @@ class FoundryAgentClient:
     ) -> LegalResponse:
         """
         Send a question to the Foundry Agent.
-        
+
         Args:
             question: The user's legal question
             session_id: Optional session ID for conversation continuity
-            
+
         Returns:
             LegalResponse with answer, citations, and thread ID
         """
         # Get or create thread
         thread_id = self._get_or_create_thread(session_id)
-        
+
         # Add user message
         self.client.agents.messages.create(
             thread_id=thread_id,
             role=MessageRole.USER,
             content=question,
         )
-        
+
         # Run the agent
         run = self.client.agents.runs.create_and_process(
             thread_id=thread_id,
             agent_id=self.agent_id,
         )
-        
+
         # Get the response
         messages = self.client.agents.messages.list(thread_id=thread_id)
-        
+
         # Find the assistant's response
         answer = ""
         citations = []
-        
+
         for message in messages:
             if message.role == MessageRole.ASSISTANT:
                 # Get the text content
@@ -2331,29 +2319,29 @@ class FoundryAgentClient:
                         # Extract citations from annotations
                         citations = self._extract_citations(content_part.text)
                 break
-        
+
         return LegalResponse(
             answer=answer,
             citations=citations,
             thread_id=thread_id,
         )
-    
+
     def _get_or_create_thread(self, session_id: Optional[str]) -> str:
         """Get existing thread or create new one."""
         if session_id and session_id in self._threads:
             return self._threads[session_id]
-        
+
         thread = self.client.agents.threads.create()
-        
+
         if session_id:
             self._threads[session_id] = thread.id
-        
+
         return thread.id
-    
+
     def _extract_citations(self, text_content) -> list:
         """Extract citations from Foundry response annotations."""
         citations = []
-        
+
         if hasattr(text_content, 'annotations'):
             for annotation in text_content.annotations:
                 if hasattr(annotation, 'file_citation'):
@@ -2362,9 +2350,9 @@ class FoundryAgentClient:
                         "source": annotation.file_citation.file_id,
                         "quote": annotation.file_citation.quote if hasattr(annotation.file_citation, 'quote') else "",
                     })
-        
+
         return citations
-    
+
     def delete_thread(self, session_id: str):
         """Clean up a conversation thread."""
         if session_id in self._threads:
@@ -2411,13 +2399,11 @@ app.add_middleware(
 # Initialize Foundry client
 foundry_client = FoundryAgentClient()
 
-
 # Request/Response Models
 class LegalQuestion(BaseModel):
     """Request model for legal questions."""
     question: str
     session_id: Optional[str] = None
-
 
 class Citation(BaseModel):
     """Citation reference."""
@@ -2425,20 +2411,17 @@ class Citation(BaseModel):
     source: str
     quote: str = ""
 
-
 class LegalAnswer(BaseModel):
     """Response model for legal answers."""
     answer: str
     citations: List[Citation]
     session_id: str
 
-
 class SearchRequest(BaseModel):
     """Request model for document search."""
     query: str
     category: Optional[str] = None
     top: int = 5
-
 
 class SearchResult(BaseModel):
     """Individual search result."""
@@ -2447,12 +2430,10 @@ class SearchResult(BaseModel):
     source: str
     relevance_score: float
 
-
 class SearchResponse(BaseModel):
     """Response model for search results."""
     results: List[SearchResult]
     query: str
-
 
 # API Endpoints
 
@@ -2463,7 +2444,7 @@ async def ask_legal_question(
 ) -> LegalAnswer:
     """
     Ask a legal question to the Foundry Agent.
-    
+
     This endpoint forwards the question to the Azure AI Foundry Agent
     and returns the response with citations.
     """
@@ -2472,7 +2453,7 @@ async def ask_legal_question(
             question=request.question,
             session_id=request.session_id,
         )
-        
+
         return LegalAnswer(
             answer=response.answer,
             citations=[
@@ -2485,10 +2466,9 @@ async def ask_legal_question(
             ],
             session_id=response.thread_id,
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/legal/search", response_model=SearchResponse)
 async def search_legal_documents(
@@ -2497,7 +2477,7 @@ async def search_legal_documents(
 ) -> SearchResponse:
     """
     Search legal documents directly.
-    
+
     This endpoint performs a search without going through the full
     agent conversation flow - useful for quick lookups.
     """
@@ -2506,12 +2486,12 @@ async def search_legal_documents(
         search_question = f"Search for: {request.query}"
         if request.category:
             search_question += f" in {request.category} documents"
-        
+
         response = await foundry_client.ask(
             question=search_question,
             session_id=None,  # Fresh session for search
         )
-        
+
         # Convert to search results format
         results = []
         for citation in response.citations[:request.top]:
@@ -2521,21 +2501,19 @@ async def search_legal_documents(
                 source=citation["source"],
                 relevance_score=1.0,  # Foundry doesn't expose scores
             ))
-        
+
         return SearchResponse(
             results=results,
             query=request.query,
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "foundry-m365-wrapper"}
-
 
 if __name__ == "__main__":
     import uvicorn
@@ -2544,7 +2522,7 @@ if __name__ == "__main__":
 
 ### requirements.txt
 
-```
+```text
 fastapi>=0.100.0
 uvicorn>=0.23.0
 azure-ai-projects>=1.0.0
@@ -2583,7 +2561,7 @@ info:
     AI-powered legal assistant for UK Civil Procedure Rules.
     This API provides access to the Legal CPR Agent powered by Azure AI Foundry.
   version: 1.0.0
-  
+
 servers:
   - url: https://your-foundry-wrapper.azurecontainerapps.io
     description: Production API
@@ -2879,10 +2857,10 @@ paths:
 ### Local Testing with Teams Toolkit
 
 1. **Install M365 Agents Toolkit** in VS Code
-2. **Open your project** with the manifest files
-3. **Press F5** to start debugging
-4. **Sign in** to your M365 developer tenant
-5. **Test in Teams** - the agent will appear in Copilot
+1. **Open your project** with the manifest files
+1. **Press F5** to start debugging
+1. **Sign in** to your M365 developer tenant
+1. **Test in Teams** - the agent will appear in Copilot
 
 ### Validation Checklist
 
@@ -2941,7 +2919,7 @@ There are **two approaches** to integrating your Legal RAG solution into Teams:
 
 ### Architecture Diagram
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                              TEAMS BOT INTEGRATION                                    │
 │                                                                                       │
@@ -2999,12 +2977,13 @@ If you've already implemented Part 1 (M365 Copilot Declarative Agent), your agen
 ### How It Works
 
 1. M365 Copilot is natively integrated into Teams
-2. Users access your Declarative Agent via the Copilot pane
-3. No additional development required
+1. Users access your Declarative Agent via the Copilot pane
+1. No additional development required
 
 ### Enabling in Teams
 
 The M365 Declarative Agent from Part 1 appears in Teams when:
+
 - The app is deployed to the organization
 - Users have M365 Copilot licenses
 - The app manifest includes Teams as a supported scope
@@ -3059,7 +3038,7 @@ For organizations without M365 Copilot licenses or needing more control, deploy 
 
 ### Project Structure
 
-```
+```text
 teams-bot/
 ├── app.py                    # Main bot application
 ├── bot.py                    # Bot logic and handlers
@@ -3080,7 +3059,7 @@ teams-bot/
 ### Step 1: Register Azure Bot
 
 1. Go to Azure Portal → Create Resource → Azure Bot
-2. Configure:
+1. Configure:
    - **Bot handle**: legal-advisor-bot
    - **Pricing tier**: Standard S1
    - **App type**: Single Tenant (recommended)
@@ -3110,6 +3089,7 @@ az bot channel create \
 ### Step 3: Bot Implementation
 
 #### config.py
+
 ```python
 """Bot configuration settings."""
 import os
@@ -3122,15 +3102,15 @@ class BotConfig:
     APP_ID: str = os.environ.get("MicrosoftAppId", "")
     APP_PASSWORD: str = os.environ.get("MicrosoftAppPassword", "")
     APP_TENANT_ID: str = os.environ.get("MicrosoftAppTenantId", "")
-    
+
     # Legal RAG Backend
     BACKEND_URL: str = os.environ.get("LEGAL_RAG_BACKEND_URL", "http://localhost:50505")
-    
+
     # Azure OpenAI (optional - if calling directly)
     AZURE_OPENAI_ENDPOINT: str = os.environ.get("AZURE_OPENAI_ENDPOINT", "")
     AZURE_OPENAI_API_KEY: str = os.environ.get("AZURE_OPENAI_API_KEY", "")
     AZURE_OPENAI_DEPLOYMENT: str = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "")
-    
+
     # Azure AI Search (optional - if searching directly)
     AZURE_SEARCH_ENDPOINT: str = os.environ.get("AZURE_SEARCH_ENDPOINT", "")
     AZURE_SEARCH_KEY: str = os.environ.get("AZURE_SEARCH_KEY", "")
@@ -3138,6 +3118,7 @@ class BotConfig:
 ```
 
 #### legal_rag_client.py
+
 ```python
 """Client for calling the Legal RAG backend API."""
 import aiohttp
@@ -3153,10 +3134,10 @@ class LegalAnswer:
 
 class LegalRAGClient:
     """Async client for Legal RAG API calls."""
-    
+
     def __init__(self, backend_url: str):
         self.backend_url = backend_url.rstrip('/')
-    
+
     async def ask(
         self,
         question: str,
@@ -3165,12 +3146,12 @@ class LegalRAGClient:
     ) -> LegalAnswer:
         """
         Send a question to the Legal RAG backend.
-        
+
         Args:
             question: The user's legal question
             category: Optional category filter (e.g., "cpr_part_*")
             history: Optional conversation history
-            
+
         Returns:
             LegalAnswer with response and citations
         """
@@ -3187,13 +3168,13 @@ class LegalRAGClient:
                 }
             }
         }
-        
+
         if category:
             payload["context"]["overrides"]["filter"] = f"category eq '{category}'"
-        
+
         if history:
             payload["messages"] = history + payload["messages"]
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"{self.backend_url}/chat",
@@ -3203,25 +3184,25 @@ class LegalRAGClient:
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"Backend error: {error_text}")
-                
+
                 data = await response.json()
-                
+
                 # Extract answer and citations from response
                 answer = data.get("message", {}).get("content", "")
                 citations = self._extract_citations(data.get("context", {}))
                 thoughts = data.get("context", {}).get("thoughts", "")
-                
+
                 return LegalAnswer(
                     answer=answer,
                     citations=citations,
                     thoughts=thoughts
                 )
-    
+
     def _extract_citations(self, context: dict) -> list:
         """Extract citations from the response context."""
         citations = []
         data_points = context.get("data_points", {})
-        
+
         # Handle text citations
         text_points = data_points.get("text", [])
         for point in text_points:
@@ -3231,11 +3212,12 @@ class LegalRAGClient:
                     "source": source.strip(),
                     "content": content.strip()[:200] + "..."
                 })
-        
+
         return citations
 ```
 
 #### bot.py
+
 ```python
 """Teams bot implementation for Legal RAG."""
 from botbuilder.core import ActivityHandler, TurnContext, MessageFactory
@@ -3253,60 +3235,59 @@ import json
 from legal_rag_client import LegalRAGClient, LegalAnswer
 from config import BotConfig
 
-
 class LegalAdvisorBot(TeamsActivityHandler):
     """
     Teams bot that provides legal advice using the Legal RAG backend.
     """
-    
+
     def __init__(self, config: BotConfig):
         super().__init__()
         self.config = config
         self.legal_client = LegalRAGClient(config.BACKEND_URL)
         self.conversation_history: dict = {}  # In production, use Redis/CosmosDB
-    
+
     async def on_message_activity(self, turn_context: TurnContext):
         """Handle incoming messages from Teams users."""
         # Get the user's message
         user_message = turn_context.activity.text
         conversation_id = turn_context.activity.conversation.id
-        
+
         # Remove bot mention if in channel
         user_message = self._remove_mention(turn_context, user_message)
-        
+
         # Send typing indicator
         await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-        
+
         try:
             # Get conversation history
             history = self.conversation_history.get(conversation_id, [])
-            
+
             # Call Legal RAG backend
             answer = await self.legal_client.ask(
                 question=user_message,
                 history=history[-6:]  # Keep last 6 messages for context
             )
-            
+
             # Build response with Adaptive Card
             card = self._build_answer_card(answer)
-            
+
             # Send the response
             await turn_context.send_activity(
                 MessageFactory.attachment(card)
             )
-            
+
             # Update conversation history
             history.append({"role": "user", "content": user_message})
             history.append({"role": "assistant", "content": answer.answer})
             self.conversation_history[conversation_id] = history[-10:]
-            
+
         except Exception as e:
             # Send error card
             error_card = self._build_error_card(str(e))
             await turn_context.send_activity(
                 MessageFactory.attachment(error_card)
             )
-    
+
     async def on_members_added_activity(
         self,
         members_added,
@@ -3319,7 +3300,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 await turn_context.send_activity(
                     MessageFactory.attachment(welcome_card)
                 )
-    
+
     def _remove_mention(self, turn_context: TurnContext, text: str) -> str:
         """Remove @mention from message text."""
         if turn_context.activity.entities:
@@ -3330,7 +3311,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                         mention_text = entity.additional_properties.get("text", "")
                         text = text.replace(mention_text, "").strip()
         return text
-    
+
     def _build_answer_card(self, answer: LegalAnswer) -> Attachment:
         """Build an Adaptive Card for the answer."""
         card_body = [
@@ -3348,7 +3329,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 "spacing": "medium"
             }
         ]
-        
+
         # Add citations if available
         if answer.citations:
             card_body.append({
@@ -3357,7 +3338,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 "weight": "bolder",
                 "spacing": "large"
             })
-            
+
             for citation in answer.citations[:5]:  # Limit to 5 citations
                 card_body.append({
                     "type": "Container",
@@ -3380,7 +3361,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                     "style": "emphasis",
                     "spacing": "small"
                 })
-        
+
         card = {
             "type": "AdaptiveCard",
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -3399,12 +3380,12 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 }
             ]
         }
-        
+
         return Attachment(
             content_type="application/vnd.microsoft.card.adaptive",
             content=card
         )
-    
+
     def _build_welcome_card(self) -> Attachment:
         """Build a welcome card for new users."""
         card = {
@@ -3446,12 +3427,12 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 }
             ]
         }
-        
+
         return Attachment(
             content_type="application/vnd.microsoft.card.adaptive",
             content=card
         )
-    
+
     def _build_error_card(self, error_message: str) -> Attachment:
         """Build an error card."""
         card = {
@@ -3472,7 +3453,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
                 }
             ]
         }
-        
+
         return Attachment(
             content_type="application/vnd.microsoft.card.adaptive",
             content=card
@@ -3480,6 +3461,7 @@ class LegalAdvisorBot(TeamsActivityHandler):
 ```
 
 #### app.py
+
 ```python
 """Main application entry point for the Teams bot."""
 import sys
@@ -3515,22 +3497,19 @@ SETTINGS = ConfigurationBotFrameworkAuthentication(
 )
 ADAPTER = CloudAdapter(SETTINGS)
 
-
 # Error handler
 async def on_error(context: TurnContext, error: Exception):
     """Global error handler for the bot."""
     print(f"\n [on_error] unhandled error: {error}", file=sys.stderr)
     traceback.print_exc()
-    
+
     # Send error message to user
     await context.send_activity("I encountered an error. Please try again later.")
-
 
 ADAPTER.on_turn_error = on_error
 
 # Create bot instance
 BOT = LegalAdvisorBot(CONFIG)
-
 
 # Listen for incoming requests on /api/messages
 async def messages(req: Request) -> Response:
@@ -3548,13 +3527,11 @@ async def messages(req: Request) -> Response:
         return json_response(data=response.body, status=response.status)
     return Response(status=HTTPStatus.OK)
 
-
 def init_app():
     """Initialize the aiohttp web application."""
     app = web.Application(middlewares=[aiohttp_error_middleware])
     app.router.add_post("/api/messages", messages)
     return app
-
 
 if __name__ == "__main__":
     app = init_app()
@@ -3564,6 +3541,7 @@ if __name__ == "__main__":
 ### Step 4: Teams App Manifest
 
 #### appPackage/manifest.json
+
 ```json
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
@@ -3624,13 +3602,15 @@ if __name__ == "__main__":
 ### Step 5: Deploy to Azure
 
 #### requirements.txt
-```
+
+```text
 botbuilder-core>=4.14.0
 botbuilder-integration-aiohttp>=4.14.0
 aiohttp>=3.8.0
 ```
 
 #### Dockerfile
+
 ```dockerfile
 FROM python:3.11-slim
 
@@ -3647,6 +3627,7 @@ CMD ["python", "app.py"]
 ```
 
 #### Deploy Commands
+
 ```bash
 # Build and push to Azure Container Registry
 az acr build --registry yourregistry --image legal-advisor-bot:latest .
@@ -3673,7 +3654,7 @@ Combine Azure AI Foundry Agent (Part 2) with Teams bot for the best of both worl
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Teams Bot (Frontend)                         │
 │  ┌─────────────────────────────────────────────────────────────┐ │
@@ -3701,14 +3682,13 @@ from azure.identity import DefaultAzureCredential
 from botbuilder.core import TurnContext
 from botbuilder.core.teams import TeamsActivityHandler
 
-
 class FoundryTeamsBot(TeamsActivityHandler):
     """Teams bot backed by Azure AI Foundry Agent."""
-    
+
     def __init__(self, config):
         super().__init__()
         self.config = config
-        
+
         # Initialize Foundry client
         self.project_client = AIProjectClient(
             credential=DefaultAzureCredential(),
@@ -3716,39 +3696,39 @@ class FoundryTeamsBot(TeamsActivityHandler):
             resource_group_name=config.AZURE_RESOURCE_GROUP,
             project_name=config.AZURE_AI_PROJECT_NAME
         )
-        
+
         self.agent_id = config.FOUNDRY_AGENT_ID
         self.threads: dict = {}  # conversation_id -> thread_id
-    
+
     async def on_message_activity(self, turn_context: TurnContext):
         """Handle messages by routing to Foundry Agent."""
         user_message = turn_context.activity.text
         conversation_id = turn_context.activity.conversation.id
-        
+
         # Get or create thread
         thread_id = self.threads.get(conversation_id)
         if not thread_id:
             thread = self.project_client.agents.threads.create()
             thread_id = thread.id
             self.threads[conversation_id] = thread_id
-        
+
         # Add message to thread
         self.project_client.agents.messages.create(
             thread_id=thread_id,
             role="user",
             content=user_message
         )
-        
+
         # Run the agent
         run = self.project_client.agents.runs.create_and_process(
             thread_id=thread_id,
             agent_id=self.agent_id
         )
-        
+
         # Get the response
         messages = self.project_client.agents.messages.list(thread_id=thread_id)
         last_message = messages[0]  # Most recent
-        
+
         # Build and send Adaptive Card
         card = self._build_answer_card(last_message.content)
         await turn_context.send_activity(
@@ -3778,21 +3758,21 @@ class FoundryTeamsBot(TeamsActivityHandler):
 ### Message Handling
 
 1. **Keep responses concise** - Teams UI works best with shorter messages
-2. **Use Adaptive Cards** - Rich formatting with actions
-3. **Handle @mentions** - Strip bot mention in channels
-4. **Typing indicators** - Show typing while processing
+1. **Use Adaptive Cards** - Rich formatting with actions
+1. **Handle @mentions** - Strip bot mention in channels
+1. **Typing indicators** - Show typing while processing
 
 ### Conversation Management
 
 1. **Limit history** - Keep last 6-10 messages for context
-2. **Use persistent storage** - Redis/CosmosDB for production
-3. **Handle timeouts** - Bot Framework has 15-second limit
+1. **Use persistent storage** - Redis/CosmosDB for production
+1. **Handle timeouts** - Bot Framework has 15-second limit
 
 ### Error Handling
 
 1. **Graceful degradation** - Show user-friendly error cards
-2. **Retry logic** - Use exponential backoff for backend calls
-3. **Logging** - Application Insights for monitoring
+1. **Retry logic** - Use exponential backoff for backend calls
+1. **Logging** - Application Insights for monitoring
 
 ***
 

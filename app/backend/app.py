@@ -611,7 +611,9 @@ async def setup_clients():
     AZURE_SEARCH_SERVICE = os.environ["AZURE_SEARCH_SERVICE"]
     AZURE_SEARCH_ENDPOINT = f"https://{AZURE_SEARCH_SERVICE}.search.windows.net"
     AZURE_SEARCH_INDEX = os.environ["AZURE_SEARCH_INDEX"]
-    AZURE_SEARCH_AGENT = os.getenv("AZURE_SEARCH_AGENT", "")
+    # CUSTOM: Support both legacy and Bicep-provisioned env var names for the AI Search knowledge base.
+    # Bicep sets AZURE_SEARCH_KNOWLEDGEBASE_NAME; older code used AZURE_SEARCH_AGENT.
+    AZURE_SEARCH_AGENT = os.getenv("AZURE_SEARCH_AGENT") or os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_NAME", "")
     # Shared by all OpenAI deployments
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure")
     OPENAI_CHATGPT_MODEL = os.environ["AZURE_OPENAI_CHATGPT_MODEL"]
@@ -668,7 +670,12 @@ async def setup_clients():
     USE_SPEECH_OUTPUT_AZURE = os.getenv("USE_SPEECH_OUTPUT_AZURE", "").lower() == "true"
     USE_CHAT_HISTORY_BROWSER = os.getenv("USE_CHAT_HISTORY_BROWSER", "").lower() == "true"
     USE_CHAT_HISTORY_COSMOS = os.getenv("USE_CHAT_HISTORY_COSMOS", "").lower() == "true"
-    USE_AGENTIC_RETRIEVAL = os.getenv("USE_AGENTIC_RETRIEVAL", "").lower() == "true"
+    requested_agentic_retrieval = os.getenv("USE_AGENTIC_RETRIEVAL", "").lower() == "true"
+    USE_AGENTIC_RETRIEVAL = requested_agentic_retrieval and bool(AZURE_SEARCH_AGENT)
+    if requested_agentic_retrieval and not AZURE_SEARCH_AGENT:
+        current_app.logger.warning(
+            "USE_AGENTIC_RETRIEVAL is true but no knowledge base name is configured (AZURE_SEARCH_AGENT/AZURE_SEARCH_KNOWLEDGEBASE_NAME); disabling agentic retrieval."
+        )
 
     # WEBSITE_HOSTNAME is always set by App Service, RUNNING_IN_PRODUCTION is set in main.bicep
     RUNNING_ON_AZURE = os.getenv("WEBSITE_HOSTNAME") is not None or os.getenv("RUNNING_IN_PRODUCTION") is not None

@@ -7,22 +7,25 @@ Your modifications transform the Azure Search OpenAI demo from a basic document 
 ## 1. Enhanced Three-Part Citation System
 
 ### What You Changed
+
 - **Original**: Simple two-part citations: `"sourcepage, sourcefile"`
 - **Your Version**: Intelligent three-part citations: `"subsection, sourcepage, sourcefile"`
 
 ### How It Works
+
 ```python
 # Your citation building logic
 def build_enhanced_citation_from_document(self, doc, source_index):
     subsection = self._extract_subsection_from_document(doc)  # "31.1"
     sourcepage = doc.sourcepage  # "CPR Part 31"
     sourcefile = doc.sourcefile  # "Civil Procedure Rules"
-    
+
     # Creates: "31.1, CPR Part 31, Civil Procedure Rules"
     return f"{subsection}, {sourcepage}, {sourcefile}"
 ```
 
 ### Benefits
+
 - Users can navigate directly to specific rule sections
 - More precise legal referencing
 - Better attribution for legal documents
@@ -30,6 +33,7 @@ def build_enhanced_citation_from_document(self, doc, source_index):
 ## 2. Intelligent Document Subsection Splitting
 
 ### What You Added
+
 Your system now automatically detects when documents contain multiple legal subsections and splits them into separate citation sources.
 
 ```python
@@ -39,11 +43,12 @@ def _extract_multiple_subsections_from_document(self, doc):
     # - "Rule 1.1 Introduction"  
     # - "A4.1 Court procedures"
     # - "Para 5.2 Requirements"
-    
+
     # One document becomes multiple precise sources
 ```
 
 ### Impact
+
 - A single CPR document can become 10+ specific rule sources
 - Each citation points to exact subsection
 - More granular and accurate referencing
@@ -51,9 +56,11 @@ def _extract_multiple_subsections_from_document(self, doc):
 ## 3. Court-Aware Category Filtering
 
 ### User Category Selection Feature
+
 Users can now select specific courts or document categories from a dropdown:
 
 #### Frontend Implementation
+
 ```typescript
 // Chat.tsx & Ask.tsx - Category Selection
 const handleSettingsChange = (field: string, value: any) => {
@@ -67,14 +74,16 @@ const handleSettingsChange = (field: string, value: any) => {
 ```
 
 #### Available Categories
+
 - All Categories (default)
 - Circuit Commercial Court
-- Commercial Court  
+- Commercial Court
 - High Court
 - County Court
 - Civil Procedure Rules and Practice Directions
 
 ### Automatic Court Detection
+
 Your system also automatically detects court mentions in queries:
 
 ```python
@@ -87,17 +96,18 @@ def detect_court_in_query(self, query: str) -> Optional[str]:
 ```
 
 ### Smart Filtering Logic
+
 ```python
 def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]):
     # Priority 1: User-selected category
     if include_category and include_category != "All":
         filters.append(f"category eq '{include_category}'")
-    
+
     # Priority 2: Auto-detected court in query
     elif detected_court:
         normalized_court = self.normalize_court_to_category(detected_court)
         filters.append(f"(category eq '{normalized_court}' or category eq 'Civil Procedure Rules')")
-    
+
     # Priority 3: Default to CPR
     else:
         filters.append("(category eq 'Civil Procedure Rules' or category eq null)")
@@ -106,16 +116,18 @@ def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]):
 ## 4. Hover Citation Preview Feature
 
 ### What You Added
+
 Users can now hover over citation numbers to see a preview of the source content without clicking.
 
 #### Frontend Implementation
+
 ```typescript
 // Answer.tsx - Hover handling
 const handleCitationClick = (e: Event) => {
     const citationElement = target.closest(".citation-sup");
     const citationText = citationElement?.getAttribute("data-citation-text");
     const citationContent = citationElement?.getAttribute("data-citation-content");
-    
+
     // Show preview on hover, full content on click
     if (citationText) {
         onCitationClicked(citationText, citationContent || undefined);
@@ -124,6 +136,7 @@ const handleCitationClick = (e: Event) => {
 ```
 
 #### Enhanced Citation Elements
+
 ```html
 <!-- Your citation format includes preview content -->
 <sup class="citation-sup" 
@@ -135,6 +148,7 @@ const handleCitationClick = (e: Event) => {
 ```
 
 ### User Experience
+
 - **Hover**: Quick preview of citation content
 - **Click**: Full citation details in supporting content tab
 - **Seamless**: No page refresh needed
@@ -142,6 +156,7 @@ const handleCitationClick = (e: Event) => {
 ## 5. Direct Storage URL Integration
 
 ### What You Changed
+
 - **Original**: Downloaded files through the application server
 - **Your Version**: Direct redirection to Azure Storage URLs
 
@@ -152,7 +167,7 @@ async def assets(path):
     # Search for document by sourcepage or sourcefile
     filter_query = f"sourcepage eq '{escaped_path}' or sourcefile eq '{escaped_path}'"
     results = await search_client.search(filter=filter_query, select=["storageUrl"])
-    
+
     # Direct redirect to storage URL with highlighting
     if storage_url:
         if highlight_terms:
@@ -161,6 +176,7 @@ async def assets(path):
 ```
 
 ### Benefits
+
 - **Performance**: No server bottleneck for file downloads
 - **Features**: Built-in search highlighting in documents
 - **Scalability**: Direct Azure Storage access
@@ -168,6 +184,7 @@ async def assets(path):
 ## 6. Enhanced Token Limits & Content Handling
 
 ### Increased Capacity
+
 ```python
 # Before: 1024 tokens max response
 # After: 8192+ tokens max response
@@ -176,6 +193,7 @@ response_token_limit = self.get_response_token_limit(self.chatgpt_model, 8192)
 ```
 
 ### Full Content Preservation
+
 ```python
 # Ensures full document content is preserved, not truncated
 "content": str(doc.content) if doc.content is not None else "",  # Full content, no truncation
@@ -184,7 +202,9 @@ response_token_limit = self.get_response_token_limit(self.chatgpt_model, 8192)
 ## 7. Legal-Focused Prompt Engineering
 
 ### Specialized Legal Prompts
+
 Your prompts now include:
+
 - Legal terminology reference guide
 - Court-specific instruction awareness
 - Mandatory citation requirements
@@ -201,6 +221,7 @@ MANDATORY CITATION REQUIREMENTS:
 ## 8. Comprehensive Logging & Debugging
 
 ### Your Debug Logging System
+
 ```python
 logging.info(f"🔍 DEBUG: Processing {len(results)} documents")
 logging.info(f"🎯 DEBUG: Document split into {len(subsections)} sources")
@@ -208,8 +229,9 @@ logging.info(f"Citation mapping [1] = '{enhanced_citation}'")
 ```
 
 ### Debug Symbols Guide
+
 - 🔍 = Data processing
-- 🎯 = Subsection operations  
+- 🎯 = Subsection operations
 - 📄 = Document operations
 - 🏷️ = Citation creation
 - ✅ = Success operations
@@ -217,7 +239,9 @@ logging.info(f"Citation mapping [1] = '{enhanced_citation}'")
 ## 9. Category Selection User Interface
 
 ### Dropdown Integration
+
 Users see a category selector with options:
+
 ```typescript
 const categoryOptions = [
     { key: "All", text: "All Categories" },
@@ -230,6 +254,7 @@ const categoryOptions = [
 ```
 
 ### Smart Defaults
+
 - No selection = Show CPR + detected court rules
 - Specific court selected = Show that court's rules + CPR
 - "All Categories" = Show everything
@@ -237,13 +262,14 @@ const categoryOptions = [
 ## 10. Improved User Workflows
 
 ### Typical User Journey
+
 1. **Select Category** (optional): Choose specific court from dropdown
-2. **Ask Question**: Type legal query
-3. **Auto-Detection**: System detects court mentions in question
-4. **Smart Search**: Combines user selection + auto-detection
-5. **Hover Preview**: Hover over citation numbers for quick preview
-6. **Click for Details**: Click for full citation information
-7. **Direct Access**: Click citation to open source document with highlighting
+1. **Ask Question**: Type legal query
+1. **Auto-Detection**: System detects court mentions in question
+1. **Smart Search**: Combines user selection + auto-detection
+1. **Hover Preview**: Hover over citation numbers for quick preview
+1. **Click for Details**: Click for full citation information
+1. **Direct Access**: Click citation to open source document with highlighting
 
 ## Key Implementation Files
 
@@ -252,12 +278,12 @@ const categoryOptions = [
    - `Answer.tsx`: Hover citation handling
    - `SupportingContent.tsx`: Citation display logic
 
-2. **Backend Approaches**:
+1. **Backend Approaches**:
    - `chatreadretrieveread.py`: Court detection + citation building
    - `retrievethenread.py`: Enhanced search filtering
    - `approach.py`: Base subsection extraction logic
 
-3. **Prompt Templates**:
+1. **Prompt Templates**:
    - Legal terminology guides
    - Citation requirement specifications
    - Court-aware instruction sets
@@ -265,6 +291,7 @@ const categoryOptions = [
 ## Benefits Summary
 
 ### For Users
+
 - **Precision**: Exact subsection citations
 - **Speed**: Hover previews, direct document access
 - **Control**: Category selection for focused searches
@@ -272,6 +299,7 @@ const categoryOptions = [
 - **Professional**: Legal-standard citation format
 
 ### For System
+
 - **Performance**: Direct storage URLs, efficient redirects
 - **Scalability**: Enhanced token limits, parallel processing
 - **Maintainability**: Comprehensive logging, clear code structure

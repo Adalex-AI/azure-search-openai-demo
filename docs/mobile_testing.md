@@ -16,12 +16,14 @@ npm run dev:mobile
 ```
 
 The frontend will display:
-```
+
+```text
   ➜  Local:   http://localhost:5173/
   ➜  Network: http://192.168.x.x:5173/   ← Use this for phone testing
 ```
 
 **Alternative (use regular dev for localhost only):**
+
 ```bash
 npm run dev   # localhost only
 ```
@@ -31,12 +33,13 @@ npm run dev   # localhost only
 ### Option 1: Browser DevTools (Fastest)
 
 1. Open Chrome/Edge and go to `http://localhost:5173/`
-2. Press **F12** to open DevTools
-3. Click the **device toolbar icon** (or press `Ctrl+Shift+M` / `Cmd+Shift+M`)
-4. Select a phone model (iPhone 14, Pixel 7, Galaxy S20, etc.)
-5. Test different orientations and screen sizes
+1. Press **F12** to open DevTools
+1. Click the **device toolbar icon** (or press `Ctrl+Shift+M` / `Cmd+Shift+M`)
+1. Select a phone model (iPhone 14, Pixel 7, Galaxy S20, etc.)
+1. Test different orientations and screen sizes
 
 **Recommended device presets:**
+
 - iPhone SE (375x667) - Small phone
 - iPhone 14 Pro (393x852) - Standard iPhone
 - Pixel 7 (412x915) - Standard Android
@@ -45,15 +48,16 @@ npm run dev   # localhost only
 ### Option 2: Your Real Phone (Same WiFi Network)
 
 1. Ensure your phone and computer are on the **same WiFi network**
-2. Find your computer's local IP:
+1. Find your computer's local IP:
    - **Mac**: `ipconfig getifaddr en0`
    - **Windows**: `ipconfig` → Look for IPv4 Address
    - **Linux**: `hostname -I`
-3. On your phone, open the browser and go to: `http://<your-ip>:5173/`
+1. On your phone, open the browser and go to: `http://<your-ip>:5173/`
 
 **Example:** `http://192.168.1.100:5173/`
 
 **Troubleshooting:**
+
 - Disable Windows Firewall temporarily if blocked
 - On Mac: Allow incoming connections in Security preferences
 - Some corporate networks block device-to-device connections
@@ -74,6 +78,7 @@ ngrok http 5173
 This gives you a public URL like: `https://abc123.ngrok-free.app`
 
 **Benefits:**
+
 - Test on any device, anywhere
 - Share with colleagues for feedback
 - Works through firewalls
@@ -110,13 +115,14 @@ Connect your Android phone via USB for real device debugging:
 
 1. Enable **Developer Options** on your phone:
    - Settings → About Phone → Tap "Build Number" 7 times
-2. Enable **USB Debugging** in Developer Options
-3. Connect phone via USB
-4. Open Chrome on your phone and navigate to the app
-5. On your computer, open Chrome and go to: `chrome://inspect`
-6. Click "inspect" under your device
+1. Enable **USB Debugging** in Developer Options
+1. Connect phone via USB
+1. Open Chrome on your phone and navigate to the app
+1. On your computer, open Chrome and go to: `chrome://inspect`
+1. Click "inspect" under your device
 
 This allows you to:
+
 - See console logs from phone
 - Inspect elements
 - Debug CSS issues
@@ -125,6 +131,7 @@ This allows you to:
 ## Mobile UI Features
 
 ### What Regular Users See (Default)
+
 - ✅ Chat interface with answer cards
 - ✅ Source category dropdown
 - ✅ Search depth selector
@@ -136,13 +143,16 @@ This allows you to:
 - ✅ AI disclaimer
 
 ### What's Hidden for Regular Users
+
 - ❌ Thought Process button (developer feature)
 - ❌ Settings panel toggle (developer feature)
 - ❌ History panel toggle (developer feature)
 
 ### Admin Mode (for developers)
+
 Add `?admin=true` to the URL to see all features:
-```
+
+```text
 http://localhost:5173/?admin=true
 http://192.168.1.100:5173/?admin=true
 ```
@@ -152,6 +162,7 @@ http://192.168.1.100:5173/?admin=true
 Mobile styles are in: `app/frontend/src/customizations/mobile.css`
 
 Key breakpoints:
+
 - `768px` - Tablet/phone breakpoint
 - `375px` - Very small phones
 - Landscape orientation handling
@@ -159,6 +170,7 @@ Key breakpoints:
 ## Testing Checklist
 
 ### Basic Functionality
+
 - [ ] Chat loads without errors
 - [ ] Can type and submit questions
 - [ ] Answers display correctly
@@ -168,6 +180,7 @@ Key breakpoints:
 - [ ] Search depth dropdown works
 
 ### Visual Layout
+
 - [ ] Header fits and is readable
 - [ ] No horizontal scrolling
 - [ ] Text is readable (16px+ for inputs)
@@ -176,6 +189,7 @@ Key breakpoints:
 - [ ] Citations wrap properly
 
 ### Usability
+
 - [ ] Input doesn't zoom on iOS
 - [ ] Keyboard doesn't cover input
 - [ ] Scrolling is smooth
@@ -183,6 +197,7 @@ Key breakpoints:
 - [ ] Panels close properly
 
 ### Edge Cases
+
 - [ ] Long answers display correctly
 - [ ] Many citations wrap properly
 - [ ] Error messages are visible
@@ -192,25 +207,29 @@ Key breakpoints:
 ## Performance Tips
 
 1. **Test on real devices** - Emulators are faster than real phones
-2. **Test on lower-end devices** - Not everyone has the latest phone
-3. **Test on 3G/4G** - Add network throttling in DevTools
-4. **Check battery usage** - Long-running animations drain battery
+1. **Test on lower-end devices** - Not everyone has the latest phone
+1. **Test on 3G/4G** - Add network throttling in DevTools
+1. **Check battery usage** - Long-running animations drain battery
 
 ## Troubleshooting
 
 ### "Can't connect from phone"
+
 - Check firewall settings
 - Ensure same WiFi network
 - Try turning off VPN
 - Check if port 5173 is accessible
 
 ### "App zooms when typing"
+
 - Input font size should be 16px+ (already set in mobile.css)
 
 ### "Elements too small to tap"
+
 - Touch targets should be 44px+ (already set in mobile.css)
 
 ### "Horizontal scroll"
+
 - Check for fixed-width elements
 - Use DevTools to find overflow
 

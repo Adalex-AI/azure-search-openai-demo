@@ -5,7 +5,7 @@
 Successfully implemented a comprehensive feedback enhancement system that:
 
 1. **Captures deployment metadata** (version, commit hash, model)
-2. **Maintains merge-safe architecture** for public repo
+1. **Maintains merge-safe architecture** for public repo
 
 ## Implementation Completed
 
@@ -170,8 +170,8 @@ RUNNING_IN_PRODUCTION          # Environment indicator
 ### Files with Minimal Changes (Easy Upgrades)
 
 1. `app/backend/approaches/chatapproach.py` - 2 lines per method (filtering)
-2. `infra/main.bicep` - 3 new env vars
-3. `.github/instructions/customizations.instructions.md` - Documentation only
+1. `infra/main.bicep` - 3 new env vars
+1. `.github/instructions/customizations.instructions.md` - Documentation only
 
 ### No Changes Required (Fully Isolated)
 

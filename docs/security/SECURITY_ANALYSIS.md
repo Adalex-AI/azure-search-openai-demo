@@ -15,6 +15,7 @@ The documentation explicitly states this behavior:
 > "The application uses an in-memory token cache. User sessions are only available in memory while the application is running."
 
 **Default Configuration (No Authentication)**
+
 - `AZURE_USE_AUTHENTICATION=false` (default)
 - `AZURE_ENFORCE_ACCESS_CONTROL=false` (default)
 - No login required
@@ -22,10 +23,11 @@ The documentation explicitly states this behavior:
 - Perfect for local development, testing, and demos
 
 **Why This Design?**
+
 1. **Developer Experience**: Faster local development without auth overhead
-2. **Testing**: Easy to test features without managing multiple test users
-3. **Demos**: Can quickly show functionality to stakeholders
-4. **Optional**: Security can be enabled when needed via environment variables
+1. **Testing**: Easy to test features without managing multiple test users
+1. **Demos**: Can quickly show functionality to stakeholders
+1. **Optional**: Security can be enabled when needed via environment variables
 
 ***
 
@@ -46,7 +48,8 @@ The security posture depends on how you deploy:
 | Default Behavior | No login needed | **Must login first** |
 
 **Key Difference:** App Service has **built-in authentication** that enforces login at the Azure level:
-```
+
+```text
 User Request → App Service Auth Middleware → Azure Entra ID Login → App Backend
 ```
 
@@ -59,7 +62,7 @@ User Request → App Service Auth Middleware → Azure Entra ID Login → App Ba
 
 ### Authentication Behavior Matrix
 
-```
+```text
 AZURE_USE_AUTHENTICATION | AZURE_ENFORCE_ACCESS_CONTROL | Environment | Result
 ─────────────────────────┼──────────────────────────────┼─────────────┼──────────────────────────
 false                    | false                        | All         | ❌ NO SECURITY (default)
@@ -83,20 +86,22 @@ true                     | true                         | App Service | ✅ Requ
    - Leverages App Service's built-in authentication
    - Stored credentials use Azure Key Vault
 
-2. **Data Protection (Azure OpenAI)**
+1. **Data Protection (Azure OpenAI)**
    - ✅ Your queries are **NOT used for training**
    - ✅ Data **NOT shared with OpenAI.com**
    - ✅ Data **NOT shared with other customers**
    - ✅ Enterprise isolation (unlike ChatGPT)
 
-3. **Document-Level Access Control**
+1. **Document-Level Access Control**
    - Supports two methods:
+
      - **Manual ACL management** via `manageacl.py` script
      - **Azure Data Lake Gen2 ACLs** for automatic sync
+
    - Uses Azure Search's built-in filtering
    - User or group-based access decisions
 
-4. **Optional Security Model**
+1. **Optional Security Model**
    - Flexible: Can be enabled/disabled per environment
    - Graceful degradation: Works without auth for testing
    - Scalable: From open access to strict enforcement
@@ -104,30 +109,34 @@ true                     | true                         | App Service | ✅ Requ
 #### ⚠️ **Potential Concerns**
 
 1. **Token Caching Issue**
+
    ```python
    # Current implementation
    "This application uses an in-memory token cache. 
     User sessions are only available in memory while 
     the application is running."
    ```
+
    - **Problem**: Sessions lost on app restart
    - **Risk**: Unexpected logout of users
    - **Solution**: Consider persisting to Azure Cosmos DB or Redis cache
 
-2. **Content Safety Monitoring**
+1. **Content Safety Monitoring**
    - By default: Automated + Optional human review
    - **Trade-off**: Microsoft employees CAN review flagged content (with restrictions)
    - **Mitigation**: Organizations handling highly sensitive data can request "modified abuse monitoring" to eliminate human review
 
-3. **MSAL Authentication in Frontend**
+1. **MSAL Authentication in Frontend**
    - Current: Uses custom MSAL-based auth (when enabled)
    - **Risk**: If misconfigured, could expose tokens in network traffic
    - **Recommendation**: Always use HTTPS in production
 
-4. **Unauthenticated Access Option**
+1. **Unauthenticated Access Option**
+
    ```python
    AZURE_ENABLE_UNAUTHENTICATED_ACCESS = true
    ```
+
    - Allows public access to the app
    - If combined with `AZURE_ENFORCE_ACCESS_CONTROL=false`, all data is public
    - **Use Case**: Public-facing knowledge bases (OK)
@@ -155,7 +164,8 @@ azd up
 ### 🔒 **Multi-Level Security Strategy**
 
 #### Level 1: Basic (Development/Testing)
-```
+
+```text
 Feature Flag: AZURE_USE_AUTHENTICATION = false
 ✅ Fast local development
 ❌ No access control
@@ -163,7 +173,8 @@ Use: Local machines, CI/CD testing
 ```
 
 #### Level 2: Authenticated (Staging/Internal)
-```
+
+```text
 Feature Flag: AZURE_USE_AUTHENTICATION = true
            AZURE_ENFORCE_ACCESS_CONTROL = false
 ✅ Users must login
@@ -173,7 +184,8 @@ Use: Internal team testing, staging environment
 ```
 
 #### Level 3: Strict (Production)
-```
+
+```text
 Feature Flag: AZURE_USE_AUTHENTICATION = true
            AZURE_ENFORCE_ACCESS_CONTROL = true
            AZURE_ENABLE_UNAUTHENTICATED_ACCESS = false
@@ -184,7 +196,8 @@ Use: Production deployment with confidential legal docs
 ```
 
 #### Level 4: Public (External Knowledge Base)
-```
+
+```text
 Feature Flag: AZURE_USE_AUTHENTICATION = false
            AZURE_ENABLE_UNAUTHENTICATED_ACCESS = true
 ✅ Public accessible
@@ -195,6 +208,7 @@ Use: Publicly available legal information
 ### 🔐 **Implementation Checklist for Secure Sharing**
 
 - [ ] **Enable Entra ID Authentication**
+
   ```bash
   azd env set AZURE_USE_AUTHENTICATION true
   azd env set AZURE_AUTH_TENANT_ID <your-tenant-id>
@@ -206,17 +220,19 @@ Use: Publicly available legal information
   - Configure known client applications
 
 - [ ] **Set Up Document Access Control**
+
   ```bash
   # Option A: Manual per-document
   python ./scripts/manageacl.py --acl-action enable_acls
   python ./scripts/manageacl.py --acl-type groups --acl-action add --acl <group-id> --url <doc-url>
-  
+
   # Option B: Automatic via Data Lake Gen2
   azd env set AZURE_ADLS_GEN2_STORAGE_ACCOUNT <storage-account>
   python ./scripts/adlsgen2setup.py './data/*' --data-access-control './scripts/sampleacls.json'
   ```
 
 - [ ] **Enable Access Control Enforcement**
+
   ```bash
   azd env set AZURE_ENFORCE_ACCESS_CONTROL true
   ```
@@ -259,13 +275,13 @@ Use: Publicly available legal information
 ### 🔴 **DO NOT DEPLOY TO PRODUCTION WITHOUT**
 
 1. ✅ Enabling `AZURE_USE_AUTHENTICATION=true`
-2. ✅ Setting up Entra ID applications (client + server)
-3. ✅ Enabling `AZURE_ENFORCE_ACCESS_CONTROL=true` for confidential docs
-4. ✅ Configuring document access via ACLs
-5. ✅ Using HTTPS everywhere (App Service enforces this)
-6. ✅ Setting up Azure Monitor logging
-7. ✅ Implementing session persistence (not in-memory)
-8. ✅ Regular security audits and access reviews
+1. ✅ Setting up Entra ID applications (client + server)
+1. ✅ Enabling `AZURE_ENFORCE_ACCESS_CONTROL=true` for confidential docs
+1. ✅ Configuring document access via ACLs
+1. ✅ Using HTTPS everywhere (App Service enforces this)
+1. ✅ Setting up Azure Monitor logging
+1. ✅ Implementing session persistence (not in-memory)
+1. ✅ Regular security audits and access reviews
 
 ### 🟡 **OPTIONAL BUT RECOMMENDED**
 
@@ -293,7 +309,7 @@ Use: Publicly available legal information
 ## Next Steps
 
 1. **For Testing**: Keep current configuration (no auth required)
-2. **For Production**: Follow "Level 3: Strict" configuration above
-3. **For Compliance**: Document your security controls per your legal jurisdiction
-4. **For Sharing**: Enable authentication + ACLs before inviting external users
+1. **For Production**: Follow "Level 3: Strict" configuration above
+1. **For Compliance**: Document your security controls per your legal jurisdiction
+1. **For Sharing**: Enable authentication + ACLs before inviting external users
 

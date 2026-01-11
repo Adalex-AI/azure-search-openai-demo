@@ -27,10 +27,10 @@ This document provides comprehensive documentation for the legal-specific evalua
 The legal evaluation framework extends the standard RAG evaluation capabilities with domain-specific metrics tailored for UK legal documents. It evaluates:
 
 1. **Accuracy of legal citations** - CPR Parts, Practice Directions, and statutory references
-2. **Case law citation correctness** - Neutral citation format (e.g., [2024] EWCA Civ 123)
-3. **Legal terminology precision** - UK-specific legal terms vs. US equivalents
-4. **Citation format compliance** - Proper `[1][2][3]` format, not malformed alternatives
-5. **Precedent matching** - Correct source document attribution
+1. **Case law citation correctness** - Neutral citation format (e.g., [2024] EWCA Civ 123)
+1. **Legal terminology precision** - UK-specific legal terms vs. US equivalents
+1. **Citation format compliance** - Proper `[1][2][3]` format, not malformed alternatives
+1. **Precedent matching** - Correct source document attribution
 
 ### Why Legal-Specific Metrics?
 
@@ -46,7 +46,7 @@ Standard RAG metrics like groundedness and relevance don't capture legal-specifi
 
 ## Architecture
 
-```
+```text
 evals/
 ├── evaluate.py                          # Main evaluation script with legal metrics
 ├── evaluate_config.json                 # Standard config
@@ -128,18 +128,21 @@ CASE_CITATION_REGEX = r'\[(\d{4})\]\s*(?:UKSC|UKHL|EWCA|EWHC|UKPC)(?:\s+(?:Civ|C
 **Purpose**: Measures how accurately the response cites statutory provisions mentioned in the ground truth.
 
 **How it works**:
+
 1. Extracts all statute references from both ground truth and response
-2. Compares section numbers and Act names
-3. Returns ratio of matched citations to expected citations
+1. Compares section numbers and Act names
+1. Returns ratio of matched citations to expected citations
 
 **Example**:
-```
+
+```text
 Ground Truth: "Under section 33 of the Limitation Act 1980..."
 Response: "Section 33 of the Limitation Act 1980 allows the court..."
 Score: 1.0 (perfect match)
 ```
 
 **Score Interpretation**:
+
 | Score | Meaning |
 |-------|---------|
 | 1.0 | All expected statutes cited correctly |
@@ -154,11 +157,13 @@ Score: 1.0 (perfect match)
 **Purpose**: Validates that case law citations use proper neutral citation format.
 
 **How it works**:
+
 1. Extracts case citations in neutral format from ground truth
-2. Searches for matching citations in response
-3. Returns ratio of matches
+1. Searches for matching citations in response
+1. Returns ratio of matches
 
 **Supported Citation Formats**:
+
 - `[2024] UKSC 1` - UK Supreme Court
 - `[2024] UKHL 1` - House of Lords (historical)
 - `[2024] EWCA Civ 123` - Court of Appeal (Civil Division)
@@ -167,7 +172,8 @@ Score: 1.0 (perfect match)
 - `[2024] UKPC 1` - Privy Council
 
 **Example**:
-```
+
+```text
 Ground Truth: "As held in [2023] EWCA Civ 456..."
 Response: "The Court of Appeal in [2023] EWCA Civ 456 established..."
 Score: 1.0
@@ -180,11 +186,13 @@ Score: 1.0
 **Purpose**: Ensures responses use correct UK legal terminology rather than US equivalents.
 
 **How it works**:
+
 1. Extracts legal terms from both ground truth and response
-2. Checks for UK-specific terminology
-3. Penalizes US legal terms (e.g., "attorney" instead of "solicitor/barrister")
+1. Checks for UK-specific terminology
+1. Penalizes US legal terms (e.g., "attorney" instead of "solicitor/barrister")
 
 **UK vs US Terminology**:
+
 | UK Term (Correct) | US Term (Incorrect) |
 |-------------------|---------------------|
 | Claimant | Plaintiff |
@@ -195,7 +203,8 @@ Score: 1.0
 | QOCS | No equivalent |
 
 **Example**:
-```
+
+```text
 Ground Truth: "The claimant must serve disclosure..."
 Response: "The claimant should provide disclosure under Part 31..."
 Score: 1.0 (uses UK terms)
@@ -211,22 +220,26 @@ Score: 0.0 (uses US terms)
 **Purpose**: Validates that document citations follow the required `[1][2][3]` format.
 
 **How it works**:
+
 1. Detects malformed citation patterns
-2. Checks for proper bracket separation
-3. Returns compliance score
+1. Checks for proper bracket separation
+1. Returns compliance score
 
 **Valid Formats**:
+
 - `[1]` - Single citation
 - `[1][2][3]` - Multiple citations (correct)
 - `[Part 36#page=Offers]` - Document citations
 
 **Invalid Formats** (penalized):
+
 - `[1, 2, 3]` - Comma-separated (malformed)
 - `[1-3]` - Range format (malformed)
 - `[1,2,3]` - No spaces (malformed)
 - `1, 2, 3` - No brackets (malformed)
 
 **Score Interpretation**:
+
 | Score | Meaning |
 |-------|---------|
 | 1.0 | All citations properly formatted |
@@ -240,17 +253,20 @@ Score: 0.0 (uses US terms)
 **Purpose**: Verifies that responses cite the correct source documents from the knowledge base.
 
 **How it works**:
+
 1. Extracts source document references from ground truth
-2. Searches for matching document citations in response
-3. Returns match ratio
+1. Searches for matching document citations in response
+1. Returns match ratio
 
 **Source Document Pattern**:
-```
+
+```json
 [Document Name#page=Section Title]
 ```
 
 **Example**:
-```
+
+```bash
 Ground Truth: "...as stated in [Part 36#page=Offers to Settle]"
 Response: "Under Part 36 [Part 36#page=Offers to Settle], a party may..."
 Score: 1.0
@@ -306,11 +322,11 @@ Create entries following this template:
 ### Ground Truth Best Practices
 
 1. **Include specific CPR references**: Use "Part 36" not just "settlement offers"
-2. **Add Practice Direction citations**: "Practice Direction 28" or "PD 28"
-3. **Include statutory references**: "section X of the [Act Name] [Year]"
-4. **Add source document citations**: `[Document#page=Section]`
-5. **Use UK terminology**: "claimant" not "plaintiff"
-6. **Cover multiple court guides**: CPR, Commercial Court, TCC, etc.
+1. **Add Practice Direction citations**: "Practice Direction 28" or "PD 28"
+1. **Include statutory references**: "section X of the [Act Name] [Year]"
+1. **Add source document citations**: `[Document#page=Section]`
+1. **Use UK terminology**: "claimant" not "plaintiff"
+1. **Cover multiple court guides**: CPR, Commercial Court, TCC, etc.
 
 ***
 
@@ -373,12 +389,14 @@ Create entries following this template:
 ### Prerequisites
 
 1. Deploy an evaluation model:
+
    ```bash
    azd env set USE_EVAL true
    azd provision
    ```
 
-2. Set up the evaluation environment:
+1. Set up the evaluation environment:
+
    ```bash
    python -m venv .evalenv
    source .evalenv/bin/activate
@@ -482,14 +500,14 @@ python -m pytest evals/test_legal_metrics.py -v
 ### Real-World Scenarios Tested
 
 1. Fast track disclosure with multiple CPR references
-2. Summary judgment with Practice Direction citations
-3. Limitation periods with statutory citations
-4. Court guide-specific responses (Commercial, TCC)
-5. Case law citations (EWCA Civ/Crim, UKSC)
-6. UK vs US terminology detection
-7. Malformed citation detection
-8. QOCS and other legal acronyms
-9. Track allocation terminology
+1. Summary judgment with Practice Direction citations
+1. Limitation periods with statutory citations
+1. Court guide-specific responses (Commercial, TCC)
+1. Case law citations (EWCA Civ/Crim, UKSC)
+1. UK vs US terminology detection
+1. Malformed citation detection
+1. QOCS and other legal acronyms
+1. Track allocation terminology
 
 ***
 
@@ -537,7 +555,7 @@ python test_search_index.py --action export --query "summary judgment"
 
 After evaluation, results are saved in `evals/results/legal-domain/`:
 
-```
+```text
 results/legal-domain/
 ├── TIMESTAMP/
 │   ├── eval_results.jsonl      # Individual question results
@@ -584,10 +602,10 @@ class NewLegalMetric(BaseMetric):
         def new_legal_metric(*, response, ground_truth, **kwargs):
             if response is None:
                 return {cls.METRIC_NAME: -1}
-            
+
             # Your metric logic here
             score = calculate_score(response, ground_truth)
-            
+
             return {cls.METRIC_NAME: score}
         return new_legal_metric
 
@@ -600,13 +618,13 @@ class NewLegalMetric(BaseMetric):
         }
 ```
 
-2. Register the metric:
+1. Register the metric:
 
 ```python
 register_metric(NewLegalMetric)
 ```
 
-3. Add to configuration:
+1. Add to configuration:
 
 ```json
 {
@@ -617,7 +635,7 @@ register_metric(NewLegalMetric)
 }
 ```
 
-4. Add unit tests in `test_legal_metrics.py`
+1. Add unit tests in `test_legal_metrics.py`
 
 ### Adding New Regex Patterns
 
@@ -637,11 +655,11 @@ Create domain-specific ground truth using the search index:
 def generate_ground_truth_for_topic(topic, num_questions=10):
     """Generate ground truth for a specific legal topic."""
     results = search_documents(topic)
-    
+
     for result in results[:num_questions]:
         question = generate_question_from_content(result['content'])
         truth = generate_answer_with_citations(result)
-        
+
         yield {"question": question, "truth": truth}
 ```
 
@@ -689,10 +707,10 @@ cat evals/results/legal-domain/TIMESTAMP/eval_results.jsonl | jq '.statute_citat
 
 ### Overview
 
-**Evaluation Date:** 2025-12-25  
-**Ground Truth Entries:** 62 questions  
-**Source Types Covered:** CPR Parts (11), Practice Directions (9), Court Guides (42)  
-**Categories Covered:** All 6 court categories  
+**Evaluation Date:** 2025-12-25
+**Ground Truth Entries:** 62 questions
+**Source Types Covered:** CPR Parts (11), Practice Directions (9), Court Guides (42)
+**Categories Covered:** All 6 court categories
 **Evaluation Type:** Direct (Azure Search + Azure OpenAI)
 
 ### Overall Metrics
@@ -727,22 +745,22 @@ cat evals/results/legal-domain/TIMESTAMP/eval_results.jsonl | jq '.statute_citat
 ### Key Findings
 
 1. **Precedent Matching**: **96%** average - the RAG system correctly identifies and cites source documents
-2. **Legal Terminology**: Perfect 100% - consistent use of UK legal terminology
-3. **Source Type Performance**: CPR and Practice Directions perform perfectly (100% statute accuracy)
-4. **Court Guides**: Statute accuracy improved to 50% by capturing "Annex" and "Guide" references, but remains lower due to complex multi-part citations in ground truth.
-5. **Citation Rate**: 100% - all answers are properly cited.
-6. **Regex Fixes**: Added support for `Annex X`, `PD X.Y`, and `CPR X.Y(Z)` formats.
+1. **Legal Terminology**: Perfect 100% - consistent use of UK legal terminology
+1. **Source Type Performance**: CPR and Practice Directions perform perfectly (100% statute accuracy)
+1. **Court Guides**: Statute accuracy improved to 50% by capturing "Annex" and "Guide" references, but remains lower due to complex multi-part citations in ground truth.
+1. **Citation Rate**: 100% - all answers are properly cited.
+1. **Regex Fixes**: Added support for `Annex X`, `PD X.Y`, and `CPR X.Y(Z)` formats.
 
 ### Improvements Made (Journey from 9.5% → 96%)
 
 1. **Ground Truth Alignment** (9.5% → 50%): Updated document names to match actual Azure Search index entries
-2. **Semantic Matching** (50% → 68%): Added fuzzy matching for document name variations
-3. **Topic-Based Matching** (68% → 81%): Added matching for related legal concepts (e.g., "hearings" ↔ "open justice")
-4. **Word Overlap Scoring** (81% → 92%): Improved partial credit for documents with shared terminology
-5. **Ground Truth Corrections** (92% → 95%): Fixed incorrect document references in ground truth
-6. **Regex Logic Fix** (95% → 96%): Corrected citation extraction to ignore non-citation placeholders in ground truth text
-7. **Advanced Regex Patterns** (96% → 98%): Added support for inverted statute citations and fixed citation rate detection
-8. **Annex & Guide Support** (98% → 96%): Added regex support for "Annex" and "Guide" references to improve Court Guide accuracy. (Note: Precedent matching fluctuated slightly due to LLM variance).
+1. **Semantic Matching** (50% → 68%): Added fuzzy matching for document name variations
+1. **Topic-Based Matching** (68% → 81%): Added matching for related legal concepts (e.g., "hearings" ↔ "open justice")
+1. **Word Overlap Scoring** (81% → 92%): Improved partial credit for documents with shared terminology
+1. **Ground Truth Corrections** (92% → 95%): Fixed incorrect document references in ground truth
+1. **Regex Logic Fix** (95% → 96%): Corrected citation extraction to ignore non-citation placeholders in ground truth text
+1. **Advanced Regex Patterns** (96% → 98%): Added support for inverted statute citations and fixed citation rate detection
+1. **Annex & Guide Support** (98% → 96%): Added regex support for "Annex" and "Guide" references to improve Court Guide accuracy. (Note: Precedent matching fluctuated slightly due to LLM variance).
 
 ### Ground Truth Coverage
 
@@ -797,9 +815,9 @@ Legal RAG applications face unique quality requirements that standard metrics do
 ### Legal-Specific Requirements
 
 1. **Citation Accuracy**: Legal professionals need correct rule references (e.g., "CPR Part 36.14" not just "Part 36")
-2. **Jurisdiction Compliance**: UK legal terms must be used (e.g., "claimant" not "plaintiff")
-3. **Source Traceability**: Every statement should be traceable to specific court rules or guides
-4. **Format Compliance**: Citations must follow legal conventions for court submissions
+1. **Jurisdiction Compliance**: UK legal terms must be used (e.g., "claimant" not "plaintiff")
+1. **Source Traceability**: Every statement should be traceable to specific court rules or guides
+1. **Format Compliance**: Citations must follow legal conventions for court submissions
 
 ### Why Precedent Matching Matters
 
@@ -819,9 +837,9 @@ In legal RAG, citing the **correct source document** is critical because:
 Ground truth entries are created by:
 
 1. Querying the Azure Search index for document categories
-2. Reviewing actual document content to formulate questions
-3. Extracting exact source document names from the index
-4. Validating document references exist in the index
+1. Reviewing actual document content to formulate questions
+1. Extracting exact source document names from the index
+1. Validating document references exist in the index
 
 ```bash
 # Query index to find documents
@@ -839,12 +857,12 @@ for r in results:
 The direct evaluation script:
 
 1. Loads ground truth from `ground_truth_cpr.jsonl`
-2. For each question:
+1. For each question:
    - Searches Azure Search index for relevant documents
    - Sends query + documents to Azure OpenAI
    - Extracts cited sources from response
    - Calculates metrics against ground truth
-3. Aggregates results by source type and category
+1. Aggregates results by source type and category
 
 ### Step 3: Semantic Matching
 
@@ -874,7 +892,7 @@ overlap = len(truth_words & response_words) / len(truth_words | response_words)
 
 Results are saved as JSON and displayed in a formatted table:
 
-```
+```text
 ═══ EVALUATION RESULTS ═══
 Total entries: 62
 
@@ -899,12 +917,12 @@ Overall Metrics:
    - Review ground truth for Section E (Disclosure) accuracy
    - Consider separate evaluation config for Commercial Court
 
-2. **Increase Statute Citation Accuracy**
+1. **Increase Statute Citation Accuracy**
    - Update prompts to explicitly request CPR Part/Rule numbers
    - Add post-processing to extract inline statute references
    - Consider adding CPR citation examples to system prompt
 
-3. **Expand Ground Truth**
+1. **Expand Ground Truth**
    - Add questions for Practice Directions (currently 9 entries)
    - Include more edge cases (amendments, transitional provisions)
    - Add questions requiring multiple source citations
@@ -916,12 +934,12 @@ Overall Metrics:
    - Alert when index updates may invalidate ground truth
    - Automated refresh when documents are re-indexed
 
-2. **Confidence Scoring**
+1. **Confidence Scoring**
    - Add confidence levels to responses
    - Weight metrics by model confidence
    - Flag low-confidence answers for review
 
-3. **Citation Chain Validation**
+1. **Citation Chain Validation**
    - Verify that cited CPR rules exist in the text
    - Cross-reference case citations with case law database
    - Validate statutory references against legislation.gov.uk
@@ -933,12 +951,12 @@ Overall Metrics:
    - Track metric trends over time
    - Alert on significant regressions
 
-2. **Human-in-the-Loop Validation**
+1. **Human-in-the-Loop Validation**
    - Sample random responses for legal expert review
    - Build feedback loop to improve ground truth
    - Create benchmark dataset for legal RAG systems
 
-3. **Multi-Jurisdiction Support**
+1. **Multi-Jurisdiction Support**
    - Extend framework to other UK courts (Employment Tribunal, Family Court)
    - Add support for Scottish and Northern Irish procedure rules
    - Consider EU/international court procedures

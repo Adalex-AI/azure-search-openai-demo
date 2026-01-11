@@ -35,17 +35,17 @@ This is the most secure option for sharing with specific lawyers or team members
 ### Step 1: Add the User as a Guest in Microsoft Entra Admin Center
 
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com)
-2. Sign in with your admin account (hbalapatabendi@gmail.com)
-3. Navigate to **Users** → **All users**
-4. Click **New user** → **Invite external user**
-5. Enter:
+1. Sign in with your admin account (hbalapatabendi@gmail.com)
+1. Navigate to **Users** → **All users**
+1. Click **New user** → **Invite external user**
+1. Enter:
    - **Email:** The user's email address
    - **Display name:** Their name
    - **Send invite message:** ✅ Check this box and customize:
 
      > "You've been invited to access Civil Procedure Copilot, our AI-powered legal research assistant for CPR, Practice Directions, and Court Guides. After accepting, visit https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io"
 
-6. Click **Review + invite**
+1. Click **Review + invite**
 
 The user will receive an email invitation to join your tenant.
 
@@ -54,11 +54,11 @@ The user will receive an email invitation to join your tenant.
 First-time users may see "Consent Required" or "Admin approval required" errors. To fix:
 
 1. Navigate to [Microsoft Entra Admin Center](https://entra.microsoft.com)
-2. Go to **Enterprise applications**
-3. Find your Client App: `Azure Search OpenAI Chat Web App` (ID: `1d382868-51d6-4200-a4ba-3a7b94ecb2d3`)
-4. Go to **Permissions** in the left menu
-5. Click **Grant admin consent for Default Directory**
-6. Confirm when prompted
+1. Go to **Enterprise applications**
+1. Find your Client App: `Azure Search OpenAI Chat Web App` (ID: `1d382868-51d6-4200-a4ba-3a7b94ecb2d3`)
+1. Go to **Permissions** in the left menu
+1. Click **Grant admin consent for Default Directory**
+1. Confirm when prompted
 
 ### Step 3: Configure Document Access
 
@@ -87,8 +87,8 @@ python ./scripts/manageacl.py -v --acl-type oids --acl-action add \
 To find a user's Object ID:
 
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com) → **Users**
-2. Click on the user
-3. Copy the **Object ID** from the Overview page
+1. Click on the user
+1. Copy the **Object ID** from the Overview page
 
 ***
 
@@ -99,19 +99,19 @@ Better for managing multiple users with the same access level.
 ### Step 1: Create a Security Group
 
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com)
-2. Navigate to **Groups** → **All groups**
-3. Click **New group**
+1. Navigate to **Groups** → **All groups**
+1. Click **New group**
    - Group type: **Security**
    - Group name: `Civil Procedure Copilot Users`
    - Membership type: **Assigned**
-4. Click **Create**
+1. Click **Create**
 
 ### Step 2: Add Members to the Group
 
 1. Open the group you created
-2. Go to **Members** → **+ Add members**
-3. Search for and select the users to add
-4. Click **Select**
+1. Go to **Members** → **+ Add members**
+1. Search for and select the users to add
+1. Click **Select**
 
 ### Step 3: Grant Group Access to Documents
 
@@ -144,12 +144,12 @@ This sets the special `["all"]` value on documents, making them available to any
 ### What Users Will See
 
 1. **First Visit:** User navigates to https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
-2. **Login Prompt:** User clicks "Login" button in the top-right corner
-3. **Microsoft Sign-In:** User signs in with their Microsoft account
-4. **Consent Screen:** First-time users may see a consent dialog asking for permissions:
+1. **Login Prompt:** User clicks "Login" button in the top-right corner
+1. **Microsoft Sign-In:** User signs in with their Microsoft account
+1. **Consent Screen:** First-time users may see a consent dialog asking for permissions:
    - "Access Azure Search OpenAI Chat API"
    - "Read your profile"
-5. **Access Granted:** User can now use Civil Procedure Copilot to query CPR, Practice Directions, and Court Guides
+1. **Access Granted:** User can now use Civil Procedure Copilot to query CPR, Practice Directions, and Court Guides
 
 ### Key Features to Highlight
 
@@ -190,10 +190,10 @@ Common issues and solutions:
 ## Security Best Practices
 
 1. **Use Groups, Not Individual Permissions** - Easier to manage at scale
-2. **Review Access Regularly** - Audit who has access to the application
-3. **Use Document-Level ACLs** - Restrict sensitive documents to specific users/groups
-4. **Monitor Sign-In Logs** - Check Microsoft Entra sign-in logs for unusual activity
-5. **Rotate App Secrets** - Periodically rotate `AZURE_SERVER_APP_SECRET` and `AZURE_CLIENT_APP_SECRET`
+1. **Review Access Regularly** - Audit who has access to the application
+1. **Use Document-Level ACLs** - Restrict sensitive documents to specific users/groups
+1. **Monitor Sign-In Logs** - Check Microsoft Entra sign-in logs for unusual activity
+1. **Rotate App Secrets** - Periodically rotate `AZURE_SERVER_APP_SECRET` and `AZURE_CLIENT_APP_SECRET`
 
 ***
 
@@ -202,15 +202,15 @@ Common issues and solutions:
 ### Remove a Specific User
 
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com) → **Enterprise applications**
-2. Select `Azure Search OpenAI Chat Web App`
-3. Go to **Users and groups**
-4. Remove the user from the list
+1. Select `Azure Search OpenAI Chat Web App`
+1. Go to **Users and groups**
+1. Remove the user from the list
 
 ### Remove a User from a Group
 
 1. Go to [Microsoft Entra Admin Center](https://entra.microsoft.com) → **Groups**
-2. Select the group
-3. Go to **Members** → Remove the user
+1. Select the group
+1. Go to **Members** → Remove the user
 
 ### Remove Document Access
 

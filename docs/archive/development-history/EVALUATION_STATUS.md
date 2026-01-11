@@ -9,6 +9,7 @@ All evaluation infrastructure is **ready** for testing the new `[1][2][3]` citat
 ## ✅ Completed Work
 
 ### 1. Custom Metrics Implementation
+
 All 5 metrics implemented and validated:
 
 | Metric | Purpose | Status |
@@ -19,10 +20,11 @@ All 5 metrics implemented and validated:
 | **SubsectionExtractionMetric** | Extracts CPR subsections (31.1, 31.6, etc.) | ✅ Validated |
 | **CategoryCoverageMetric** | Counts document categories referenced | ✅ Validated |
 
-**Validation Test Results**: 20/20 assertions passed (100% success rate)  
+**Validation Test Results**: 20/20 assertions passed (100% success rate)
 **Test File**: `evals/validate_metrics.py`
 
 ### 2. Test Dataset
+
 - **File**: `evals/practical_test_questions.json`
 - **Questions**: 120+ realistic legal questions
 - **Categories**: 13 categories covering:
@@ -41,6 +43,7 @@ All 5 metrics implemented and validated:
   - Urgency questions
 
 ### 3. Environment Configuration
+
 - **Virtual Environment**: `.evalenv` created with:
   - `azure-ai-evaluation`
   - `evaltools`
@@ -48,12 +51,13 @@ All 5 metrics implemented and validated:
   - `langchain`
   - All required dependencies
 
-- **Azure Developer CLI**: 
+- **Azure Developer CLI**:
   - Installed at `/usr/local/bin/azd` (version 1.20.3)
   - Authenticated as `hbalapatabendi@gmail.com`
   - Tenant: `3bfe16b2-5fcc-4565-b1f1-15271d20fecf`
 
 ### 4. Backend Service
+
 - **Status**: Running (PID 68573, port 50505)
 - **Framework**: Quart (async Flask-like)
 - **Authentication**: Configured for unauthenticated access
@@ -61,6 +65,7 @@ All 5 metrics implemented and validated:
   - `AZURE_USE_AUTHENTICATION="true"` (allows empty auth_claims)
 
 ### 5. Configuration Files
+
 - **evaluate_config.json**: Updated with all 5 custom metrics
 - **evaluate.py**: Metrics registered and configured
 - **load_azd_env.py**: Patched with fallback to scan `.azure/` directories
@@ -72,6 +77,7 @@ All 5 metrics implemented and validated:
 ### Backend /chat Endpoint Hang
 
 **Symptoms**:
+
 - Backend accepts POST `/chat` requests successfully
 - Logs show: `"Chat endpoint using approach: ChatReadRetrieveReadApproach"`
 - Request hangs indefinitely during `approach.run()` execution
@@ -79,15 +85,17 @@ All 5 metrics implemented and validated:
 - Backend process remains alive, doesn't crash
 
 **Likely Causes**:
+
 1. **Azure OpenAI quota exhausted** - GPT-5-nano deployment may have rate limits
-2. **Azure Search service not responding** - Index query timing out
-3. **Network connectivity issue** - Firewall/VPN blocking Azure API calls
-4. **Model deployment offline** - GPT-5-nano deployment not available
-5. **Authentication token expired** - AzureDeveloperCliCredential needs refresh
+1. **Azure Search service not responding** - Index query timing out
+1. **Network connectivity issue** - Firewall/VPN blocking Azure API calls
+1. **Model deployment offline** - GPT-5-nano deployment not available
+1. **Authentication token expired** - AzureDeveloperCliCredential needs refresh
 
 **Affected Component**: `ChatReadRetrieveReadApproach.run_until_final_call()` at line 274-293
 
 **Evidence**:
+
 ```bash
 # Backend startup logs
 INFO:app:Setting up Azure credential using AzureDeveloperCliCredential with tenant_id 3bfe16b2-5fcc-4565-b1f1-15271d20fecf
@@ -104,6 +112,7 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 ```
 
 **Azure Resources**:
+
 - **OpenAI Endpoint**: `https://cog-gz2m4s637t5me-us2.openai.azure.com/`
 - **Deployment**: `gpt-5-nano` (version `2024-12-01-preview`)
 - **Search Index**: `legal-court-rag-index`
@@ -113,13 +122,16 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 ## 📋 Next Steps
 
 ### Option 1: Troubleshoot Azure Backend (Recommended)
+
 1. **Check Azure OpenAI quota**:
+
    ```bash
    azd config show
    # Check deployment status in Azure Portal
    ```
 
-2. **Verify model deployment**:
+1. **Verify model deployment**:
+
    ```bash
    az cognitiveservices account deployment show \
      --resource-group <rg-name> \
@@ -127,41 +139,49 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
      --deployment-name gpt-5-nano
    ```
 
-3. **Test Azure Search connectivity**:
+1. **Test Azure Search connectivity**:
+
    ```bash
    curl -H "api-key: <key>" \
      "https://<search-service>.search.windows.net/indexes/legal-court-rag-index?api-version=2023-11-01"
    ```
 
-4. **Add detailed logging to backend**:
+1. **Add detailed logging to backend**:
    - Add `logger.info()` statements in `chatreadretrieveread.py` at lines 285-360
    - Identify exact hanging point (OpenAI call vs Search call)
 
-5. **Refresh authentication**:
+1. **Refresh authentication**:
+
    ```bash
    /usr/local/bin/azd auth login --use-device-code
    ```
 
 ### Option 2: Use Deployed Azure Instance
+
 If the app is already deployed to Azure App Service:
+
 1. Get deployed URL from `.azure/cpr-rag/.env` (AZURE_WEBAPP_URL)
-2. Modify `evaluate.py` to point to deployed endpoint:
+1. Modify `evaluate.py` to point to deployed endpoint:
+
    ```python
    target_url = os.getenv("AZURE_WEBAPP_URL", "http://localhost:50505") + "/chat"
    ```
 
 ### Option 3: Generate Synthetic Ground Truth
+
 Create ground truth manually without backend:
+
 1. Pick 10-20 questions from `practical_test_questions.json`
-2. Manually write expected answers with `[1][2][3]` citations
-3. Save as `ground_truth_manual.jsonl`
-4. Run evaluation: `python evals/evaluate.py --data ground_truth_manual.jsonl`
+1. Manually write expected answers with `[1][2][3]` citations
+1. Save as `ground_truth_manual.jsonl`
+1. Run evaluation: `python evals/evaluate.py --data ground_truth_manual.jsonl`
 
 ***
 
 ## 🚀 Running Evaluation (Once Backend Responds)
 
 ### 1. Generate Ground Truth
+
 ```bash
 source .evalenv/bin/activate
 python evals/generate_ground_truth.py --numquestions=50
@@ -170,13 +190,16 @@ python evals/generate_ground_truth.py --numquestions=50
 This creates `ground_truth.jsonl` with responses from backend using new citation format.
 
 ### 2. Run Evaluation
+
 ```bash
 source .evalenv/bin/activate
 python evals/evaluate.py --numquestions=10
 ```
 
 ### 3. Review Results
+
 Check `evals/results/` directory for:
+
 - Metric scores (CSV/JSON)
 - Per-question breakdown
 - Aggregate statistics
@@ -237,7 +260,8 @@ Based on validation tests, expected output format:
 ## 🔍 Validation Results
 
 ### Metric Logic Validation
-```
+
+```text
 TEST CASE 1: Perfect Response - All metrics pass
   ✓ AnyCitationMetric: PASS
   ✓ CitationsMatchedMetric: PASS (100.00%)
@@ -274,9 +298,9 @@ FINAL: 20/20 assertions passed (100% success rate)
 ## 💡 Recommendations
 
 1. **Immediate**: Focus on resolving Azure backend hang (check quota, deployment status, network)
-2. **Alternative**: Use deployed Azure instance if available
-3. **Fallback**: Create manual ground truth for 10-20 questions to validate evaluation pipeline
-4. **Long-term**: Add timeout handling to Azure API calls in backend code
+1. **Alternative**: Use deployed Azure instance if available
+1. **Fallback**: Create manual ground truth for 10-20 questions to validate evaluation pipeline
+1. **Long-term**: Add timeout handling to Azure API calls in backend code
 
 ***
 
@@ -289,5 +313,5 @@ FINAL: 20/20 assertions passed (100% success rate)
 
 ***
 
-**Document Updated**: 2025-11-11  
+**Document Updated**: 2025-11-11
 **Status**: Evaluation infrastructure complete, awaiting Azure backend connectivity resolution

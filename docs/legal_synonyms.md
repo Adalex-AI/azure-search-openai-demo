@@ -32,9 +32,9 @@ Without synonym expansion, searches using the colloquial terms return 0 results.
 We use **Azure AI Search synonym maps** to handle terminology expansion at the search engine level. This is:
 
 1. **Scalable**: Add new synonyms without code changes
-2. **Maintainable**: Single file to update synonyms
-3. **Works with agentic retrieval**: Synonym expansion happens during search, not in code
-4. **Works with fuzzy search**: Combine synonyms with fuzzy search for typo tolerance
+1. **Maintainable**: Single file to update synonyms
+1. **Works with agentic retrieval**: Synonym expansion happens during search, not in code
+1. **Works with fuzzy search**: Combine synonyms with fuzzy search for typo tolerance
 
 ### Key Files
 
@@ -92,6 +92,7 @@ new term, alternative term, official term
 ```
 
 Then run:
+
 ```bash
 python scripts/manage_synonym_map.py create
 ```
@@ -101,14 +102,15 @@ No code changes required in the backend!
 ## How It Works
 
 1. **Synonym Map Creation**: The script creates a `legal-cpr-synonyms` map with 87 rules
-2. **Index Field Assignment**: The map is applied to `content` and `sourcepage` fields
-3. **Query Expansion**: When a user searches, Azure AI Search automatically expands queries using synonyms
-4. **No Code Changes**: The backend doesn't need `expand_legal_query()` - Azure handles it
+1. **Index Field Assignment**: The map is applied to `content` and `sourcepage` fields
+1. **Query Expansion**: When a user searches, Azure AI Search automatically expands queries using synonyms
+1. **No Code Changes**: The backend doesn't need `expand_legal_query()` - Azure handles it
 
 ### Synonym Format
 
 Use comma-separated equivalents (bidirectional expansion):
-```
+
+```text
 freezing order, freezing injunction, mareva order
 ```
 
@@ -145,11 +147,13 @@ def add_fuzzy_to_query(query: str, edit_distance: int = 1) -> str:
 ### Run Regular Evaluations
 
 Add to CI/CD pipeline or run periodically:
+
 ```bash
 python evals/test_search_quality.py
 ```
 
 If any tests fail (pass rate < 100%), review the suggestions:
+
 ```bash
 python evals/test_search_quality.py --suggest
 ```
@@ -182,27 +186,29 @@ The evaluation covers 8 categories:
 ## Best Practices
 
 1. **Keep synonyms up to date**: Review legal terminology changes regularly
-2. **Test after updates**: Always run the evaluation after adding synonyms
-3. **Use comma-separated format**: Explicit mappings (`=>`) don't work at query time
-4. **Use fuzzy search for typos**: Not synonym maps
-5. **Document new terms**: Add comments in the synonym file explaining new additions
+1. **Test after updates**: Always run the evaluation after adding synonyms
+1. **Use comma-separated format**: Explicit mappings (`=>`) don't work at query time
+1. **Use fuzzy search for typos**: Not synonym maps
+1. **Document new terms**: Add comments in the synonym file explaining new additions
 
 ## Known Limitations
 
 1. **`r. NUMBER` pattern**: The abbreviation `r.` for "rule" doesn't expand when followed by a number (e.g., `r. 31.6`). This is handled as an acceptable limitation in the evaluation tests since it requires a custom analyzer to fix.
 
-2. **Multi-word synonyms with wildcards**: Azure AI Search doesn't support patterns like `CPR *` → `Civil Procedure Rules *`.
+1. **Multi-word synonyms with wildcards**: Azure AI Search doesn't support patterns like `CPR *` → `Civil Procedure Rules *`.
 
 ## Troubleshooting
 
 ### Synonym map not applying
 
 1. Check the index fields have the synonym map assigned:
+
 ```bash
 python scripts/manage_synonym_map.py apply
 ```
 
-2. Verify the map exists:
+1. Verify the map exists:
+
 ```bash
 python scripts/manage_synonym_map.py list
 ```
@@ -210,7 +216,8 @@ python scripts/manage_synonym_map.py list
 ### New synonyms not working
 
 1. Ensure the format is correct (comma-separated, newline-delimited)
-2. Re-create the map:
+1. Re-create the map:
+
 ```bash
 python scripts/manage_synonym_map.py create
 ```
@@ -218,7 +225,8 @@ python scripts/manage_synonym_map.py create
 ### Queries still returning 0 results
 
 1. Check if the term is in the synonym map
-2. Run the terminology evaluation to identify gaps:
+1. Run the terminology evaluation to identify gaps:
+
 ```bash
 python evals/test_terminology_gaps.py --verbose
 ```
@@ -235,9 +243,11 @@ python evals/test_terminology_gaps.py --verbose
 This section documents the strategic expansion from 87 to 146+ synonym rules implemented across Phases 1-3, with recommendations for Phase 4 (optional).
 
 ### Phase 1: Critical Correction ✅ COMPLETED
+
 **Status**: Implemented and tested
 
 **Change**: Fixed accuracy error in schedule of loss terminology
+
 - **Before**: `schedule of loss, schedule of damage` (non-standard US term)
 - **After**: `schedule of loss, statement of special damages` (official CPR term)
 - **Impact**: Elevated accuracy from 95/100 to 100/100; pass rate 98.6% → 100%
@@ -245,20 +255,22 @@ This section documents the strategic expansion from 87 to 146+ synonym rules imp
 **Files Modified**: `scripts/manage_synonym_map.py`
 
 ### Phase 2: Tier 1 Additions - High-Impact Coverage ✅ COMPLETED
+
 **Status**: Implemented and tested (24 new rules added)
 
 **Sections Added**:
+
 1. **Interim Remedies & Protective Measures (CPR Part 25)** - 10 rules
    - Privacy injunctions, super-injunctions, confidentiality orders, identification orders
    - Captures modern litigation practices (X v Persons Unknown cases)
    - Expected search improvement: +8-12%
 
-2. **Group Litigation & Party Management (CPR Parts 19-20)** - 6 rules
+1. **Group Litigation & Party Management (CPR Parts 19-20)** - 6 rules
    - Test claims, lead claims, GLO issues, representative actions
    - Enables multi-party litigation searches
    - Expected search improvement: +3-5%
 
-3. **Costs Management & Assessment (CPR Parts 44-47)** - 8 rules
+1. **Costs Management & Assessment (CPR Parts 44-47)** - 8 rules
    - Precedent H normalization (costs budget, costs schedule, costs estimate)
    - Costs management terminology (CMO, approved budgets, detailed assessment)
    - Highest search volume impact (15-20% of multi-track litigation queries)
@@ -267,18 +279,20 @@ This section documents the strategic expansion from 87 to 146+ synonym rules imp
 **Cumulative Status**: 87 → 111 rules | Total search improvement: +15-25%
 
 ### Phase 3: Tier 2 Additions - Specialized Procedure Coverage ✅ COMPLETED
+
 **Status**: Implemented and tested (35 new rules added)
 
 **Sections Added**:
+
 1. **Trial Procedure & Evidence (CPR Parts 29-35)** - 4 rules
    - Trial bundles, authorities bundles, expert exchange, contempt of court
    - Captures mandatory trial documents and procedures
 
-2. **Procedural Defects & Remedies (CPR Parts 3-4, 11-13)** - 6 rules
+1. **Procedural Defects & Remedies (CPR Parts 3-4, 11-13)** - 6 rules
    - Striking out, abuse of process, relief from sanction, unless orders, TWM applications
    - Handles procedural remedies with distinct legal significance
 
-3. **Specialized Claims & Low-Value Procedures (CPR 45, 49, 68-76)** - 10 rules
+1. **Specialized Claims & Low-Value Procedures (CPR 45, 49, 68-76)** - 10 rules
    - Fixed costs procedures (RTA, whiplash, low-value claims)
    - Official Injury Claims portal (OIC) terminology
    - Specialized tracks: Judicial review, defamation, data protection
@@ -289,9 +303,11 @@ This section documents the strategic expansion from 87 to 146+ synonym rules imp
 **Cumulative Status**: 111 → 146 rules | Total search improvement: +30-40%
 
 ### Phase 4: Tier 3 Additions - Exhaustive Coverage (OPTIONAL - READY)
+
 **Status**: Designed and documented (12 new rules ready for implementation)
 
 **Content Ready for Implementation**:
+
 1. **Document Terminology & Abbreviations** - 12 rules
    - Claims terminology (claim form, statement of claim, defence, reply)
    - Legal abbreviations (CPR, PD, CMC, GLO, RTA, OCMC, MCL, OIC)
@@ -299,7 +315,8 @@ This section documents the strategic expansion from 87 to 146+ synonym rules imp
 
 **If Implemented**: 146 → 158 rules | Total search improvement: +50% (exhaustive coverage)
 
-**When to Implement Phase 4**: 
+**When to Implement Phase 4**:
+
 - When targeting exhaustive platform coverage (12+ weeks into production)
 - After quarterly review cycle validates Phase 2-3 performance
 - To normalize abbreviation handling across all CPR parts
@@ -372,10 +389,11 @@ When validating new synonyms, add test cases to `evals/test_search_quality.py`:
 
 ## CPR Update Tracking
 
-**Last Update**: April 2025 CPR reforms  
+**Last Update**: April 2025 CPR reforms
 **Next Review**: July 2025 (quarterly cycle)
 
 ### Recent Updates Captured in Phase 3
+
 - OIC portal terminology (Official Injury Claims, April 2025)
 - PD27B reforms (low-value personal injury procedures, April 2025)
 - CPR Part 25 revisions (interim remedies, April 2025)

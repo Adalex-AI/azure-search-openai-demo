@@ -1,7 +1,7 @@
 # Court Guides Processing — Quick Reference
 
-**Folder:** `court_guides_processing_pipeline/`  
-**Status:** Organized (Jan 2026) — Ready for implementation  
+**Folder:** `court_guides_processing_pipeline/`
+**Status:** Organized (Jan 2026) — Ready for implementation
 **Key Doc:** `docs/IMPLEMENTATION_PLAN.md`
 
 ***
@@ -9,25 +9,30 @@
 ## The 5-Minute Summary
 
 ### What?
+
 UK court guide PDFs are converted to JSON and indexed in Azure AI Search for legal RAG search.
 
 ### Current State
+
 - ✅ 5 guides processed and indexed (698 sections total)
 - ⚠️ No automated pipeline (manual process)
 - ⚠️ Scripts not version-controlled
 
 ### Plan
+
 6-phase implementation to fully automate:
+
 1. Recover missing scripts (2-3 weeks)
-2. Evaluate parsing strategy (1-2 weeks)
-3. Build unified pipeline (3-4 weeks)
-4. Add change monitoring (2-3 weeks)
-5. CI/CD integration (2-3 weeks)
-6. Documentation & handoff (1 week)
+1. Evaluate parsing strategy (1-2 weeks)
+1. Build unified pipeline (3-4 weeks)
+1. Add change monitoring (2-3 weeks)
+1. CI/CD integration (2-3 weeks)
+1. Documentation & handoff (1 week)
 
 **Total:** ~10 weeks (7-8 weeks with parallelization)
 
 ### Why?
+
 - Court guides update annually → automatable
 - Manual process error-prone → standardize
 - Monitoring gaps → miss important updates
@@ -37,7 +42,7 @@ UK court guide PDFs are converted to JSON and indexed in Azure AI Search for leg
 
 ## Folder Organization
 
-```
+```text
 court_guides_processing_pipeline/
 ├── docs/                          # Documentation
 │   ├── IMPLEMENTATION_PLAN.md     # ← START HERE
@@ -79,22 +84,22 @@ court_guides_processing_pipeline/
 
 ## Success Metrics
 
-✅ All scripts recovered and tested  
-✅ Single command to process all guides  
-✅ Automated detection of guide changes  
-✅ 95%+ content retention  
-✅ Full CI/CD integration  
-✅ Complete operator runbook  
+✅ All scripts recovered and tested
+✅ Single command to process all guides
+✅ Automated detection of guide changes
+✅ 95%+ content retention
+✅ Full CI/CD integration
+✅ Complete operator runbook
 
 ***
 
 ## Next Steps
 
 1. **Review** `docs/IMPLEMENTATION_PLAN.md` (detailed read: 20 mins)
-2. **Decide** on parser strategy (Phase 2)
-3. **Assign** owners for each phase
-4. **Schedule** Phase 1 kickoff
-5. **Monitor** progress against timeline
+1. **Decide** on parser strategy (Phase 2)
+1. **Assign** owners for each phase
+1. **Schedule** Phase 1 kickoff
+1. **Monitor** progress against timeline
 
 ***
 
@@ -109,6 +114,6 @@ court_guides_processing_pipeline/
 
 ***
 
-**Last Updated:** January 4, 2026  
-**Reviewed By:** [TBD]  
+**Last Updated:** January 4, 2026
+**Reviewed By:** [TBD]
 **Next Review:** When Phase 1 begins

@@ -16,7 +16,7 @@ In order to use the adversarial simulator and safety evaluators, you need an Azu
     azd env set USE_AI_PROJECT true
     ```
 
-2. Then, run the following command to provision the project:
+1. Then, run the following command to provision the project:
 
     ```shell
     azd provision

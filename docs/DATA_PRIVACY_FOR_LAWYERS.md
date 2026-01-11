@@ -1,7 +1,7 @@
 # Data Privacy & Security Guide for Civil Procedure Copilot
 
-**Version:** 1.0  
-**Last Updated:** December 2024  
+**Version:** 1.0
+**Last Updated:** December 2024
 **Audience:** Lawyers and legal professionals using the Civil Procedure Copilot
 
 ***
@@ -44,12 +44,12 @@ These are all publicly available court documents. The AI uses these indexed sour
 When you ask a question about CPR or court procedures:
 
 1. **Your question** is sent to our Azure-hosted backend
-2. **Azure AI Search** retrieves the most relevant CPR sections, Practice Directions, or Court Guide passages
-3. **Azure OpenAI** generates an answer based **only** on the retrieved legal documents
-4. **Citations** are provided so you can verify the source
-5. **The AI forgets** your query immediately—it's stateless (no memory of previous sessions)
+1. **Azure AI Search** retrieves the most relevant CPR sections, Practice Directions, or Court Guide passages
+1. **Azure OpenAI** generates an answer based **only** on the retrieved legal documents
+1. **Citations** are provided so you can verify the source
+1. **The AI forgets** your query immediately—it's stateless (no memory of previous sessions)
 
-```
+```text
 ┌─────────────────────┐     ┌──────────────────────┐     ┌──────────────────────────┐
 │  Your CPR Question  │ ──▶ │  Azure AI Search     │ ──▶ │  Azure OpenAI            │
 │                     │     │  (CPR, Court Guides) │     │  (Generates answer from  │
@@ -70,10 +70,11 @@ Microsoft makes the following contractual commitments for Azure OpenAI:
 ### 3.1 Your Data is NOT Used for Training
 
 > *"Your prompts (inputs) and completions (outputs), your embeddings, and your training data are NOT used to train any generative AI foundation models without your permission or instruction."*
-> 
+>
 > — Microsoft Azure OpenAI Documentation
 
 This means:
+
 - Your legal queries never become part of the AI's training data
 - Asking about specific cases, clients, or legal matters is protected
 - Microsoft cannot learn from your usage patterns
@@ -83,6 +84,7 @@ This means:
 > *"Your prompts and completions are NOT available to other customers, NOT available to OpenAI, and NOT used to improve Microsoft or third-party products or services without your explicit permission."*
 
 This means:
+
 - Other Azure customers cannot access your queries
 - OpenAI (the company) never sees your data
 - ChatGPT users cannot access your legal research
@@ -133,11 +135,13 @@ Azure OpenAI includes content safety measures to prevent misuse. Here's how it w
 To prevent misuse of Azure OpenAI, Microsoft implements abuse monitoring:
 
 **Default Behavior (Automated Review):**
+
 - If content is flagged, AI models may review it to detect abuse patterns
 - Prompts reviewed this way are **NOT stored**
 - No human sees your data under normal circumstances
 
 **Human Review (Exceptional Cases):**
+
 - Only occurs if automated systems detect potential severe abuse
 - Authorized Microsoft employees may review flagged content
 - Access requires Secure Access Workstations (SAWs) and Just-In-Time approval
@@ -146,6 +150,7 @@ To prevent misuse of Azure OpenAI, Microsoft implements abuse monitoring:
 ### 5.3 Modified Abuse Monitoring (Enterprise Option)
 
 Organizations handling highly sensitive data can apply to Microsoft for modified abuse monitoring, which eliminates human review. This may be appropriate for:
+
 - Attorney-client privileged communications
 - Sensitive litigation matters
 - Confidential transaction details
@@ -190,13 +195,13 @@ Azure OpenAI Service inherits Azure's compliance certifications:
 
 ### 8.1 What You CAN Safely Do
 
-✅ Ask questions about CPR rules, Parts, and Practice Directions  
-✅ Research court procedures for Commercial Court, King's Bench, Chancery Division, etc.  
-✅ Query time limits for claims, statements of case, and appeals  
-✅ Explore case management requirements and pre-action protocols  
-✅ Research service requirements and court fee rules  
-✅ Ask about disclosure, witness evidence, and trial procedures  
-✅ Query specific court requirements (e.g., Commercial Court skeleton argument rules)  
+✅ Ask questions about CPR rules, Parts, and Practice Directions
+✅ Research court procedures for Commercial Court, King's Bench, Chancery Division, etc.
+✅ Query time limits for claims, statements of case, and appeals
+✅ Explore case management requirements and pre-action protocols
+✅ Research service requirements and court fee rules
+✅ Ask about disclosure, witness evidence, and trial procedures
+✅ Query specific court requirements (e.g., Commercial Court skeleton argument rules)
 
 ### 8.2 Example Safe Queries
 
@@ -208,11 +213,11 @@ Azure OpenAI Service inherits Azure's compliance certifications:
 
 ### 8.3 Recommendations
 
-⚠️ **Avoid including real client names** in queries when possible  
-⚠️ **Use generic placeholders** for specific case details (e.g., "Claimant" vs actual name)  
-⚠️ **Clear chat history** after sessions if preferred  
-⚠️ **Verify AI answers** against the source CPR or Court Guide citations provided  
-⚠️ **Check Practice Direction dates** - procedures may have been updated  
+⚠️ **Avoid including real client names** in queries when possible
+⚠️ **Use generic placeholders** for specific case details (e.g., "Claimant" vs actual name)
+⚠️ **Clear chat history** after sessions if preferred
+⚠️ **Verify AI answers** against the source CPR or Court Guide citations provided
+⚠️ **Check Practice Direction dates** - procedures may have been updated
 
 ### 8.4 What to Remember
 
@@ -261,6 +266,7 @@ The data is not used for training and is not shared with other users or OpenAI. 
 ### Q: Where can I find the source document for a citation?
 
 The AI provides source citations (e.g., "CPR Part 24", "Commercial Court Guide §3.2"). You can find the official documents at:
+
 - **CPR & Practice Directions:** [justice.gov.uk](https://www.justice.gov.uk/courts/procedure-rules/civil)
 - **Commercial Court Guide:** [judiciary.uk](https://www.judiciary.uk/guidance-and-resources/commercial-court-guide/)
 - **Other Court Guides:** Check the relevant court's page on judiciary.uk
@@ -272,7 +278,7 @@ The AI provides source citations (e.g., "CPR Part 24", "Commercial Court Guide �
 For authoritative and up-to-date information:
 
 - **Data, Privacy, and Security:** https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/data-privacy
-- **Abuse Monitoring:** https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/abuse-monitoring  
+- **Abuse Monitoring:** https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/abuse-monitoring
 - **Content Filtering:** https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/content-filter
 - **Microsoft Trust Center:** https://www.microsoft.com/trust-center
 

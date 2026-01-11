@@ -54,9 +54,9 @@ This stage is optional and only applies when the multimodal feature is enabled *
 When multimodal support is enabled, figures extracted in the previous stage are enriched with descriptions and embeddings. Each figure is:
 
 1. **Cropped and saved**: The figure image is cropped from the PDF using its bounding box coordinates and saved as a PNG file.
-2. **Described**: A text description is generated using either Azure OpenAI's GPT-4 Vision model or Azure AI Content Understanding, depending on configuration.
-3. **Uploaded**: The figure image is uploaded to Azure Blob Storage and assigned a URL.
-4. **Embedded** (optional): If image embeddings are enabled, a vector embedding is computed for the figure using Azure AI Vision.
+1. **Described**: A text description is generated using either Azure OpenAI's GPT-4 Vision model or Azure AI Content Understanding, depending on configuration.
+1. **Uploaded**: The figure image is uploaded to Azure Blob Storage and assigned a URL.
+1. **Embedded** (optional): If image embeddings are enabled, a vector embedding is computed for the figure using Azure AI Vision.
 
 The output from this stage is enriched figure metadata, including the description text, storage URL, and optional embedding vector.
 
@@ -109,9 +109,9 @@ The [`prepdocs.py`](../app/backend/prepdocs.py) script is responsible for both u
 The script uses the following steps to index documents:
 
 1. If it doesn't yet exist, create a new index in Azure AI Search.
-2. Upload the PDFs to Azure Blob Storage.
-3. Split the PDFs into chunks of text.
-4. Upload the chunks to Azure AI Search. If using vectors (the default), also compute the embeddings and upload those alongside the text.
+1. Upload the PDFs to Azure Blob Storage.
+1. Split the PDFs into chunks of text.
+1. Upload the chunks to Azure AI Search. If using vectors (the default), also compute the embeddings and upload those alongside the text.
 
 ### Enhancing search functionality with data categorization
 
@@ -145,29 +145,29 @@ This project includes an optional feature to perform data ingestion in the cloud
     azd env set AZURE_SEARCH_INDEX cloudindex
     ```
 
-2. Run this command:
+1. Run this command:
 
     ```shell
     azd env set USE_CLOUD_INGESTION true
     ```
 
-3. Open `azure.yaml` and un-comment the document-extractor, figure-processor, and text-processor sections. Those are the Azure Functions apps that will be deployed and serve as Azure AI Search skills.
+1. Open `azure.yaml` and un-comment the document-extractor, figure-processor, and text-processor sections. Those are the Azure Functions apps that will be deployed and serve as Azure AI Search skills.
 
-4. (Recommended) Increase the capacity for the embedding model to the maximum quota allowed for your region/subscription, so that the Azure Functions can generate embeddings without hitting rate limits:
+1. (Recommended) Increase the capacity for the embedding model to the maximum quota allowed for your region/subscription, so that the Azure Functions can generate embeddings without hitting rate limits:
 
     ```shell
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY 400
     ```
 
-5. Provision the new Azure Functions resources, deploy the function apps, and update the search indexer with:
+1. Provision the new Azure Functions resources, deploy the function apps, and update the search indexer with:
 
     ```shell
     azd up
     ```
 
-6. That will upload the documents in the `data/` folder to the Blob storage container, create the indexer and skillset, and run the indexer to ingest the data. You can monitor the indexer status from the portal.
+1. That will upload the documents in the `data/` folder to the Blob storage container, create the indexer and skillset, and run the indexer to ingest the data. You can monitor the indexer status from the portal.
 
-7. When you have new documents to ingest, you can upload documents to the Blob storage container and run the indexer from the Azure Portal to ingest new documents.
+1. When you have new documents to ingest, you can upload documents to the Blob storage container and run the indexer from the Azure Portal to ingest new documents.
 
 ### Indexer architecture
 
@@ -176,13 +176,13 @@ The cloud ingestion pipeline uses four Azure Functions as custom skills within a
 ![Cloud ingestion pipeline diagram](images/ingestion_pipeline.png)
 
 1. **User uploads documents** to Azure Blob Storage (content container)
-2. **Azure AI Search Indexer** monitors the blob container and orchestrates processing
-3. **Custom skills** process documents through three stages:
+1. **Azure AI Search Indexer** monitors the blob container and orchestrates processing
+1. **Custom skills** process documents through three stages:
    - **Document Extractor** (Skill #1): Extracts text and figure metadata from source documents
    - **Figure Processor** (Skill #2): Enriches figures with descriptions and embeddings
    - **Shaper Skill** (Skill #3): Built-in Azure AI Search skill that consolidates enriched data
    - **Text Processor** (Skill #4): Combines text with enriched figures, chunks content, and generates embeddings
-4. **Azure AI Search Index** receives the final processed chunks with embeddings
+1. **Azure AI Search Index** receives the final processed chunks with embeddings
 
 The functions are defined in the `app/functions/` directory, and the custom skillset is configured in the `app/backend/setup_cloud_ingestion.py` script.
 

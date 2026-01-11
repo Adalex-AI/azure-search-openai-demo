@@ -33,7 +33,7 @@ You have two options:
 
 1. Comment out or delete `remoteBuild: true` in `azure.yaml`, and make sure you have Docker installed in your environment.
 
-2. Deploy using App Service instead:
+1. Deploy using App Service instead:
 
     * Comment out `host: containerapp` and uncomment `host: appservice` in the [azure.yaml](../azure.yaml) file.
     * Set the deployment target to `appservice`:

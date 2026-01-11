@@ -7,12 +7,12 @@ This guide covers the key AI engineering concepts and Python theory required to 
 ## Table of Contents
 
 1. [RAG Architecture Overview](#rag-architecture-overview)
-2. [Core AI/ML Concepts](#core-aiml-concepts)
-3. [Python Theory & Patterns](#python-theory--patterns)
-4. [Azure AI Services Integration](#azure-ai-services-integration)
-5. [Prompt Engineering](#prompt-engineering)
-6. [Evaluation & Metrics](#evaluation--metrics)
-7. [Production Best Practices](#production-best-practices)
+1. [Core AI/ML Concepts](#core-aiml-concepts)
+1. [Python Theory & Patterns](#python-theory--patterns)
+1. [Azure AI Services Integration](#azure-ai-services-integration)
+1. [Prompt Engineering](#prompt-engineering)
+1. [Evaluation & Metrics](#evaluation--metrics)
+1. [Production Best Practices](#production-best-practices)
 
 ***
 
@@ -22,7 +22,7 @@ This guide covers the key AI engineering concepts and Python theory required to 
 
 **Retrieval-Augmented Generation (RAG)** is an AI architecture that enhances Large Language Models (LLMs) by providing them with relevant external knowledge at query time, rather than relying solely on their training data.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        RAG Pipeline                              │
 ├─────────────────────────────────────────────────────────────────┤
@@ -42,10 +42,11 @@ This guide covers the key AI engineering concepts and Python theory required to 
 This application implements a **Chat-Read-Retrieve-Read** pattern:
 
 1. **Query Rewriting**: Transform conversational queries into effective search queries
-2. **Retrieval**: Search Azure AI Search index for relevant document chunks
-3. **Answer Generation**: Generate response using retrieved context + conversation history
+1. **Retrieval**: Search Azure AI Search index for relevant document chunks
+1. **Answer Generation**: Generate response using retrieved context + conversation history
 
 **Key files:**
+
 - [approaches/chatreadretrieveread.py](../app/backend/approaches/chatreadretrieveread.py) - Main chat approach
 - [approaches/retrievethenread.py](../app/backend/approaches/retrievethenread.py) - Single-turn ask approach
 
@@ -62,13 +63,13 @@ This application implements a **Chat-Read-Retrieve-Read** pattern:
 class OpenAIEmbeddings(ABC):
     """
     Converts text to vector embeddings using OpenAI models.
-    
+
     Supported models:
     - text-embedding-ada-002: 1536 dimensions
     - text-embedding-3-small: 512-1536 dimensions  
     - text-embedding-3-large: 256-3072 dimensions
     """
-    
+
     SUPPORTED_BATCH_AOAI_MODEL = {
         "text-embedding-ada-002": {"token_limit": 8100, "max_batch_size": 16},
         "text-embedding-3-small": {"token_limit": 8100, "max_batch_size": 16},
@@ -77,6 +78,7 @@ class OpenAIEmbeddings(ABC):
 ```
 
 **Key concepts:**
+
 - **Dimensionality**: Higher dimensions can capture more nuance but require more storage
 - **Cosine similarity**: Measures similarity between vectors (0 = orthogonal, 1 = identical)
 - **Token limits**: Models have maximum input sizes measured in tokens
@@ -96,6 +98,7 @@ VectorizedQuery(
 ```
 
 **Hybrid Search** combines:
+
 - **Lexical search**: Traditional keyword matching (BM25)
 - **Vector search**: Semantic similarity matching
 - **Semantic reranking**: Re-scores results using a cross-encoder model
@@ -116,6 +119,7 @@ def calculate_token_length(text: str) -> int:
 ```
 
 **Why tokens matter:**
+
 - Models have context window limits (e.g., 128K tokens for GPT-4o)
 - Costs are calculated per token
 - Chunking strategies must respect token limits
@@ -133,7 +137,7 @@ class SentenceTextSplitter(TextSplitter):
     - Stay within token limits
     - Include overlap for context continuity
     """
-    
+
     def __init__(
         self,
         max_tokens_per_section: int = 1000,   # Max tokens per chunk
@@ -143,6 +147,7 @@ class SentenceTextSplitter(TextSplitter):
 ```
 
 **Chunking strategies:**
+
 | Strategy | Use Case |
 |----------|----------|
 | Fixed-size | Simple, predictable chunk sizes |
@@ -167,7 +172,7 @@ async def run_without_streaming(
     overrides: dict[str, Any],
 ) -> dict[str, Any]:
     """Non-streaming chat completion."""
-    
+
     # Await async OpenAI call
     response = await self.openai_client.chat.completions.create(
         model=self.chatgpt_deployment,
@@ -176,13 +181,12 @@ async def run_without_streaming(
     )
     return {"answer": response.choices[0].message.content}
 
-
 async def run_with_streaming(
     self,
     messages: list[ChatCompletionMessageParam],
 ) -> AsyncGenerator[dict[str, Any], None]:
     """Streaming chat completion using async generators."""
-    
+
     async for chunk in await self.openai_client.chat.completions.create(
         model=self.chatgpt_deployment,
         messages=messages,
@@ -192,6 +196,7 @@ async def run_with_streaming(
 ```
 
 **Key async patterns used:**
+
 - `async def` / `await`: For async functions
 - `AsyncGenerator`: For streaming responses
 - `async with`: For async context managers
@@ -206,16 +211,15 @@ from abc import ABC, abstractmethod
 
 class TextSplitter(ABC):
     """Abstract base class for text splitters."""
-    
+
     @abstractmethod
     def split_pages(self, pages: list[Page]) -> Generator[SplitPage, None, None]:
         """All splitters must implement this method."""
         pass
 
-
 class SentenceTextSplitter(TextSplitter):
     """Concrete implementation."""
-    
+
     def split_pages(self, pages: list[Page]) -> Generator[SplitPage, None, None]:
         # Actual implementation
         for page in pages:
@@ -240,7 +244,7 @@ class Document:
     sourcefile: Optional[str] = None
     score: Optional[float] = None
     reranker_score: Optional[float] = None
-    
+
     def serialize_for_results(self) -> dict[str, Any]:
         """Convert to JSON-serializable dict."""
         return {
@@ -352,7 +356,7 @@ from openai import RateLimitError
 
 async def create_embedding_with_retry(self, text: str) -> list[float]:
     """Create embedding with exponential backoff on rate limits."""
-    
+
     async for attempt in AsyncRetrying(
         retry=retry_if_exception_type(RateLimitError),
         wait=wait_random_exponential(min=15, max=60),
@@ -483,6 +487,7 @@ user:
 ```
 
 **Key features:**
+
 - YAML frontmatter for configuration
 - Jinja2 templating for dynamic content
 - Sample data for testing
@@ -496,11 +501,11 @@ from pathlib import Path
 
 class PromptyManager:
     PROMPTS_DIRECTORY = Path(__file__).parent / "prompts"
-    
+
     def load_prompt(self, path: str):
         """Load prompty file."""
         return prompty.load(self.PROMPTS_DIRECTORY / path)
-    
+
     def render_prompt(self, prompt, data) -> list[dict]:
         """Render prompt with data."""
         return prompty.prepare(prompt, data)
@@ -509,9 +514,9 @@ class PromptyManager:
 ### Prompt Best Practices for Legal RAG
 
 1. **Grounding instructions**: Require citations, discourage hallucination
-2. **Domain terminology**: Include glossary of legal terms
-3. **Context awareness**: Handle court-specific vs. general rules
-4. **Citation format**: Enforce consistent citation style `[1][2][3]`
+1. **Domain terminology**: Include glossary of legal terms
+1. **Context awareness**: Handle court-specific vs. general rules
+1. **Citation format**: Enforce consistent citation style `[1][2][3]`
 
 ***
 
@@ -602,7 +607,7 @@ class TokenUsage:
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
-    
+
     @property
     def estimated_cost(self) -> float:
         """Estimate cost in USD."""
@@ -620,20 +625,20 @@ from datetime import datetime, timedelta
 
 class RateLimiter:
     """Token bucket rate limiter."""
-    
+
     def __init__(self, requests_per_minute: int = 60):
         self.rpm = requests_per_minute
         self.tokens = requests_per_minute
         self.last_update = datetime.now()
         self.lock = asyncio.Lock()
-    
+
     async def acquire(self):
         async with self.lock:
             now = datetime.now()
             elapsed = (now - self.last_update).total_seconds()
             self.tokens = min(self.rpm, self.tokens + elapsed * self.rpm / 60)
             self.last_update = now
-            
+
             if self.tokens < 1:
                 wait_time = (1 - self.tokens) * 60 / self.rpm
                 await asyncio.sleep(wait_time)
@@ -677,16 +682,19 @@ def sanitize_query(query: str) -> str:
 ## Learning Resources
 
 ### AI/ML Fundamentals
+
 - [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
 - [Azure AI Search Documentation](https://learn.microsoft.com/azure/search/)
 - [RAG Pattern Overview](https://learn.microsoft.com/azure/search/retrieval-augmented-generation-overview)
 
 ### Python
+
 - [Python asyncio Documentation](https://docs.python.org/3/library/asyncio.html)
 - [Type Hints Cheat Sheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html)
 - [Quart Documentation](https://quart.palletsprojects.com/)
 
 ### Azure
+
 - [Azure OpenAI Service](https://learn.microsoft.com/azure/ai-services/openai/)
 - [Azure AI Search](https://learn.microsoft.com/azure/search/)
 - [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/)

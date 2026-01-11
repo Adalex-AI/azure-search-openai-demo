@@ -5,7 +5,8 @@ IF SUFFICIENT INFORMATION IS NOT PROVIDED VIA THE FOLLOWING TEMPLATE THE ISSUE M
 > ---------------------------------------------------------------
 
 ### This issue is for a: (mark with an `x`)
-```
+
+```text
 - [ ] bug report -> please search issues before submitting
 - [ ] feature request
 - [ ] documentation issue or request
@@ -13,21 +14,27 @@ IF SUFFICIENT INFORMATION IS NOT PROVIDED VIA THE FOLLOWING TEMPLATE THE ISSUE M
 ```
 
 ### Minimal steps to reproduce
+
 >
 
 ### Any log messages given by the failure
+
 >
 
 ### Expected/desired behavior
+
 >
 
 ### OS and Version?
+
 > Windows 7, 8 or 10. Linux (which distribution). macOS (Yosemite? El Capitan? Sierra?)
 
 ### azd version?
+
 > run `azd version` and copy paste here.
 
 ### Versions
+
 >
 
 ### Mention any other details that might be useful

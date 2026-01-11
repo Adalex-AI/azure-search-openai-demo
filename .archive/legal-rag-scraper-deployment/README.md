@@ -17,7 +17,7 @@ This folder contains the necessary scripts and source code to scrape Civil Proce
     pip install -r requirements.txt
     ```
 
-2.  **Environment Configuration:**
+1.  **Environment Configuration:**
 
     Copy `.env.example` to `.env` and fill in your Azure credentials.
 
@@ -110,6 +110,7 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
 ### Option 1: Azure Container Apps Job (Recommended)
 
 1.  **Containerize the Application**
+
     Create a `Dockerfile` in the root of this folder:
 
     ```dockerfile
@@ -136,14 +137,16 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
     CMD ["./run_pipeline.sh"]
     ```
 
-2.  **Build and Push Image**
+1.  **Build and Push Image**
+
     Build the Docker image and push it to an Azure Container Registry (ACR).
 
     ```bash
     az acr build --registry <your-acr-name> --image legal-rag-scraper:v1 .
     ```
 
-3.  **Create the Container App Job**
+1.  **Create the Container App Job**
+
     Create a scheduled job in Azure Container Apps.
 
     ```bash
@@ -156,6 +159,7 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
       --registry-server <your-acr-name>.azurecr.io \
       --env-vars "AZURE_SEARCH_SERVICE=..." "AZURE_SEARCH_KEY=..." "AZURE_OPENAI_ENDPOINT=..." "AZURE_OPENAI_KEY=..."
     ```
+
     *Note: Replace the environment variables with your actual secrets or use Key Vault references.*
 
 ### Option 2: Azure Functions (Timer Trigger)
@@ -163,6 +167,6 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
 Alternatively, you can deploy this as an Azure Function with a Timer Trigger.
 
 1.  Create a new Azure Function App (Python).
-2.  Move the logic from `scripts/` into a Timer Trigger function.
-3.  **Note:** Selenium in Azure Functions (Consumption Plan) can be challenging due to sandbox limitations. You may need to use the **Premium Plan** or a custom Docker container (similar to Option 1) if you require a full browser instance for scraping.
+1.  Move the logic from `scripts/` into a Timer Trigger function.
+1.  **Note:** Selenium in Azure Functions (Consumption Plan) can be challenging due to sandbox limitations. You may need to use the **Premium Plan** or a custom Docker container (similar to Option 1) if you require a full browser instance for scraping.
 

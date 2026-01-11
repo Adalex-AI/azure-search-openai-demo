@@ -65,7 +65,8 @@ export function Component(): JSX.Element {
     const audio = useRef(new Audio()).current;
     const [isPlaying, setIsPlaying] = useState(false);
     const [showAgenticRetrievalOption, setShowAgenticRetrievalOption] = useState<boolean>(false);
-    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(true);
+    // CUSTOM: Default to off; only enable when explicitly configured and selected.
+    const [useAgenticRetrieval, setUseAgenticRetrieval] = useState<boolean>(false);
     const [showCategoryFilter, setShowCategoryFilter] = useState<boolean>(false);
 
     const lastQuestionRef = useRef<string>("");
@@ -113,6 +114,9 @@ export function Component(): JSX.Element {
             setShowSpeechOutputBrowser(config.showSpeechOutputBrowser);
             setShowSpeechOutputAzure(config.showSpeechOutputAzure);
             setShowAgenticRetrievalOption(config.showAgenticRetrievalOption);
+            // CUSTOM: Auto-enable agentic retrieval when server supports it (no toggle needed).
+            // If server doesn't support it, ensure it's disabled.
+            setUseAgenticRetrieval(config.showAgenticRetrievalOption);
             // 'showCategoryFilter' may not exist on older/alternate Config types — cast to any to safely read optional field
             setShowCategoryFilter(!!(config as any).showCategoryFilter);
         });
@@ -235,7 +239,8 @@ export function Component(): JSX.Element {
                         use_gpt4v: useGPT4V,
                         gpt4v_input: gpt4vInput,
                         language: i18n.language,
-                        use_agentic_retrieval: useAgenticRetrieval,
+                        // CUSTOM: Only send agentic retrieval override when the server advertises it.
+                        use_agentic_retrieval: showAgenticRetrievalOption ? useAgenticRetrieval : false,
                         ...(seed !== null ? { seed: seed } : {})
                     }
                 },

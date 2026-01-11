@@ -71,8 +71,11 @@ This report is an automated, AI-assisted triage of the diff excerpts in `docs/fr
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (1) This rule shows how to calculate any period of time for doing any act which is specified -(a) by these Rules;(b) by a practice direction; or(c) by a judgment or order of the court.(2) A period of time expressed as a number of days shall be computed as clear days.(3) In this rule 'clear days' means that in computing the number of days -(a) the day on which the period begins; and(b) if the end of the period is defined by reference to an event, the day on which that event occursare not included.Examples(i) Notice of an application must be served at least 3 days before the hearing.An application is listed to be heard on Friday 20 October.The last date for service is Monday 16 October.(ii) The court is to fix a date for a hearing.The hearing must be at least 28 days after the date of notice.If the court gives notice of the date of the hearing on 1 October, the earliest date for the hearing is 30 October.(iii) Particulars of claim must be served within 14 days of service of the claim form.The claim form is served on 2 October.The last day for service of the particulars of claim is 16 October.(4) Where the specified period -(a) is 5 days or less; and(b) includes -(i) a Saturday or Sunday; or(ii) a Bank Holiday, Christmas Day or Good Friday,that day does not count.Example Notice of an application must be served at least 3 days before the hearing.An application is to be heard on Monday 20 October.The last date for service is Tuesday 14 October.(5) Subject to the provisions of Practice Direction 5 C, when the period specified -(a) by these Rules or a practice direction; or(b) by any judgment or court order,for doing any act at the court office ends on a day on which the office is closed, that act shall be in time under these rules if done on the next day on which the court office is open.
+
 Added (Local-only):
+
 - (1) This rule shows how to calculate any period of time for doing any act which is specified -(a) by these Rules;(b) by a practice direction; or(c) by a judgment or order of the court.(2) A period of time expressed as a number of days shall be computed as clear days.(3) In this rule 'clear days' means that in computing the number of days -(a) the day on which the period begins; and(b) if the end of the period is defined by reference to an event, the day on which that event occursare not included.Examples(i) Notice of an application must be served at least 3 days before the hearing.An application is listed to be heard on Friday 20 October.The last date for service is Monday 16 October.(ii) The court is to fix a date for a hearing.The hearing must be at least 28 days after the date of notice.If the court gives notice of the date of the hearing on 1 October, the earliest date for the hearing is 30 October.(iii) Particulars of claim must be served within 14 days of service of the claim form.The claim form is served on 2 October.The last day for service of the particulars of claim is 16 October.(4) Where the specified period -(a) is 5 days or less; and(b) includes -(i) a Saturday or Sunday; or(ii) a Bank Holiday, Christmas Day or Good Friday,that day does not count.Example Notice of an application must be served at least 3 days before the hearing.An application is to be heard on Monday 20 October.The last date for service is Tuesday 14 October.(5) When the period specified -(a) by these Rules or a practice direction; or(b) by any judgment or court order,for doing any act at the court office ends on a day on which the office is closed, that act shall be in time under these rules if done on the next day on which the court office is open.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -89,12 +92,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (1) Where permission to apply for judicial review has been refused at a hearing in the High Court, an application for permission to appeal may be made to the Court of Appeal except where precluded by section 18(1)(a) of the Senior Courts Act 198.
 - (3) Subject to paragraph (4) and unless the appeal court orders otherwise, an appellant's notice must be served on each respondent-
 - (b) in any event not later than 7 days,
 - after it is filed.
 - (1) In this rule, "Aarhus Convention claim" and "prohibitively expensive" have the same meanings as in Section IX of Part 46, and "claimant" means a claimant to whom rules 46.26 to 46.28 apply.
+
 Added (Local-only):
+
 - (1) Where permission to apply for judicial review has been refused at a hearing in the High Court, an application for permission to appeal may be made to the Court of Appeal except where precluded by section 18(1) of the Senior Courts Act 198.
 - (3) Subject to paragraph (4) and unless the appeal court orders otherwise, a sealed copy of the appellant's notice must be served on each respondent-
 - (b) in any event where it is served by the appellant not later than 14 days,
@@ -114,11 +120,14 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 8.2 Where the claimant uses the Part 8 procedure the claim form must state -
 - (Rule 7.5 provides for service of the claim form)
 - (3) A defendant who wishes to rely on written evidence must file it when they file their acknowledgment of service.
 - (4) If they do so, they must also, at the same time, serve a copy of their evidence on the other parties.
+
 Added (Local-only):
+
 - 8.2(1) Where the claimant uses the Part 8 procedure the claim form must state -
 - (2) Except where another rule or practice direction applies, rule 7.5 and rule 7.6 shall apply with regard to the service of the claim form.
 - (3) A defendant who wishes to rely on written evidence must file it when they file their acknowledgment of service unless the defendant has indicated on their acknowledgement of service an intention to contest jurisdiction, in which case the evidence must be filed within fourteen days of filing the acknowledgment of service if no such application is made.
@@ -138,11 +147,14 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 1.1 The normal order for disclosure will be an order that the parties give standard disclosure.
 - 1.2 In order to give standard disclosure the disclosing party must make a reasonable search for documents falling within the paragraphs of rule 31.6.
 - 1.3 Having made the search the disclosing party must (unless rule 31.10(8) applies) make a list of the documents of whose existence the party is aware that fall within those paragraphs and which are or have been in the party's control (see rule 31.8).
 - 1.4 The obligations imposed by an order for standard disclosure may be dispensed with or limited either by the court or by written agreement between the parties. Any such written agreement should be lodged with the court.
+
 Added (Local-only):
+
 - 1.1 In order to give standard disclosure the disclosing party must make a reasonable search for documents falling within the paragraphs of rule 31.6.
 - 1.2 Having made the search the disclosing party must (unless rule 31.10(8) applies) make a list of the documents of whose existence the party is aware that fall within those paragraphs and which are or have been in the party's control (see rule 31.8).
 - 1.3 The obligations imposed by an order for standard disclosure may be dispensed with or limited either by the court or by written agreement between the parties. Any such written agreement should be lodged with the court.
@@ -161,12 +173,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - "early adopter court" means a County Court hearing centre that has been selected to trial more advanced features within Online Civil Money Claims and is listed on the HCMTS Reform Civil Fact Sheet which can be found atwww.gov.uk/government/publications/hmcts-reform-civil-fact-sheets;
 - 2.1(1)The purpose of this practice direction is to establish a pilot to test an online claims process, called "Online Civil Money Claims". Claimants may use the pilot to make their claim, if their claim is suitable for the pilot. (Sub-paragraph (3) sets out the conditions that need to be met for a claim to be suitable for the pilot). The pilot is to run from 7 th August 2017 to 1 October 2025. The pilot applies in the County Court.
 - (l). the claim is conducted in English, save that a party acting in person may view and complete screens, and submit the completed screens, in Welsh;
 - (l). the claim is conducted in English, save that in a case to which paragraph (d)(iii) applies the defendant may respond to the claim in Welsh;
 - 2.1(7)If both the claimant and the defendant are represented, and the claim is suitable for the pilot except that the defendant's legal representative is not registered with My HMCTS, the claimant may nevertheless start the claim using the OCMC website and Sections 2 A to 4 of this practice direction apply, but the claim will be sent out of Online Civil Money Claims as soon as it has been issued. SECTION 2 A - PAYMENT OF COURT FEES Payment of court fees
+
 Added (Local-only):
+
 - 2.1(1)The purpose of this practice direction is to establish a pilot to test an online claims process, called "Online Civil Money Claims". Sub-paragraph (3) sets out the conditions that need to be met for a claim to be within the scope of the pilot. Where a claim is within the scope of the pilot-
 - (a) Claimants who are not represented by a legal representative may use the pilot to make their claim; and
 - (b) If the claimant is legally represented, the pilot must be used to make the claim if sub-paragraph 2.1(5 A) applies. The pilot is to run from 7 th August 2017 to 1 st October 2026. The pilot applies in the County Court.
@@ -187,12 +202,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - PRACTICE DIRECTION 51 ZG 3 - PILOT SCHEME FOR CERTAIN HIGH COURT QUALIFIED ONE-WAY COSTS SHIFTING (QOCS) CASES
 - 1. This Practice Direction establishes a pilot schemes to test a new approach to costbudgeting in relevant claims issued on or after 6 April 2025 and before 6 April 2028.
 - 2.The provisions of Section II of Part 3 (costs management) and Practice Direction 3 Dshall apply, save as modified by this Practice Direction. Rules 3.13 and 3.14 shall notapply.
 - 3.In this Practice Direction-
 - (a) "relevant claim" means a Part 7 multi track claim proceeding in the District Registry at Manchester or Birmingham to which rule 44.13 (qualified one-waycosts shifting: scope and interpretation) applies;
+
 Added (Local-only):
+
 - PRACTICE DIRECTION 51 ZH - ACCESS TO PUBLIC DOMAIN DOCUMENTS
 - PLEASE NOTE THIS PD COMES INTO FORCE 1 JANUARY 2026
 - Contents of this Practice Direction
@@ -213,8 +231,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (11) Size of supplementary bundle: No supplementary bundle (whether for permission to appeal or for an appeal hearing) may exceed one lever arch file of 350 pages in size, unless the court gives permission. An application for permission to file a supplementary bundle of more than 350 pages must be made by application notice in accordance with CPR Part 23 and specify exactly what additional documents the party wishes to include; why it is necessary to put the additional documents before the court; and whether there isagreement between the parties as to their inclusion.
+
 Added (Local-only):
+
 - (11) Size of supplementary bundle: No supplementary bundle (whether for permission to appeal or for an appeal hearing) may exceed one lever arch file of 350 pages in size, unless the court gives permission. An application for permission to file a supplementary bundle of more than 350 pages must be made by application notice in accordance with CPR Part 23 and specify exactly what additional documents the party wishes to include; why it is necessary to put the additional documents before the court; and whether there is agreement between the parties as to their inclusion.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -231,12 +252,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (c) the Principal Registry of the Family Division, the senior District Judge of that division. Appeals relating to the application of Chapters I and II of Part I of the Competition Act 1998
 - (a) 'the Act' means the Competition Act 1998;
 - (ii) a regulator as defined in section 54 of the Act;
 - (3) Any party whose appeal notice raises an issue relating to the application of Chapter I or II of Part I of the Act, must -
 - (5) A competition authority may make written observations to the Court of Appeal, or apply for permission to make oral observations, on issues relating to the application of Chapter I or II.
+
 Added (Local-only):
+
 - (c) the Principal Registry of the Family Division, the senior District Judge of that division. Appeals relating to the application of Chapters I and II of Part I of the Competition Act 1998 or to a claim under section 101 of the Digital Markets, Competition and Consumers Act 2024
 - (a) 'the 1988 Act' means the Competition Act 1998 or to a claim under section 101 of the Digital Markets, Competition and Consumers Act 2024;
 - (aa) 'the 2024 Act' means the Digital Markets, Competition and Consumers Act 2024;
@@ -257,8 +281,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (b) where the claim form has been served outside the jurisdiction, more than 7 days (but where practicable no more than 35 days) after the period forfiling provided for by rule 57.19(7), to allow for time for those served with notice of the claim or who respond to the advertisement of the claim to file notice of intention to intervene or an application for permission to intervene as the case may be.
+
 Added (Local-only):
+
 - (b) where the claim form has been served outside the jurisdiction, more than 7 days (but where practicable no more than 35 days) after the period for filing provided for by rule 57.19(7), to allow for time for those served with notice of the claim or who respond to the advertisement of the claim to file notice of intention to intervene or an application for permission to intervene as the case may be.
 
 Recommended action: update/re-index the Azure document(s) from the fresh scrape for this sourcefile.
@@ -275,8 +302,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 5.5(1) A practice direction may make provision for documents to be filed or sent to the court by -(a) facsimile; or(b) other electronic means.(2) Any such practice direction may -(a) provide that only particular categories of documents may be filed or sent to the court by such means;(b) provide that particular provisions only apply in specific courts; and(c) specify the requirements that must be fulfilled for any document filed or sent to the court by such means.
+
 Added (Local-only):
+
 - 5.5(1) A practice direction may make provision for documents to be filed or sent to the court by -(a) the use of an electronic filing and case management system; or(b) other electronic means.(2) Any such practice direction may -(a) provide that only particular categories of documents may be filed or sent to the court by such means;(b) provide that particular provisions only apply in specific courts;(c) specify the requirements that must be fulfilled for any document filed or sent to the court by such means; and
 - (d) modify or disapply any provision of these rules in relation to the use of any court electronic filing and case management system.
 
@@ -294,12 +324,15 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (d) to (f) Omitted(g) 'the 2005 Hague Convention' means the Convention on Choice of Court Agreements concluded on 30 th June 2005 at the Hague.
 - for the registration of foreign judgments for enforcement in England and Wales.
 - (5 A) Written evidence in support of an application under section 4 B of the 1982 Act (registration and enforcement of judgments under the 2005 Hague Convention) must also include any other evidence required by Article 13 of the 2005 Hague Convention.
 - (a) the application for registration;
 - (b) any proceedings brought to set aside the registration; and
+
 Added (Local-only):
+
 - (d) to (f) Omitted(g) 'the 2005 Hague Convention' means the Convention on Choice of Court Agreements concluded on 30 th June 2005 at The Hague;
 - (h) "the 2019 Hague Convention" means the Convention on the Recognition and Enforcement of Foreign Judgments in Civil or Commercial Matters concluded on 2 nd July 2019 at The Hague.
 - for the registration of foreign judgments for enforcement in England and Wales; and
@@ -320,6 +353,7 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Added (Local-only):
+
 - Digital Markets, Competition and Consumers Act 2024 ("the 2024 Act")
 - 13 A.1
 - A party who relies on a CMA breach decision (which has the same meaning as in section 102(5) of the Digital Markets, Competition and Consumers Act 2024), must state that in their statement of case, and must-
@@ -340,8 +374,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 8.9 A party to a claim which has been transferred under paragraph 8.7 may apply to transfer it to the Commercial Court if it otherwise falls within the scope of rule 58.2(1), in accordance with the procedure set out in rules 58.4(2) and 30.5(3).
+
 Added (Local-only):
+
 - 8.9 A party to a claim which has been transferred under paragraph 8.7 may apply to transfer it to the Commercial Court if it otherwise falls within the scope of rule 58.2(2), in accordance with the procedure set out in rules 58.4(2) and 30.5(3).
 - ---
 - Part 1 of the Digital Markets, Competition and Consumers Act 2024
@@ -362,8 +399,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - • Include names of all those who may have or have had custody of disclosable documents, including secretaries, personal assistants, former employees and/or former participants. It may be helpful to identify different dates for particular custodians. • State the geographical location (if known). Consider (at least) servers, desktop PCs, laptops, notebooks, handheld devices, PDA devices, off-site storage, removable storage media (for example, CD-ROMs, DVDs, USB drives, memory sticks) and databases. • Consider all types of e-mail system (for example, Outlook, Lotus Notes, web-based accounts), whether stored on personal computers, portable devices or in web-based accounts (for example, Yahoo, Hotmail, Gmail). • For example, instant messaging, voicemail, VOIP (Voice Over Internet Protocol), recorded telephone lines, text messaging, audio files, video files. • State the geographical location (if known). Consider (at least) servers, desktops and laptops. • For example, .pdf. .tif, .jpg. • For example, Powerpoint or equivalent, specialist documents (such as CAD Drawings). • Where Keyword Searches are used in order to identify irrelevant documents which are to be excluded from disclosure (for example a confidential name of a client or customer), a general description of the type of search may be given. • See Practice Direction 31 B, which refers to the following matters which may be relevant: (a) the number of documents involved; (b) the nature and complexity of the proceedings; (c) the ease and expense of retrieval of any particular document; (d) the availability of documents or contents of documents from other sources; and (e) the significance of any document which is likely to be located during the search. • For example, back-ups, archives, off-site or outsourced document storage, documents created by former employees, documents stored in other jurisdictions, documents in foreign languages. • There is no requirement that you should obtain OCR versions of documents, and this question is directed only to OCR versions which you have available or expect to have available to you. If you do provide OCR versions to another party, they will be provided by you on an 'as is' basis, with no assurance to the other party that the OCR versions are complete or accurate. You may wish to exclude provision of OCR versions of documents which have been redacted. • Include names of all those who may have or have had custody of disclosable documents, including secretaries, personal assistants, former employees and/or former participants. It may be helpful to identify different dates for particular custodians. • 'Metadata' is information about the document or file which is recorded in the computer, such as the date and time of creation or modification of a word-processing file, or the author and the date and time of sending of an e-mail. The question is directed to the more extensive Metadata which may be relevant where for example authenticity is disputed.
+
 Added (Local-only):
+
 - • Include names of all those who may have or have had custody of disclosable documents, including secretaries, personal assistants, former employees and/or former participants. It may be helpful to identify different dates for particular custodians. • State the geographical location (if known). Consider (at least) servers, desktop PCs, laptops, notebooks, handheld devices, PDA devices, off-site storage, removable storage media (for example, CD-ROMs, DVDs, USB drives, memory sticks) and databases. • Consider all types of e-mail system (for example, Outlook, Lotus Notes, web-based accounts), whether stored on personal computers, portable devices or in web-based accounts (for example, Yahoo, Hotmail, Gmail). • For example, instant messaging, voicemail, VOIP (Voice Over Internet Protocol), recorded telephone lines, text messaging, audio files, video files. • State the geographical location (if known). Consider (at least) servers, desktops and laptops. • For example, .pdf. .tif, .jpg. • For example, Power Point or equivalent, specialist documents (such as CAD Drawings). • Where Keyword Searches are used in order to identify irrelevant documents which are to be excluded from disclosure (for example a confidential name of a client or customer), a general description of the type of search may be given. • See Practice Direction 31 B, which refers to the following matters which may be relevant: (a) the number of documents involved; (b) the nature and complexity of the proceedings; (c) the ease and expense of retrieval of any particular document; (d) the availability of documents or contents of documents from other sources; and (e) the significance of any document which is likely to be located during the search. • For example, back-ups, archives, off-site or outsourced document storage, documents created by former employees, documents stored in other jurisdictions, documents in foreign languages. • There is no requirement that you should obtain OCR versions of documents, and this question is directed only to OCR versions which you have available or expect to have available to you. If you do provide OCR versions to another party, they will be provided by you on an 'as is' basis, with no assurance to the other party that the OCR versions are complete or accurate. You may wish to exclude provision of OCR versions of documents which have been redacted. • Include names of all those who may have or have had custody of disclosable documents, including secretaries, personal assistants, former employees and/or former participants. It may be helpful to identify different dates for particular custodians. • 'Metadata' is information about the document or file which is recorded in the computer, such as the date and time of creation or modification of a word-processing file, or the author and the date and time of sending of an e-mail. The question is directed to the more extensive Metadata which may be relevant where for example authenticity is disputed.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -380,12 +420,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - Disclosure and inspection of evidence in relation to a competition claim
 - (d) "reasoned justification" means a statement containing reasonably available facts and evidence sufficient to support the plausibility of the claim for damages to which the relevant evidence relates;
 - (e) "relevant evidence" means evidence that a person is seeking to have disclosed or is seeking to inspect that relates to a competition claim.
 - Disclosure and inspection of evidence in relation to a competition claim - evidence in the file of the competition authority
 - (i) a competition authority has closed the investigation to which the request for its investigation materials relates; and
+
 Added (Local-only):
+
 - Disclosure and inspection of evidence in relation to a competition claim or digital markets proceedings
 - (aa) "the 2024 Act" means the Digital Markets, Competition and Consumers Act 2024;
 - (ba) "digital markets proceedings" has the same meaning as in section 116(4) of the 2024 Act;
@@ -406,10 +449,13 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (c)generate significant public interest; or
 - (d)by virtue of the volume or nature of technical material, are best dealt with by judges with significant experience of handling such matters.
 - 6.16 An appeal brought by virtue of sections 289(1) or (2) of the TCP Act or section 65(1) of the PLBCA Act will be treated as if it is a revie w under statute for the purposes of rules 45.41 to 45.44 and may therefore be an Aarhus Convention claim for the purposes of those rules.
+
 Added (Local-only):
+
 - 1.4 In this Practice Direction "nationally significant infrastructure project challenge" means a claim brought within sections 13 or 118 of the Pl.anning Act 2008
 - (c)generate significant public interest;
 - (d)by virtue of the volume or nature of technical material, are best dealt with by judges with significant experience of handling such matters; or
@@ -430,12 +476,15 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - Applications under sections 32 and 45 of the 1996 Act
 - 9.1
 - This paragraph applies to arbitration claims for the determination of -
 - (1) a question as to the substantive jurisdiction of the arbitral tribunal under section 32 of the 1996 Act; and
 - (2) a preliminary point of law under section 45 of the 1996 Act.
+
 Added (Local-only):
+
 - 9.1 Omitted
 - Having regard to the overriding objective the court may decide particular issues without a hearing.
 
@@ -453,8 +502,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 4.2 Some countries require legalisation of the document to be served and some require a formal letter of request which must be signed by the Senior Master. Any queries on this should be addressed to the Foreign Process Section (Room E 02) at the Royal Courts of Justice.
+
 Added (Local-only):
+
 - 4.2 Some countries require legalisation of the document to be served and some require a formal letter of request which must be signed by the Senior Master. Any queries on this should be addressed to the Foreign Process Section at the Royal Courts of Justice.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -471,8 +523,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (1) This rule applies if, in any proceedings in the King's Bench Division, (other than proceedings in the Commercial or Admiralty Courts) a district registry of the High Court or a county court, a party's statement of case raises an issue relating to the application of of Chapter I or II of Part I of the Competition Act 19982.
+
 Added (Local-only):
+
 - (1) This rule applies if, in any proceedings in the King's Bench Division, (other than proceedings in the Commercial or Admiralty Courts) a district registry of the High Court or a county court, a party's statement of case raises an issue relating to the application of of Chapter I or II of Part I of the Competition Act 19982 or to a claim under section 101 of the Digital Markets, Competition and Consumers Act 2024.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -489,12 +544,15 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 'summary assessment' means the procedure whereby costs are assessed by the judge who has heard the case or application;
 - (1) Where the court orders a party to pay costs to another party (other than fixed costs) it may either -
 - (a) make a summary assessment of the costs; or
 - (b) order detailed assessment of the costs by a costs officer,
 - (2) A party may recover the fixed costs specified in Part 45 in accordance with that Part.
+
 Added (Local-only):
+
 - 'summary assessment' means the procedure whereby costs are assessed by the judge who has decided the case or application or where rule 44.6(2) applies;
 - (1) Where the court orders a party to pay costs to another party (other than fixed costs) it may -
 - (a) make a summary assessment of the costs;
@@ -514,6 +572,7 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Added (Local-only):
+
 - (3) Neither rule 19.4 nor rule 20.7 applies to the joinder of a person under paragraph (1).
 
 Recommended action: update/re-index the Azure document(s) from the fresh scrape for this sourcefile.
@@ -529,8 +588,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (3) A Media and Communications List Judge is a judge authorised by the President of the KIng's Bench Division, in consultation with the Chancellor of the High Court, to hear claims in the Media and Communications List.
+
 Added (Local-only):
+
 - (3) A Media and Communications List Judge is a judge authorised by the President of the King's Bench Division, in consultation with the Chancellor of the High Court, to hear claims in the Media and Communications List.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -546,8 +608,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (a) the preliminary question of whether the court is satisfied of the matters set out in section 45(2)(b); or
+
 Added (Local-only):
+
 - (a) Omitted
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -563,9 +628,12 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (2) In this Section 'the 2003 Act'means the Anti-social Behaviour Act 2003.
 - (3) In this Section 'the 2006 Act'means the Police and Justice Act 2006. Applications under section 91(3) of the 2003 Act or section 27(3) of the 2006 Act for a power of arrest to be attached to any provision of an injunction
+
 Added (Local-only):
+
 - (2) In this Section 'the 2003 Act' means the Anti-social Behaviour Act 2003.
 - (3) In this Section 'the 2006 Act' means the Police and Justice Act 2006. Applications under section 91(3) of the 2003 Act or section 27(3) of the 2006 Act for a power of arrest to be attached to any provision of an injunction
 
@@ -582,6 +650,7 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Added (Local-only):
+
 - SECTION 3 Referral of Release Decisions
 - SUB-SECTION 1 General
 - ---
@@ -601,8 +670,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (i) 'specially represented party'means a party, other than tthe appropriate Minister, whose interests a special advocate represents.
+
 Added (Local-only):
+
 - (i) 'specially represented party' means a party, other than the appropriate Minister, whose interests a special advocate represents.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -619,8 +691,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (c) rule 52.13 (responden's notice); and
+
 Added (Local-only):
+
 - (c) rule 52.13 (respondent's notice); and
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -637,10 +712,13 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (2) After the relevant person serves sensitive material on the special advocate, the special advocate must not communicate with any person about any matter connected with the proceedings, except in accordance with paragraph (3) or (6)(b) or with a direction of the court pursuant to a request under paragraph (4).
 - (b) the special advocate must not reply to the communication other than in accordance with directions of the court, except that the special advocate may without such directions send a written acknowledgment of receipt to the specially represented party's legal representative. Evidence in proceedings to which this Part applies
 - (c) the details of any special advocate already appointed under rule 82.9 (appointment of a special advocate).
+
 Added (Local-only):
+
 - (2) After the relevant person serves sensitive material on the special advocate, the special advocate must not communicate with any person about any matter connected with the proceedings, except in accordance with paragraph (3), (3 A) or (6)(b) or with a direction of the court pursuant to a request under paragraph (4).
 - (3 A) The special advocate may communicate with the specially represented party or the specially represented party's legal representative with the express agreement of the relevant person and (where the relevant person is not the Secretary of State) the Secretary of State.
 - (b) the special advocate must not reply to the communication other than in accordance with paragraph (3 A) or directions of the court, except that the special advocate may without such directions send a written acknowledgment of receipt to the specially represented party's legal representative. Evidence in proceedings to which this Part applies
@@ -659,8 +737,11 @@ Recommended action: inspect the scraper extraction for this page; the live page 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (2) He will normally do so orally at the hearing, but he may give them later at a hearing either orally or in writting.
+
 Added (Local-only):
+
 - (2) He will normally do so orally at the hearing, but he may give them later at a hearing either orally or in writing.
 
 Recommended action: update/re-index the Azure document(s) from the fresh scrape for this sourcefile.
@@ -677,11 +758,14 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 4.2 The party who obtains an order for the examination of a deponentbefore an examiner of the courtmust:
 - (1) apply to the Foreign Process Section at the Royal Courts of Justice atforeignprocess.rcj@justice.gov.ukfor the allocation of an examiner; alternatively engage a person who satisfies the criteria in CPR 34.8 (3) (a) or (c);
 - 5.4 The above documents should be filed with the Foreign Process Section of the Royal Courts of Justice, by post to "Foreign Process Section Royal Courts of Justice, Strand London WC 2 A 2 LL" or left in person at the document drop box in the Main Hall of the Royal Courts of Justice marked for the attention of the Foreign Process Section.
 - 6.3 An application under rule 34.17 must include or exhibit-
+
 Added (Local-only):
+
 - 4.2 The party who obtains an order for the examination of a deponent before an examiner of the court must:
 - (1) apply to the Foreign Process Section at the Royal Courts of Justice for the allocation of an examiner; alternatively engage a person who satisfies the criteria in CPR 34.8 (3) (a) or (c);
 - 5.4 The above documents should be filed with the Foreign Process Section of the Royal Courts of Justice..
@@ -700,8 +784,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (1) Unless the [claimant][defendant] serves his list of documents by 4.00 p.m. on Friday, January 22, 1999 his [claim][defence] will be struck out and judgment entered for the [defendent][claimant], or
+
 Added (Local-only):
+
 - (1) Unless the [claimant][defendant] serves his list of documents by 4.00 p.m. on Friday, January 22, 1999 his [claim][defence] will be struck out and judgment entered for the [defendant][claimant], or
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -717,8 +804,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (1) ensure that the case file documents are provided by the parties where necesary and filed on the court file,
+
 Added (Local-only):
+
 - (1) ensure that the case file documents are provided by the parties where necessary and filed on the court file,
 
 Recommended action: update/re-index the Azure document(s) from the fresh scrape for this sourcefile.
@@ -735,8 +825,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 3.4 The amount, which may be allowed to a self represented litigant under rule 46.5(4)(b), is £19 per hour.
+
 Added (Local-only):
+
 - 3.4 The amount, which may be allowed to a self represented litigant under rule 46.5(4)(b), is £24 per hour.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -752,9 +845,12 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - SECTION II - CASE STATED BY CROWN COURT OR MAGISTRATES'COURT
 - The procedure for applying to the Crown Court or a Magistrates' Court to have a case stated for the opinion of the High Court is set out in the Criminal Procedure Rules.
+
 Added (Local-only):
+
 - SECTION II - CASE STATED BY CROWN COURT OR MAGISTRATES' COURT
 - The procedure for applying to the Crown Court or a Magistrates' Court to have a case stated for the opinion of the High Court differs according to whether the proceedings are criminal or civil. For criminal proceedings, the procedure is set out in the Criminal Procedure Rules. For civil proceedings, the procedure for applying to the Crown Court is set out in the Crown Court Rules 1982, and for applying to a magistrates' court, the Magistrates' Courts Rules 1981.
 - ---
@@ -772,8 +868,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (4) any facts which might affect the exercise of the court"s powers under the Act.
+
 Added (Local-only):
+
 - (4) any facts which might affect the exercise of the court's powers under the Act.
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -789,8 +888,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (5) experts'reports;
+
 Added (Local-only):
+
 - (5) experts' reports;
 
 Recommended action: do a quick manual spot-check against the live `storageUrl` + Azure content; then decide whether to re-index or adjust extraction.
@@ -807,8 +909,11 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - The master or district judge may give the directions sought though, if the directions relate to actual or proposed litigation, only if it is a plain case, and therefore the master or district judge may think it appropriate to give the directions without a hearing: see Practice Direction 2 B, para 4.1 and para. 5.1(e), and see also paragraph 6 above. Otherwise the case will be referred to the judge.
+
 Added (Local-only):
+
 - A Master may give the directions sought, whether at a hearing or on paper pursuant to paragraph 6. They will ordinarily do so, but may refer the matter to a High Court Judge if they consider it appropriate. District Judges may give the directions sought only with the consent of their Supervising Judge or their nominee (see PD 2 B para. 7 B.2(c)).
 
 Recommended action: update/re-index the Azure document(s) from the fresh scrape for this sourcefile.
@@ -825,10 +930,13 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - (3) section 1(2) of the 1933 Act, which limits enforcement under that Act to money judgments.
 - (c) section 4 B of the 1982 Act;
 - (2) registers of certificates issued for the enforcement in foreign countries of High Court judgments under the 1920, 1933 and 1982 Acts, and under article 13 of the 2005 Hague Convention;
+
 Added (Local-only):
+
 - (3) section 1(2) of the 1933 Act, which limits enforcement under that Act to money judgments;
 - (4) section 15 (1) of the 1982 Act, which limits enforcement under Part I of that Act to judgments within the meaning given by article 4(1) of the 2005 Hague Convention and article 3(1) of the 2019 Hague Convention.
 - (c) sections 4, 4 B and 4 C of the 1982 Act;
@@ -849,8 +957,11 @@ Recommended action: update/re-index the Azure document(s) from the fresh scrape 
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - PRACTICE DIRECTION 77 - APPLICATIONS FOR AND RELATING TO SERIOUS CRIME PREVENTION ORDERS
+
 Added (Local-only):
+
 - PRACTICE DIRECTION 77 - APPLICATIONS FOR AND RELATING TO SERIOUS CRIME PREVENTION ORDERS AND REFERRAL OF RELEASE DECISIONS
 - ---
 - SECTION 1 - SERIOUS CRIME PREVENTION ORDERS
@@ -871,9 +982,12 @@ Recommended action: do a quick manual spot-check against the live `storageUrl` +
 Key excerpt (truncated):
 
 Removed (Azure-only):
+
 - 'Code of Practice' means any code of practice which may at any time be issued by Her Majesty's Courts and Tribunals Service relating to the discharge by the Centre of its functions and the way in which a Centre user is to conduct business with the Centre; and
 - 4.2 Her Majesty's Courts and Tribunals Service may change the Code of Practice from time to time.
+
 Added (Local-only):
+
 - 'Code of Practice' means any code of practice which may at any time be issued by His Majesty's Courts and Tribunals Service relating to the discharge by the Centre of its functions and the way in which a Centre user is to conduct business with the Centre; and
 - 4.2 His Majesty's Courts and Tribunals Service may change the Code of Practice from time to time.
 

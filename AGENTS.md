@@ -8,6 +8,7 @@ If necessary, edit this file to ensure it accurately reflects the current state 
 ## Custom Features (This Fork)
 
 This fork includes customizations for legal document RAG. See [CUSTOMIZATIONS_README.md](docs/customizations/README.md) for details.
+See [MAINTENANCE_GUIDE.md](docs/MAINTENANCE_GUIDE.md) for operations and update workflows.
 
 Key custom folders:
 
@@ -50,18 +51,21 @@ This fork includes an enhanced feedback system that captures comprehensive diagn
 ### Feedback Capabilities
 
 **Deployment Tracking**: Automatically captures:
+
 - Deployment ID and version information
 - Git commit hash for version tracking
 - Model name (gpt-4, gpt-4-turbo, etc.)
 - Environment (production/development)
 
 **Thought Filtering**: Protects system prompts by:
+
 - Automatically filtering admin-only thoughts from API responses
 - Removing `raw_messages` containing system instructions
 - Preserving user-safe thoughts (search queries, retrieved documents)
 - Storing admin-only information separately for debugging
 
 **Data Storage**: Saves feedback with:
+
 - User-visible context (no system prompts)
 - Separate admin files containing full diagnostic data
 - Consent-based storage (respects user privacy choices)
@@ -92,6 +96,7 @@ pytest tests/test_feedback.py tests/test_thought_filter.py --cov=customizations 
 
 * app: Contains the main application code, including frontend and backend.
   * app/backend: Contains the Python backend code, written with Quart framework.
+
     * app/backend/approaches: Contains the different approaches
       * app/backend/approaches/approach.py: Base class for all approaches
       * app/backend/approaches/retrievethenread.py: Ask approach, just searches and answers
@@ -128,8 +133,10 @@ pytest tests/test_feedback.py tests/test_thought_filter.py --cov=customizations 
       * app/backend/prepdocslib/textprocessor.py: Processes text chunks for cloud ingestion (merges figures, generates embeddings)
       * app/backend/prepdocslib/textsplitter.py: Splits text into chunks using different strategies
     * app/backend/app.py: The main entry point for the backend application.
+
   * app/functions: Azure Functions used for cloud ingestion custom skills (document extraction, figure processing, text processing). Each function bundles a synchronized copy of `prepdocslib`; run `python scripts/copy_prepdocslib.py` to refresh the local copies if you modify the library.
   * app/frontend: Contains the React frontend code, built with TypeScript, built with vite.
+
     * app/frontend/src/api: Contains the API client code for communicating with the backend.
     * app/frontend/src/components: Contains the React components for the frontend.
     * app/frontend/src/locales: Contains the translation files for internationalization.
@@ -147,6 +154,7 @@ pytest tests/test_feedback.py tests/test_thought_filter.py --cov=customizations 
       * app/frontend/src/customizations/citationSanitizer.ts: Fixes malformed citation formats
       * app/frontend/src/customizations/useCategories.ts: Hook for dynamic category fetching
       * app/frontend/src/customizations/config.ts: Frontend feature flags
+
 * infra: Contains the Bicep templates for provisioning Azure resources.
 * tests: Contains the test code, including e2e tests, app integration tests, and unit tests.
 

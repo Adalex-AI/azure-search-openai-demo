@@ -87,7 +87,7 @@ This repository includes an optional feature that uses reasoning models to gener
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU GlobalStandard
    ```
 
-2. **(Optional) Set default reasoning effort**
+1. **(Optional) Set default reasoning effort**
 
    You can configure how much effort the reasoning model spends on processing and understanding the user's request. Valid options are `minimal` (for GPT-5 models only), `low`, `medium`, and `high`. Reasoning effort defaults to `medium` if not set.
 
@@ -97,21 +97,21 @@ This repository includes an optional feature that uses reasoning models to gener
    azd env set AZURE_OPENAI_REASONING_EFFORT minimal
    ```
 
-3. **Update the infrastructure and application:**
+1. **Update the infrastructure and application:**
 
    Execute `azd up` to provision the infrastructure changes (only the new model, if you ran `up` previously) and deploy the application code with the updated environment variables.
 
-4. **Try out the feature:**
+1. **Try out the feature:**
 
    Open the web app and start a new chat. The reasoning model will be used for all chat completion requests, including the query rewriting step.
 
-5. **Experiment with reasoning effort:**
+1. **Experiment with reasoning effort:**
 
    Select the developer options in the web app and change "Reasoning Effort" to `low`, `medium`, or `high`. This will override the default reasoning effort of "medium".
 
    ![Reasoning configuration screenshot](./images/reasoning.png)
 
-6. **Understand token usage:**
+1. **Understand token usage:**
 
    The reasoning models use additional billed tokens behind the scenes for the thinking process.
    To see the token usage, select the lightbulb icon on a chat answer. This will open the "Thought process" tab, which shows the reasoning model's thought process and the token usage for each chat completion.

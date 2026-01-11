@@ -5,6 +5,7 @@ This folder contains the local pipeline for scraping, validating, and uploading 
 ## Overview
 
 **Core Pipeline Scripts:**
+
 - **scrape_cpr.py**: Selenium-based web scraper for Civil Procedure Rules from justice.gov.uk
 - **validation.py**: Content quality checks and legal terminology validation
 - **upload_with_embeddings.py**: Azure Search upload with automatic vector embedding generation from Azure OpenAI
@@ -35,6 +36,7 @@ azd config set defaults.location <your-region>
 ### Configuration
 
 Configuration is read from `azd` environment variables:
+
 - `AZURE_SEARCH_SERVICE`: Azure Search service endpoint
 - `AZURE_SEARCH_KEY`: Azure Search admin key
 - `AZURE_OPENAI_SERVICE`: Azure OpenAI service endpoint
@@ -80,6 +82,7 @@ python validation.py --input Upload
 ```
 
 The validation script checks:
+
 - ✅ Content quality (length, legal terminology)
 - 📊 Duplicate detection
 - 🔍 Comparison against Azure Search index
@@ -96,6 +99,7 @@ python upload_with_embeddings.py --input Upload
 ```
 
 **Key Features:**
+
 - Automatic vector embedding generation (Azure OpenAI `text-embedding-3-large`)
 - Rate-limited batch processing (3 documents per batch, 10-second delays)
 - Exponential backoff retry for Azure rate limits
@@ -106,6 +110,7 @@ python upload_with_embeddings.py --input Upload
 For **automated weekly scraping via GitHub Actions**, see [Phase 2 Documentation](../../docs/customizations/PHASE_2_SCRAPER_AUTOMATION.md).
 
 This folder contains the core scripts that Phase 2 orchestrates. The GitHub Actions workflow:
+
 - Runs on a schedule (weekly by default)
 - Can be triggered manually via GitHub Actions UI
 - Supports dry-run mode for testing
@@ -113,7 +118,7 @@ This folder contains the core scripts that Phase 2 orchestrates. The GitHub Acti
 
 ## Output Structure
 
-```
+```text
 data/legal-scraper/
 ├── processed/
 │   ├── Upload/                    # Scraped JSON files
@@ -179,9 +184,9 @@ python -c "from config import Config; Config.validate_azure_config()"
 ### Validation Failures
 
 1. Check validation report: `data/legal-scraper/validation-reports/`
-2. Review error messages for specific issues
-3. Fix content issues (length, terminology) in source
-4. Re-run validation
+1. Review error messages for specific issues
+1. Fix content issues (length, terminology) in source
+1. Re-run validation
 
 ### Upload Issues
 
@@ -225,14 +230,15 @@ See [Phase 2 Setup Guide](../../docs/PHASE_2_SETUP.md) for configuration instruc
 ## Support
 
 For issues or questions:
+
 1. Check validation reports in `data/legal-scraper/validation-reports/`
-2. Review script logs for detailed error messages
-3. Run individual steps to isolate issues
-4. Use `--help` flag on any script for usage options
+1. Review script logs for detailed error messages
+1. Run individual steps to isolate issues
+1. Use `--help` flag on any script for usage options
 
 ## Architecture
 
-```
+```text
 Legal Document Workflow:
 ┌─────────────────────────────────────────────┐
 │ Scrape CPR Rules from justice.gov.uk        │ (scrape_cpr.py)

@@ -1,6 +1,6 @@
 # Synonym Map Expansion: Implementation Summary
 
-**Date Completed**: December 31, 2025  
+**Date Completed**: December 31, 2025
 **Status**: ✅ **Phases 1-3 Complete** (Phase 4 Optional - Ready for Implementation)
 
 ***
@@ -24,6 +24,7 @@ The strategic recommendation to expand the legal CPR synonym map from 87 to 146+
 **File**: `scripts/manage_synonym_map.py`
 
 **Change Made**:
+
 ```python
 # BEFORE (Incorrect - US terminology)
 schedule of loss, schedule of damage
@@ -32,7 +33,8 @@ schedule of loss, schedule of damage
 schedule of loss, statement of special damages
 ```
 
-**Impact**: 
+**Impact**:
+
 - Fixed accuracy error from 95/100 to 100/100
 - Test pass rate: 98.6% → 100% (70/70)
 - Eliminates incorrect US terminology "schedule of damage" that violates UK legal conventions
@@ -46,7 +48,8 @@ schedule of loss, statement of special damages
 **New Sections Added**: 24 rules across 3 categories
 
 #### 2.1 Interim Remedies & Protective Measures (CPR Part 25) - 10 Rules
-```
+
+```text
 prohibitory injunction, prohibitive injunction
 mandatory injunction, positive injunction, affirmative injunction
 interim injunction with notice, on-notice injunction
@@ -58,7 +61,8 @@ self-identification order, identification order
 confidentiality injunction, breach of confidence order
 restraining order, restraint order, prohibiting order
 ```
-**Captures**: Modern litigation practices (X v Persons Unknown cases, privacy injunctions)  
+
+**Captures**: Modern litigation practices (X v Persons Unknown cases, privacy injunctions)
 **Expected Impact**: +8-12% search improvement
 
 #### 2.2 Group Litigation & Party Management (CPR Parts 19-20) - 6 Rules

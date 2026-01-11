@@ -10,12 +10,14 @@ From the README:
 ## 📊 Your Current Setup
 
 You have **TWO** models deployed:
+
 1. ❌ `gpt-5-nano` (main chatgpt deployment) - **INCOMPATIBLE** with backend code
-2. ✅ `gpt-4.1-mini` (searchagent deployment) - **COMPATIBLE** and recommended
+1. ✅ `gpt-4.1-mini` (searchagent deployment) - **COMPATIBLE** and recommended
 
 ## 🔧 Quick Fix: Switch to gpt-4.1-mini
 
 ### Option 1: Update Environment Variable (Recommended)
+
 ```bash
 cd /Users/HasithB/Downloads/PROJECTS/azure-search-openai-demo-2
 
@@ -37,6 +39,7 @@ curl -X POST http://localhost:50505/chat \
 ```
 
 ### Option 2: Use azd to Update
+
 ```bash
 azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT "searchagent"
 azd env set AZURE_OPENAI_CHATGPT_MODEL "gpt-4.1-mini"
@@ -69,35 +72,38 @@ The backend code was written for GPT-4 models and doesn't handle GPT-5's restric
 Once you switch to gpt-4.1-mini:
 
 1. **Backend should work immediately** ✅
-2. **Run evaluation**:
+1. **Run evaluation**:
+
    ```bash
    source .evalenv/bin/activate
    python evals/generate_ground_truth.py --numquestions=50
    python evals/evaluate.py --numquestions=10
    ```
 
-3. **Review results** in `evals/results/`
+1. **Review results** in `evals/results/`
 
 ## 📝 For Future: Using GPT-5-nano
 
 If you want to use GPT-5-nano in the future, the backend needs these code changes:
 
 1. ✅ **Already applied**: Temperature fix (skip temperature parameter)
-2. ⚠️ **Still needed**: Remove/conditionally handle `tools` parameter
-3. ⚠️ **Still needed**: Remove/conditionally handle `seed` parameter
-4. ⚠️ **Still needed**: Test `reasoning_effort` parameter support
-5. ⚠️ **Still needed**: Verify all API calls work with GPT-5 constraints
+1. ⚠️ **Still needed**: Remove/conditionally handle `tools` parameter
+1. ⚠️ **Still needed**: Remove/conditionally handle `seed` parameter
+1. ⚠️ **Still needed**: Test `reasoning_effort` parameter support
+1. ⚠️ **Still needed**: Verify all API calls work with GPT-5 constraints
 
 See `BACKEND_HANG_DIAGNOSIS.md` for complete analysis.
 
 ## 🎓 Evaluation Model Recommendation
 
 For **evaluation**, the repo recommends:
+
 - **Model**: `gpt-4o` (not gpt-5)
 - **Version**: `2024-08-06`
 - **Purpose**: Evaluating groundedness, relevance, etc.
 
 To set up evaluation model:
+
 ```bash
 azd env set USE_EVAL true
 azd env set AZURE_OPENAI_EVAL_DEPLOYMENT_CAPACITY 100

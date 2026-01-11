@@ -3,15 +3,19 @@
 name: RAG chat app with your data (Python)
 description: Chat with your domain data using Azure OpenAI and Azure AI Search.
 languages:
+
 - python
 - typescript
 - bicep
 - azdeveloper
+
 products:
+
 - azure-openai
 - azure-cognitive-search
 - azure-app-service
 - azure
+
 page_type: sample
 urlFragment: azure-search-openai-demo
 ***
@@ -46,6 +50,7 @@ This template, the application code and configuration it contains, has been buil
 - [Clean up](#clean-up)
 - [Guidance](#guidance)
   - [Resources](#resources)
+  - [Maintenance & Operations](docs/MAINTENANCE_GUIDE.md)
 
 ![Chat screen](docs/images/chatscreen.png)
 
@@ -135,10 +140,11 @@ Once the codespace opens (this may take several minutes), open a terminal window
 A related option is VS Code Dev Containers, which will open the project in your local VS Code using the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers):
 
 1. Start Docker Desktop (install it if not already installed)
-2. Open the project:
+1. Open the project:
+
     [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
 
-3. In the VS Code window that opens, once the project files show up (this may take several minutes), open a terminal window.
+1. In the VS Code window that opens, once the project files show up (this may take several minutes), open a terminal window.
 
 ### Local environment
 
@@ -153,8 +159,8 @@ A related option is VS Code Dev Containers, which will open the project in your 
     - [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - For Windows users only.
       - **Important**: Ensure you can run `pwsh.exe` from a PowerShell terminal. If this fails, you likely need to upgrade PowerShell.
 
-2. Create a new folder and switch to it in the terminal.
-3. Run this command to download the project code:
+1. Create a new folder and switch to it in the terminal.
+1. Run this command to download the project code:
 
     ```shell
     azd init -t azure-search-openai-demo
@@ -186,11 +192,15 @@ The steps below will provision Azure resources and deploy the application code t
 
     Enter a name that will be used for the resource group.
     This will create a new folder in the `.azure` folder, and set it as the active environment for any calls to `azd` going forward.
+
 1. (Optional) This is the point where you can customize the deployment by setting environment variables, in order to [use existing resources](docs/deploy_existing.md), [enable optional features (such as auth or vision)](docs/deploy_features.md), or [deploy low-cost options](docs/deploy_lowcost.md), or [deploy with the Azure free trial](docs/deploy_freetrial.md).
 1. Run `azd up` - This will provision Azure resources and deploy this sample to those resources, including building the search index based on the files found in the `./data` folder.
+
     - **Important**: Beware that the resources created by this command will incur immediate costs, primarily from the AI Search resource. These resources may accrue costs even if you interrupt the command before it is fully executed. You can run `azd down` or delete the resources manually to avoid unnecessary spending.
     - You will be prompted to select two locations, one for the majority of resources and one for the OpenAI resource, which is currently a short list. That location list is based on the [OpenAI model availability table](https://learn.microsoft.com/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability) and may become outdated as availability changes.
+
 1. After the application has been successfully deployed you will see a URL printed to the console.  Click that URL to interact with the application in your browser.
+
 It will look like the following:
 
 !['Output from running azd up'](docs/images/endpoint.png)
@@ -216,7 +226,7 @@ azd up
 You can only run a development server locally **after** having successfully run the `azd up` command. If you haven't yet, follow the [deploying](#deploying) steps above.
 
 1. Run `azd auth login` if you have not logged in recently.
-2. Start the server:
+1. Start the server:
 
   Windows:
 
@@ -251,8 +261,8 @@ Once in the web app:
 To clean up all the resources created by this sample:
 
 1. Run `azd down`
-2. When asked if you are sure you want to continue, enter `y`
-3. When asked if you want to permanently delete the resources, enter `y`
+1. When asked if you are sure you want to continue, enter `y`
+1. When asked if you want to permanently delete the resources, enter `y`
 
 The resource group and all the resources will be deleted.
 
@@ -268,17 +278,21 @@ You can find extensive documentation in the [docs](docs/README.md) folder:
 
 - Deploying:
   - [Troubleshooting deployment](docs/deploy_troubleshooting.md)
+
     - [Debugging the app on App Service](docs/appservice.md)
+
   - [Deploying with azd: deep dive and CI/CD](docs/azd.md)
   - [Deploying with existing Azure resources](docs/deploy_existing.md)
   - [Deploying from a free account](docs/deploy_lowcost.md)
   - [Enabling optional features](docs/deploy_features.md)
+
     - [All features](docs/deploy_features.md)
     - [Login and access control](docs/login_and_acl.md)
     - [Multimodal](docs/multimodal.md)
     - [Reasoning](docs/reasoning.md)
     - [Private endpoints](docs/deploy_private.md)
     - [Agentic retrieval](docs/agentic_retrieval.md)
+
   - [Sharing deployment environments](docs/sharing_environments.md)
 - [Local development](docs/localdev.md)
 - [Customizing the app](docs/customization.md)

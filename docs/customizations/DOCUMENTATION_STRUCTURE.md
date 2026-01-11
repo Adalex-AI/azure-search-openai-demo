@@ -5,9 +5,11 @@ This document describes the current documentation organization and what each fil
 ## 📋 Active Documentation
 
 ### 1. **README.md** - Customizations Overview
+
 **Purpose**: Main entry point for understanding all custom features
 
 **Contents**:
+
 - What was built (Phase 1 & 2)
 - System architecture overview link
 - Merge-safe architecture explanation
@@ -21,9 +23,11 @@ This document describes the current documentation organization and what each fil
 ***
 
 ### 2. **SYSTEM_ARCHITECTURE.md** - As-Built Architecture & Design
+
 **Purpose**: Comprehensive system design documentation with diagrams
 
 **Contents**:
+
 - End-to-end system architecture diagram
 - Data flow sequence diagram (user query → answer)
 - Component breakdown (frontend + backend)
@@ -38,22 +42,24 @@ This document describes the current documentation organization and what each fil
 ***
 
 ### 3. **DEPLOYMENT_AND_OPERATIONS.md** - What Was Deployed & How to Operate
+
 **Status**: ✅ **DEPLOYED & OPERATIONAL**
 
 **Purpose**: Production deployment setup, monitoring, maintenance, and troubleshooting
 
 **Contents**:
+
 - **What Was Deployed**: GitHub Actions workflow (the ONLY deployment option used)
   - Weekly automation schedule (Sundays 00:00 UTC)
   - Configuration details (batch size, delays, retries)
   - GitHub secrets and authentication
   - Performance metrics & pipeline duration
-  
+
 - **Local Development**:
   - Setup and prerequisites
   - Testing the pipeline locally
   - Manual GitHub Actions workflow triggers
-  
+
 - **Operations & Monitoring**:
   - Health checks (workflow status, index verification)
   - Weekly/monthly/quarterly maintenance tasks
@@ -70,6 +76,7 @@ This document describes the current documentation organization and what each fil
 ## 🏛️ Archived Documentation
 
 ### **PHASE_2_SCRAPER_AUTOMATION.md** (Archived)
+
 **Location**: `.archive/PHASE_2_SCRAPER_AUTOMATION.md`
 
 **Reason Archived**: Content consolidated into [DEPLOYMENT_AND_OPERATIONS.md](./DEPLOYMENT_AND_OPERATIONS.md)
@@ -77,6 +84,7 @@ This document describes the current documentation organization and what each fil
 **Original Purpose**: Detailed Phase 2 GitHub Actions workflow documentation
 
 **What Happened**:
+
 - All workflow configuration merged into DEPLOYMENT_AND_OPERATIONS.md
 - Phase 2 is no longer presented as an option - it's the deployed system
 - Single source of truth approach: operations doc now covers deployed solution
@@ -105,13 +113,14 @@ The documentation is organized around **what was actually deployed**:
 ### ✅ What We Document
 
 1. **Deployed Systems**: GitHub Actions weekly automation
-2. **How to Operate**: Setup, monitoring, troubleshooting
-3. **How to Develop**: Local testing, modifying scripts
-4. **What Was Built**: Architecture and components
+1. **How to Operate**: Setup, monitoring, troubleshooting
+1. **How to Develop**: Local testing, modifying scripts
+1. **What Was Built**: Architecture and components
 
 ### ❌ What We Don't Document
 
 Alternative deployment options that weren't implemented:
+
 - Azure Container Apps (removed - not deployed)
 - Azure Functions (removed - not deployed)
 - Multiple deployment paths (removed - clarity matters)
@@ -154,17 +163,20 @@ Alternative deployment options that weren't implemented:
 ## 🔄 When to Update Documentation
 
 **Update README.md when**:
+
 - New custom features added
 - Integration points change
 - Feature flags modified
 - Evaluation metrics improve
 
 **Update SYSTEM_ARCHITECTURE.md when**:
+
 - Component structure changes
 - Technology stack changes
 - Data flow changes
 
 **Update DEPLOYMENT_AND_OPERATIONS.md when**:
+
 - Deployment process changes
 - Monitoring procedures change
 - New troubleshooting issues discovered
@@ -172,6 +184,7 @@ Alternative deployment options that weren't implemented:
 - Maintenance schedules change
 
 **Archive a doc when**:
+
 - Approach deprecated or replaced
 - Feature no longer in use
 - Documented only as historical reference
@@ -191,7 +204,7 @@ Alternative deployment options that weren't implemented:
 ## 💡 Key Takeaways
 
 1. **Single Source of Truth**: DEPLOYMENT_AND_OPERATIONS.md describes the deployed system (GitHub Actions)
-2. **No Alternatives**: Removed Container Apps and Functions options - reduces confusion
-3. **Archived, Not Deleted**: Historical docs preserved in `.archive/` for reference
-4. **Comprehensive Architecture**: SYSTEM_ARCHITECTURE.md provides design overview
-5. **Easy Navigation**: README.md serves as entry point to all customizations
+1. **No Alternatives**: Removed Container Apps and Functions options - reduces confusion
+1. **Archived, Not Deleted**: Historical docs preserved in `.archive/` for reference
+1. **Comprehensive Architecture**: SYSTEM_ARCHITECTURE.md provides design overview
+1. **Easy Navigation**: README.md serves as entry point to all customizations

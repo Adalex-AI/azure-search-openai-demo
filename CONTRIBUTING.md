@@ -26,7 +26,9 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 Before you submit your Pull Request (PR) consider the following guidelines:
 
 - Search the repository (<https://github.com/[organization-name>]/[repository-name]/pulls) for an open or closed PR
+
   that relates to your submission. You don't want to duplicate effort.
+
 - Make your changes in a new git fork
 - Follow [Code style conventions](#code-style)
 - [Run the tests](#running-unit-tests) (and write new ones, if needed)

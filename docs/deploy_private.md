@@ -3,15 +3,19 @@
 name: RAG chat with private endpoints
 description: Configure access to a chat app so that it's only accessible from private endpoints.
 languages:
+
 - python
 - typescript
 - bicep
 - azdeveloper
+
 products:
+
 - azure-openai
 - azure-cognitive-search
 - azure-app-service
 - azure
+
 page_type: sample
 urlFragment: azure-search-openai-demo-private-access
 ***
@@ -55,13 +59,13 @@ You might also decide to delete the VPN Gateway when not in use.
     azd up
     ```
 
-2. Provision all the Azure resources:
+1. Provision all the Azure resources:
 
     ```bash
     azd provision
     ```
 
-3. Once provisioning is complete, you will see an error when it tries to run the data ingestion script, because you are not yet connected to the VPN. That message should provide a URL for the VPN configuration file download. If you don't see that URL, run this command:
+1. Once provisioning is complete, you will see an error when it tries to run the data ingestion script, because you are not yet connected to the VPN. That message should provide a URL for the VPN configuration file download. If you don't see that URL, run this command:
 
     ```bash
     azd env get-value AZURE_VPN_CONFIG_DOWNLOAD_LINK
@@ -69,7 +73,7 @@ You might also decide to delete the VPN Gateway when not in use.
 
     Open that link in your browser. Select "Download VPN client" to download a ZIP file containing the VPN configuration.
 
-4. Open `AzureVPN/azurevpnconfig.xml`, and replace the `<clientconfig>` empty tag with the following:
+1. Open `AzureVPN/azurevpnconfig.xml`, and replace the `<clientconfig>` empty tag with the following:
 
     ```xml
       <clientconfig>
@@ -81,19 +85,19 @@ You might also decide to delete the VPN Gateway when not in use.
 
     > **Note:** We use the IP address `10.0.11.4` since it is the first available IP in the `dns-resolver-subnet`(10.0.11.0/28) from the provisioned virtual network, as Azure reserves the first four IP addresses in each subnet. Adding this DNS server allows your VPN client to resolve private DNS names for Azure services accessed through private endpoints. See the network configuration in [network-isolation.bicep](../infra/network-isolation.bicep) for details.
 
-5. Install the [Azure VPN Client](https://learn.microsoft.com/azure/vpn-gateway/azure-vpn-client-versions).
+1. Install the [Azure VPN Client](https://learn.microsoft.com/azure/vpn-gateway/azure-vpn-client-versions).
 
-6. Open the Azure VPN Client and select "Import" button. Select the `azurevpnconfig.xml` file you just downloaded and modified.
+1. Open the Azure VPN Client and select "Import" button. Select the `azurevpnconfig.xml` file you just downloaded and modified.
 
-7. Select "Connect" and the new VPN connection. You will be prompted to select your Microsoft account and login.
+1. Select "Connect" and the new VPN connection. You will be prompted to select your Microsoft account and login.
 
-8. Once you're successfully connected to VPN, you can run the data ingestion script:
+1. Once you're successfully connected to VPN, you can run the data ingestion script:
 
     ```bash
     azd hooks run postprovision
     ```
 
-9. Finally, you can deploy the app:
+1. Finally, you can deploy the app:
 
     ```bash
     azd deploy
@@ -102,11 +106,15 @@ You might also decide to delete the VPN Gateway when not in use.
 ## Environment variables controlling private access
 
 1. `AZURE_PUBLIC_NETWORK_ACCESS`: Controls the value of public network access on supported Azure resources. Valid values are 'Enabled' or 'Disabled'.
+
     1. When public network access is 'Enabled', Azure resources are open to the internet.
     1. When public network access is 'Disabled', Azure resources are only accessible over a virtual network.
+
 1. `AZURE_USE_PRIVATE_ENDPOINT`: Controls deployment of [private endpoints](https://learn.microsoft.com/azure/private-link/private-endpoint-overview) which connect Azure resources to the virtual network.
+
     1. When set to 'true', ensures private endpoints are deployed for connectivity even when `AZURE_PUBLIC_NETWORK_ACCESS` is 'Disabled'.
     1. Note that private endpoints do not make the chat app accessible from the internet. Connections must be initiated from inside the virtual network.
+
 1. `AZURE_USE_VPN_GATEWAY`: Controls deployment of a VPN gateway for the virtual network. If you do not use this and public access is disabled, you will need a different way to connect to the virtual network.
 
 ## Compatibility with other features

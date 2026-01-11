@@ -1,7 +1,7 @@
 # 📋 Court Guides Processing Pipeline — Documentation Index
 
-**Folder Name:** `court_guides_processing_pipeline/`  
-**Status:** ✅ Organized (January 4, 2026)  
+**Folder Name:** `court_guides_processing_pipeline/`
+**Status:** ✅ Organized (January 4, 2026)
 **Ready For:** Stakeholder review and Phase 1 implementation
 
 ***
@@ -9,25 +9,29 @@
 ## 📖 Start Here Based on Your Role
 
 ### 👔 Project Manager / Decision Maker
-**Start with:** `QUICK_REFERENCE.md`  
-→ 5-minute summary of what, why, and next steps  
+
+**Start with:** `QUICK_REFERENCE.md`
+→ 5-minute summary of what, why, and next steps
 → Then: `docs/IMPLEMENTATION_PLAN.md` (Executive Summary section)
 
 ### 👨‍💻 Engineer (Implementing Phase 1-3)
-**Start with:** `docs/IMPLEMENTATION_PLAN.md`  
-→ Phase 1: Script Recovery (what's missing, how to recover)  
-→ Phase 2-3: Pipeline consolidation approach  
+
+**Start with:** `docs/IMPLEMENTATION_PLAN.md`
+→ Phase 1: Script Recovery (what's missing, how to recover)
+→ Phase 2-3: Pipeline consolidation approach
 → Reference: `docs/SCRIPTS_USED.md` for individual script details
 
 ### 🚀 DevOps / SRE (Implementing Phase 4-5)
-**Start with:** `docs/IMPLEMENTATION_PLAN.md`  
-→ Phase 4: Change Monitoring (automated detection)  
-→ Phase 5: CI/CD Integration (testing & automation)  
+
+**Start with:** `docs/IMPLEMENTATION_PLAN.md`
+→ Phase 4: Change Monitoring (automated detection)
+→ Phase 5: CI/CD Integration (testing & automation)
 → Reference: `COMPLETION_SUMMARY.md` for current status
 
 ### 🔍 QA / Validator
-**Start with:** `docs/CHECKLIST.md`  
-→ Step-by-step validation process  
+
+**Start with:** `docs/CHECKLIST.md`
+→ Step-by-step validation process
 → Then: `README_OVERVIEW.md` (Testing & Quality section)
 
 ***
@@ -58,34 +62,38 @@
 ## 🎯 How to Use This Documentation
 
 ### Scenario 1: "I Need to Understand the Current State"
+
 1. Read: `README_OVERVIEW.md` (10 mins)
-2. Skim: `docs/README.md` (5 mins)
-3. Understand: `docs/mapping.json` (structure)
-4. Check: `COMPLETION_SUMMARY.md` (what changed recently)
+1. Skim: `docs/README.md` (5 mins)
+1. Understand: `docs/mapping.json` (structure)
+1. Check: `COMPLETION_SUMMARY.md` (what changed recently)
 
 ### Scenario 2: "I Need to Implement the Plan"
+
 1. Read: `docs/IMPLEMENTATION_PLAN.md` → Full Strategic Plan (20 mins)
-2. Focus on: Your assigned phase (Phases 1-6)
-3. Reference: `docs/SCRIPTS_USED.md` for technical details
-4. Validate: `docs/CHECKLIST.md` for quality gates
+1. Focus on: Your assigned phase (Phases 1-6)
+1. Reference: `docs/SCRIPTS_USED.md` for technical details
+1. Validate: `docs/CHECKLIST.md` for quality gates
 
 ### Scenario 3: "Court Guides Need to Be Updated"
+
 1. Check: `docs/CHECKLIST.md` (validation steps)
-2. Run: Scripts in `validation/` folder (after Phase 1)
-3. Reference: `docs/SCRIPTS_USED.md` (troubleshooting)
-4. Upload: Updated outputs to Azure Search
+1. Run: Scripts in `validation/` folder (after Phase 1)
+1. Reference: `docs/SCRIPTS_USED.md` (troubleshooting)
+1. Upload: Updated outputs to Azure Search
 
 ### Scenario 4: "Something Broke - Help!"
+
 1. Check: `docs/SCRIPTS_USED.md` → "If a script fails" section
-2. Review: `validation/` folder for error logs (after Phase 1)
-3. Consult: `docs/IMPLEMENTATION_PLAN.md` → Risk Assessment section
-4. Escalate: Contact folder owner
+1. Review: `validation/` folder for error logs (after Phase 1)
+1. Consult: `docs/IMPLEMENTATION_PLAN.md` → Risk Assessment section
+1. Escalate: Contact folder owner
 
 ***
 
 ## 🗂️ Folder Structure Overview
 
-```
+```text
 court_guides_processing_pipeline/
 │
 ├── 📖 ROOT DOCUMENTATION (Quick Access)
@@ -127,17 +135,20 @@ court_guides_processing_pipeline/
 ## ⏭️ Next Steps
 
 ### This Week
+
 1. **You (Decision Maker):** Review `QUICK_REFERENCE.md` (5 mins)
-2. **Team Lead:** Review `docs/IMPLEMENTATION_PLAN.md` (20 mins)
-3. **Meeting:** Discuss 5-6 key decisions (see IMPLEMENTATION_PLAN.md "Questions for Stakeholders")
+1. **Team Lead:** Review `docs/IMPLEMENTATION_PLAN.md` (20 mins)
+1. **Meeting:** Discuss 5-6 key decisions (see IMPLEMENTATION_PLAN.md "Questions for Stakeholders")
 
 ### Next Week
+
 1. **Assign owners** for each phase
-2. **Choose parser strategy** (Phase 2)
-3. **Approve budget** (if using Azure DI)
-4. **Schedule Phase 1 kickoff**
+1. **Choose parser strategy** (Phase 2)
+1. **Approve budget** (if using Azure DI)
+1. **Schedule Phase 1 kickoff**
 
 ### Implementation (Timeline)
+
 - See `docs/IMPLEMENTATION_PLAN.md` → Implementation Timeline section
 - Expected: 7-10 weeks total (depending on parallelization)
 

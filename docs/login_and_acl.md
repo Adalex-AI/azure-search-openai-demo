@@ -3,15 +3,19 @@
 name: RAG chat with document security
 description: This guide demonstrates how to add an optional login and document level access control system to a RAG chat app for your domain data. This system can be used to restrict access to indexed data to specific users.
 languages:
+
 - python
 - typescript
 - bicep
 - azdeveloper
+
 products:
+
 - azure-openai
 - azure-cognitive-search
 - azure-app-service
 - azure
+
 page_type: sample
 urlFragment: azure-search-openai-demo-document-security
 ***
@@ -29,15 +33,19 @@ The [azure-search-openai-demo](/) project can set up a full RAG chat app on Azur
 - [Setting up Microsoft Entra applications](#setting-up-microsoft-entra-applications)
   - [Automatic Setup](#automatic-setup)
   - [Manual Setup](#manual-setup)
+
     - [Server App](#server-app)
     - [Client App](#client-app)
     - [Configure Server App Known Client Applications](#configure-server-app-known-client-applications)
     - [Testing](#testing)
     - [Programmatic Access With Authentication](#programmatic-access-with-authentication)
+
   - [Troubleshooting](#troubleshooting)
 - [Adding data with document level access control](#adding-data-with-document-level-access-control)
   - [Using the Add Documents API](#using-the-add-documents-api)
+
     - [Enabling global access on documents without access control](#enabling-global-access-on-documents-without-access-control)
+
   - [Azure Data Lake Storage Gen2 and prepdocs](#azure-data-lake-storage-gen2-setup)
 - [Migrate to built-in document access control](#migrate-to-built-in-document-access-control)
 - [Environment variables reference](#environment-variables-reference)
@@ -62,6 +70,7 @@ Two Microsoft Entra applications must be registered in order to make the optiona
 The easiest way to setup the two apps is to use the `azd` CLI. We've written scripts that will automatically create the two apps and configure them for use with the sample. To trigger the automatic setup, run the following commands:
 
 1. **Enable authentication for the app**
+
   Run the following command to show the login UI and use Entra authentication by default:
 
     ```shell
@@ -69,6 +78,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     ```
 
 1. (Optional) **Enforce access control**
+
   To ensure that the app restricts search results to only documents that the user has access to, run the following command:
 
     ```shell
@@ -76,6 +86,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     ```
 
 1. (Optional) **Allow global document access**
+
   To allow upload of documents that have global access when there are no document-specific access controls assigned, run the following command:
 
     ```shell
@@ -83,6 +94,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     ```
 
 1. (Optional) **Allow unauthenticated access**
+
   To allow unauthenticated users to use the app, run the following command:
 
     ```shell
@@ -92,6 +104,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     Note: These users will not be able to search on documents that have access control assigned, so `AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS` should also be set to true to give them access to the remaining documents.
 
 1. **Set the authentication tenant ID**
+
   Specify the tenant ID associated with authentication by running:
 
     ```shell
@@ -99,6 +112,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     ```
 
 1. **Login to the authentication tenant (if needed)**
+
   If your auth tenant ID is different from your currently logged in tenant ID, run:
 
     ```shell
@@ -116,6 +130,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
     If your index does not exist yet, access control will be automatically enabled when the index is created during deployment.
 
 1. **Deploy the app**
+
   Finally, run the following command to provision and deploy the app:
 
     ```shell
@@ -159,9 +174,12 @@ The following instructions explain how to setup the two apps using the Azure Por
   - Select **Add permissions**.
 - Select **Expose an API** in the left hand menu. The server app works by using the [On Behalf Of Flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow#protocol-diagram), which requires the server app to expose at least 1 API.
   - The application must define a URI to expose APIs. Select **Add** next to **Application ID URI**.
+
     - By default, the Application ID URI is set to `api://<application client id>`. Accept the default by selecting **Save**.
+
   - Under **Scopes defined by this API**, select **Add a scope**.
   - Fill in the values as indicated:
+
     - For **Scope name**, use **access_as_user**.
     - For **Who can consent?**, select **Admins and users**.
     - For **Admin consent display name**, type **Access Azure Search OpenAI Chat API**.
@@ -180,9 +198,11 @@ The following instructions explain how to setup the two apps using the Azure Por
   - In the **Name** section, enter a meaningful application name. This name will be displayed to users of the app, for example `Azure Search OpenAI Chat Web App`.
   - Under **Supported account types**, select **Accounts in this organizational directory only**.
   - Under `Redirect URI (optional)` section, select `Single-page application (SPA)` in the combo-box and enter the following redirect URI:
+
     - If you are running the sample locally, add the endpoints `http://localhost:50505/redirect` and `http://localhost:5173/redirect`
     - If you are running the sample on Azure, add the endpoints provided by `azd up`: `https://<your-endpoint>.azurewebsites.net/redirect`.
     - If you are running the sample from Github Codespaces, add the Codespaces endpoint: `https://<your-codespace>-50505.app.github.dev/redirect`
+
 - Select **Register** to create the application
 - In the app's registration screen, find the **Application (client) ID**.
   - Run the following `azd` command to save this ID: `azd env set AZURE_CLIENT_APP_ID <Application (client) ID>`.
@@ -344,8 +364,8 @@ Previous versions of the sample used [security filters](https://learn.microsoft.
 To support [built-in access control](https://learn.microsoft.com/azure/search/search-query-access-control-rbac-enforcement), deployment takes the following steps:
 
 1. Adds the `user_impersonation` permission for Azure AI Search to the server app
-2. Enables [permission filtering](https://learn.microsoft.com/azure/search/search-index-access-control-lists-and-rbac-push-api#create-an-index-with-permission-filter-fields) on the existing index.
-3. Sets the [x-ms-query-source-authorization](https://learn.microsoft.com/azure/search/search-query-access-control-rbac-enforcement#how-query-time-enforcement-works) header on every query when `AZURE_ENFORCE_ACCESS_CONTROL` is enabled.
+1. Enables [permission filtering](https://learn.microsoft.com/azure/search/search-index-access-control-lists-and-rbac-push-api#create-an-index-with-permission-filter-fields) on the existing index.
+1. Sets the [x-ms-query-source-authorization](https://learn.microsoft.com/azure/search/search-query-access-control-rbac-enforcement#how-query-time-enforcement-works) header on every query when `AZURE_ENFORCE_ACCESS_CONTROL` is enabled.
 
 When `AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS` was enabled, previous versions of the sample interpreted no access control on a document as meaning that the document was globally available. Built-in document access control requires [`["all"]`](https://learn.microsoft.com/azure/search/search-index-access-control-lists-and-rbac-push-api#special-acl-values-all-and-none) to be set for each globally available document. You can run a [one-time migration](#enabling-global-access-on-documents-without-access-control) on your existing index to enable global access for these documents.
 

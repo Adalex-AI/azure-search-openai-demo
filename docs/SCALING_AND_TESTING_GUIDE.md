@@ -85,6 +85,7 @@ Your current setup uses **gpt-5-nano with 1.5M TPM** - sufficient for enterprise
 #### Deployment Update (Completed)
 
 You have successfully upgraded capacity:
+
 *   **Deployment**: `gpt-5-nano`
 *   **SKU**: GlobalStandard (Scaled)
 *   **Rate Limit**: 1,500,000 TPM
@@ -110,8 +111,8 @@ az cognitiveservices account deployment update \
 Different Azure regions have different quotas. If you're hitting limits:
 
 1. Go to [Azure OpenAI Studio](https://oai.azure.com/) → **Quotas**
-2. Check available TPM for your model in eastus2
-3. Your GlobalStandard SKU has regional flexibility
+1. Check available TPM for your model in eastus2
+1. Your GlobalStandard SKU has regional flexibility
 
 #### Multi-Region Load Balancing (For High Traffic)
 
@@ -219,7 +220,6 @@ import time
 
 from locust import HttpUser, between, task
 
-
 class LegalChatUser(HttpUser):
     wait_time = between(5, 20)
 
@@ -227,7 +227,7 @@ class LegalChatUser(HttpUser):
     def ask_legal_question(self):
         self.client.get("/", name="home")
         time.sleep(self.wait_time())
-        
+
         # Legal domain questions for Civil Procedure Copilot
         first_question = random.choice([
             "What are the time limits for filing a defence under CPR Part 15?",
@@ -255,13 +255,13 @@ class LegalChatUser(HttpUser):
                 },
             },
         )
-        
+
         if response.status_code == 200:
             time.sleep(self.wait_time())
             # Follow up question
             follow_up = random.choice(response.json().get("context", {}).get("followup_questions", ["Tell me more"]))
             result_message = response.json().get("message", {}).get("content", "")
-            
+
             self.client.post(
                 "/chat",
                 name="follow up",
@@ -389,20 +389,25 @@ Use the following table to plan your infrastructure based on the number of **con
 ### Steps to Scale
 
 #### 1. Calculate Your Load (TPM)
+
 *   **Formula**: `Users * (Tokens per Query) = Required TPM`.
 *   *Example*: 100 users * 1,000 tokens/query = **100k TPM** required.
 *   *Action*: Increase `chatGptDeploymentCapacity` in parameters.
 
 #### 2. Scale Azure AI Search (QPS)
+
 *   **Rule**: 1 Standard Replica handles ~10-15 Queries Per Second (QPS) with Semantic Ranker enabled.
 *   *Action*: For >50 concurrent users, run:
+
     ```bash
     az search service update --replica-count 2 --resource-group rg-cpr-rag --name cpr-rag
     ```
 
 #### 3. Scale App Hosting (Concurrency)
+
 *   **Rule**: A single Python container (Uvicorn) handles ~4-10 concurrent requests efficiently.
 *   *Action*: Set `Minimum Instances` to `Users / 10`.
+
     ```bash
     # Switch to Dedicated Profile D4 for stable performance
     azd env set AZURE_CONTAINER_APPS_WORKLOAD_PROFILE D4
@@ -418,6 +423,7 @@ Use the following table to plan your infrastructure based on the number of **con
 These estimates capture the difference between a low-cost testing environment and a high-performance production setup.
 
 #### 1. Azure AI Search (Primary Cost Driver)
+
 | Feature | Current (Basic) | Recommended (Standard) | Difference |
 | :--- | :--- | :--- | :--- |
 | **Base Service** | ~$75 / month | ~$250 / month | +$175 |
@@ -426,6 +432,7 @@ These estimates capture the difference between a low-cost testing environment an
 | **Total Search Cost** | **~$75 / mo** | **~$750 - $1,000 / mo** | **~$675+** |
 
 #### 2. App Service / Container Apps
+
 | Plan | Current (B1 / Consumption) | Recommended (P1v3 / Dedicated) | Difference |
 | :--- | :--- | :--- | :--- |
 | **Compute** | ~$13 / month | ~$85 / month | +$72 |
@@ -450,16 +457,16 @@ az consumption usage list --start-date 2026-01-01 --end-date 2026-01-31 \
 ### Set Budget Alerts
 
 1. Go to Azure Portal → **Cost Management + Billing**
-2. Click **Budgets** → **Add**
-3. Set daily/weekly budget based on testing phase
-4. Configure alert emails at 50%, 80%, 100% thresholds
+1. Click **Budgets** → **Add**
+1. Set daily/weekly budget based on testing phase
+1. Configure alert emails at 50%, 80%, 100% thresholds
 
 ### Cost-Saving Tips During Testing
 
 1. **Scale down after hours**: Reduce capacity when not actively testing
-2. **Use Consumption plan**: Scale to zero when idle
-3. **Test locally first**: Use `./start.sh` for initial testing
-4. **Batch your tests**: Run all load tests in dedicated windows
+1. **Use Consumption plan**: Scale to zero when idle
+1. **Test locally first**: Use `./start.sh` for initial testing
+1. **Batch your tests**: Run all load tests in dedicated windows
 
 ```bash
 # Scale down after testing (evening)
@@ -483,6 +490,7 @@ azd provision
 **Your situation**: With 30K TPM on gpt-5-nano, you may hit limits with 10+ concurrent users.
 
 **Solutions**:
+
 ```bash
 # Switch to gpt-5-mini which has 1.5M TPM (50x more capacity!)
 azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-mini
@@ -502,6 +510,7 @@ az cognitiveservices account deployment update \
 **Symptoms**: Slow search results, timeouts on complex queries
 
 **Solutions**:
+
 ```bash
 # Add replicas for query throughput (no reindexing needed!)
 az search service update --name cpr-rag --resource-group rg-cpr-rag --replica-count 2
@@ -516,6 +525,7 @@ az search service show --name cpr-rag --resource-group rg-cpr-rag \
 **Symptoms**: First request after idle takes 10+ seconds
 
 **Solutions**:
+
 ```bash
 # Use dedicated workload profile (no cold starts)
 azd env set AZURE_CONTAINER_APPS_WORKLOAD_PROFILE D4
@@ -531,6 +541,7 @@ azd provision
 **Symptoms**: OOM errors, slow responses, container restarts
 
 **Solutions**:
+
 ```bash
 # Increase memory
 # Edit infra/main.bicep:
@@ -543,6 +554,7 @@ containerCpuCoreCount: '2.0'  # Increase from 1.0
 **Symptoms**: Users can't log in, consent errors
 
 **Solutions**:
+
 - Grant admin consent for the application (see [SHARING_WITH_USERS.md](SHARING_WITH_USERS.md))
 - Check user is invited to the tenant
 - Verify API permissions are configured
@@ -552,24 +564,28 @@ containerCpuCoreCount: '2.0'  # Increase from 1.0
 ## Testing Workflow Checklist
 
 ### Week Before Testing
+
 - [ ] Notify testers with application URL and login instructions
 - [ ] Run smoke test with 5 users
 - [ ] Verify Application Insights is collecting data
 - [ ] Document baseline metrics
 
 ### Day Before Testing
+
 - [ ] Scale up resources to expected capacity
 - [ ] Run load test matching expected user count
 - [ ] Clear any cached errors
 - [ ] Send reminder to testers
 
 ### During Testing
+
 - [ ] Monitor Application Insights dashboard
 - [ ] Watch for 429 errors
 - [ ] Track response times
 - [ ] Collect user feedback
 
 ### After Testing
+
 - [ ] Export metrics and logs
 - [ ] Document any issues encountered
 - [ ] Scale down resources to save costs

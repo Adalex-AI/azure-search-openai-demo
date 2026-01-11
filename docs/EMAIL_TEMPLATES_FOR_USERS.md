@@ -1,7 +1,7 @@
 # Email Templates: Inviting Users to Civil Procedure Copilot
 
-> **Application Name:** Civil Procedure Copilot  
-> **Purpose:** AI-powered legal research assistant for CPR, Practice Directions, and Court Guides  
+> **Application Name:** Civil Procedure Copilot
+> **Purpose:** AI-powered legal research assistant for CPR, Practice Directions, and Court Guides
 > **URL:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
 ***
@@ -62,6 +62,7 @@ I'm pleased to invite you to use **Civil Procedure Copilot** – our AI-powered 
 ### 📚 What Documents Can I Search?
 
 The system contains the following curated legal materials:
+
 - **Civil Procedure Rules (Parts 1-89)** and all Practice Directions
 - **Commercial Court Guide** (11th Edition, July 2023)
 - **King's Bench Division Guide** (2025 Edition)
@@ -74,11 +75,11 @@ The system contains the following curated legal materials:
 
 1. **Visit:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
-2. **Click "Login"** in the top-right corner
+1. **Click "Login"** in the top-right corner
 
-3. **Sign in** with your Microsoft work account
+1. **Sign in** with your Microsoft work account
 
-4. **Approve permissions** when prompted (first time only)
+1. **Approve permissions** when prompted (first time only)
 
 ### 🔄 How It Works
 
@@ -94,6 +95,7 @@ The system contains the following curated legal materials:
 
 **🏷️ Category Filter**
 Use the dropdown next to the input box to narrow your search:
+
 - CPR Rules only
 - Practice Directions only
 - Specific Court Guides (Commercial, Chancery, etc.)
@@ -101,6 +103,7 @@ Use the dropdown next to the input box to narrow your search:
 
 **🔍 Search Depth**
 Choose how thorough the AI should search:
+
 - **Quick:** Fast single search – best for simple lookups like "What is CPR Part 31?"
 - **Standard:** Balanced depth – recommended for most questions
 - **Thorough:** Comprehensive multi-source search – best for complex analysis
@@ -131,6 +134,7 @@ Rate responses to help improve accuracy. You can optionally share your query for
 ### 🛡️ Privacy & Security
 
 Your data is protected:
+
 - ✅ **NOT used for AI training** – Your queries never train AI models
 - ✅ **NOT shared** – Your queries are isolated; others cannot see them
 - ✅ **NOT sent to OpenAI** – Uses Azure OpenAI (separate enterprise service)
@@ -140,6 +144,7 @@ Your data is protected:
 ### ❓ Getting Help
 
 Click the **blue question mark button (?)** in the bottom-right corner of the application for:
+
 - Detailed usage instructions
 - Feature explanations
 - Tips for effective queries
@@ -149,8 +154,8 @@ If you encounter any issues, please contact me directly.
 
 Best regards,
 
-[Your Name]  
-[Your Title]  
+[Your Name]
+[Your Title]
 [Your Contact Information]
 
 ***
@@ -170,9 +175,9 @@ You've been invited to access **Civil Procedure Copilot**, our AI-powered resear
 You should have received a separate email from Microsoft with the subject: **"You're invited to access applications in Default Directory"**
 
 1. **Check your inbox** (and spam/junk folder) for this Microsoft invitation
-2. **Click "Accept invitation"** in that email
-3. **Sign in** with your Microsoft account (work, school, or personal)
-4. **Complete the consent process**
+1. **Click "Accept invitation"** in that email
+1. **Sign in** with your Microsoft account (work, school, or personal)
+1. **Complete the consent process**
 
 If you haven't received the invitation, please let me know and I'll resend it.
 
@@ -182,13 +187,14 @@ Once you've accepted the invitation:
 
 1. **Visit:** https://capps-backend-ot6tupm5qi5wy.delightfulground-1a2f1220.eastus2.azurecontainerapps.io
 
-2. **Click "Login"** and sign in with the account you used to accept the invitation
+1. **Click "Login"** and sign in with the account you used to accept the invitation
 
-3. **Approve permissions** when prompted (first-time only)
+1. **Approve permissions** when prompted (first-time only)
 
 ### 📚 What You Can Search
 
 The Civil Procedure Copilot gives you access to:
+
 - **Civil Procedure Rules (Parts 1-89)** and all Practice Directions
 - **Commercial Court Guide** (11th Edition, July 2023)
 - **King's Bench Division Guide** (2025 Edition)
@@ -200,9 +206,9 @@ The Civil Procedure Copilot gives you access to:
 ### 🔄 How to Use It
 
 1. **Type a question** in plain English (e.g., "What are the time limits for filing a defence?")
-2. **Review the AI answer** which includes numbered citations [1], [2], [3]
-3. **Click citations** to view the exact source text from CPR documents
-4. **Ask follow-up questions** – the chat remembers your conversation context
+1. **Review the AI answer** which includes numbered citations [1], [2], [3]
+1. **Click citations** to view the exact source text from CPR documents
+1. **Ask follow-up questions** – the chat remembers your conversation context
 
 ### ⚙️ Key Features
 
@@ -239,10 +245,10 @@ If you have any trouble accessing the system, please contact me directly.
 
 Kind regards,
 
-[Your Name]  
-[Your Title]  
-[Your Organization]  
-[Your Email]  
+[Your Name]
+[Your Title]
+[Your Organization]
+[Your Email]
 [Your Phone]
 
 ***
@@ -262,8 +268,8 @@ We've launched **Civil Procedure Copilot**, an AI-powered assistant for research
 ### 🚀 Quick Start
 
 1. **Login** with your work Microsoft account
-2. **Type a question** in plain English
-3. **Click citations [1][2][3]** to verify source documents
+1. **Type a question** in plain English
+1. **Click citations [1][2][3]** to verify source documents
 
 ### 📚 What's Searchable?
 

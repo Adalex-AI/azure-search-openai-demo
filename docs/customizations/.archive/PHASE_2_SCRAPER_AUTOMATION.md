@@ -6,7 +6,7 @@ This document describes the Phase 2 implementation of the Legal RAG system, whic
 
 Phase 2 consists of a **GitHub Actions workflow** that runs on a schedule (weekly) or on-demand to keep the Azure Search index up-to-date with the latest legal documents.
 
-```
+```text
 GitHub Actions Workflow
 ├── Step 1: Scrape Civil Procedure Rules
 │   └── scrape_cpr.py (using Selenium to fetch from justice.gov.uk)
@@ -26,6 +26,7 @@ GitHub Actions Workflow
 - **Language**: Python with Selenium
 - **Output**: JSON files saved to `data/legal-scraper/processed/Upload/`
 - **Document Format**:
+
   ```json
   {
     "id": "Insolvency Proceedings_chunk_001",
@@ -66,8 +67,8 @@ GitHub Actions Workflow
 - **Schedule**: Runs weekly on Sunday at midnight UTC
 - **Manual Trigger**: Can be manually triggered via Actions tab with `dry_run` flag
 - **Jobs**:
-  1. **scrape-and-validate**: Scrapes documents and validates them
-  2. **upload-production**: Uploads validated documents to Azure Search (only if `dry_run=false`)
+1. **scrape-and-validate**: Scrapes documents and validates them
+1. **upload-production**: Uploads validated documents to Azure Search (only if `dry_run=false`)
 - **Artifacts**: Uploads scraped data and validation reports for debugging
 
 ## Secrets & Configuration
@@ -93,6 +94,7 @@ gh workflow run legal-scraper.yml --repo adalex-ai/azure-search-openai-demo -f d
 ```
 
 This will:
+
 - Scrape documents
 - Validate them
 - Generate embeddings
@@ -114,6 +116,7 @@ cd scripts/legal-scraper
 ```
 
 Options:
+
 - `--scrape`: Run scraper only
 - `--validate`: Run validation only
 - `--upload`: Run upload only
@@ -130,10 +133,12 @@ Options:
 **Problem**: Azure OpenAI returns "Too Many Requests"
 
 **Solution**:
+
 - The code automatically retries with exponential backoff
 - Batch size is reduced to 3 documents
 - 10-second delay between batches
 - If still failing, increase delay in `upload_with_embeddings.py`:
+
   ```python
   time.sleep(15)  # Increase from 10
   ```
@@ -143,11 +148,13 @@ Options:
 **Problem**: Documents fail validation
 
 **Check**:
+
 - Ensure documents have legal terminology (check `legal_terms` in `config.py`)
 - Verify content length is ≥500 characters
 - Check UTF-8 encoding of scraped content
 
 **Solution**:
+
 - Review validation reports in `data/legal-scraper/validation-reports/`
 - Adjust `MIN_LEGAL_TERMS` or `MIN_CONTENT_LENGTH` in `config.py`
 - Fix scraper if returning malformed documents
@@ -157,10 +164,12 @@ Options:
 **Problem**: Scraper returns 0 documents
 
 **Check**:
+
 - Is justice.gov.uk website structure still the same?
 - Are Selenium WebDriver selectors still valid?
 
 **Solution**:
+
 - Run scraper locally to debug
 - Update CSS selectors in `scrape_cpr.py` if website changed
 - Check browser console for JavaScript errors
@@ -168,11 +177,13 @@ Options:
 ### Monitoring
 
 Check workflow status at:
-```
+
+```text
 https://github.com/adalex-ai/azure-search-openai-demo/actions
 ```
 
 Each run produces:
+
 - **Artifacts**: Scraped JSON files and validation reports (retained 7 days)
 - **Logs**: Full execution logs visible in Actions UI
 - **Status**: Pass/Fail with error messages

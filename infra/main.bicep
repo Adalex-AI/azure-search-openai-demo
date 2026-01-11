@@ -372,8 +372,8 @@ param ragSendImageSources bool = true
 param useWebSource bool = false
 @description('Whether to enable SharePoint sources for agentic retrieval')
 param useSharePointSource bool = false
-@description('Whether to enable agentic retrieval features')
-param useAgenticRetrieval bool = true
+@description('Whether to enable agentic retrieval features (UI + request overrides). Defaults to false to avoid enabling without a configured knowledge base.')
+param useAgenticRetrieval bool = false
 
 param acaIdentityName string = deploymentTarget == 'containerapps' ? '${environmentName}-aca-identity' : ''
 param acaManagedEnvironmentName string = deploymentTarget == 'containerapps' ? '${environmentName}-aca-env' : ''

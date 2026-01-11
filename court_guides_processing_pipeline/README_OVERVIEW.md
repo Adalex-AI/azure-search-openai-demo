@@ -1,6 +1,6 @@
 # Court Guides Processing Pipeline — Overview
 
-**Folder Status:** Organized and documented (Planning phase)  
+**Folder Status:** Organized and documented (Planning phase)
 **Last Updated:** January 4, 2026
 
 ***
@@ -23,7 +23,7 @@ This folder contains the **complete documentation, source files, and outputs** f
 
 ## Folder Structure
 
-```
+```text
 court_guides_processing_pipeline/
 │
 ├── docs/                          [📚 Documentation]
@@ -58,7 +58,7 @@ court_guides_processing_pipeline/
 
 ## The Pipeline at a Glance
 
-```
+```text
 PDF (sources/)
     ↓
 [Docling Extraction] - Extract structured content with OCR
@@ -96,20 +96,20 @@ Azure AI Search Index (legal-court-rag-index)
    - Complete roadmap for automation
    - 6 phases with timelines and dependencies
    - Risk assessment and metrics
-   
-2. **[README.md](docs/README.md)**
+
+1. **[README.md](docs/README.md)**
    - Original process documentation
    - What worked well ✅ and known issues ⚠️
-   
-3. **[SCRIPTS_USED.md](docs/SCRIPTS_USED.md)**
+
+1. **[SCRIPTS_USED.md](docs/SCRIPTS_USED.md)**
    - Reference for each pipeline script
    - Troubleshooting guidance
-   
-4. **[CHECKLIST.md](docs/CHECKLIST.md)**
+
+1. **[CHECKLIST.md](docs/CHECKLIST.md)**
    - Step-by-step validation checklist
    - Run after any updates
-   
-5. **[mapping.json](docs/mapping.json)**
+
+1. **[mapping.json](docs/mapping.json)**
    - Field mappings: PDF → Processed JSON → Azure Search schema
 
 ***
@@ -117,6 +117,7 @@ Azure AI Search Index (legal-court-rag-index)
 ## Current Status: Not Yet Automated ⚠️
 
 ### What Works ✅
+
 - Docling extraction pipeline (proven, produces good results)
 - JSON processing and transformation
 - Azure OpenAI embedding generation
@@ -124,6 +125,7 @@ Azure AI Search Index (legal-court-rag-index)
 - 5 court guides fully processed and indexed
 
 ### What's Missing ⚠️
+
 - **No version control for scripts** — extraction/processing scripts exist but not in repo
 - **No automated change detection** — manual check needed for guide updates
 - **No scheduled pipeline** — currently manual, one-off process
@@ -134,25 +136,29 @@ Azure AI Search Index (legal-court-rag-index)
 ## When You Need to Use This
 
 ### Scenario 1: Court Guide Updated
+
 1. Check the [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) Phase 4 for monitoring approach
-2. Follow [CHECKLIST.md](docs/CHECKLIST.md) to validate changes
-3. Re-run pipeline (instructions pending Phase 3 completion)
+1. Follow [CHECKLIST.md](docs/CHECKLIST.md) to validate changes
+1. Re-run pipeline (instructions pending Phase 3 completion)
 
 ### Scenario 2: New Court Guide Added
+
 1. Add PDF to `sources/`
-2. Update [docs/mapping.json](docs/mapping.json) with guide metadata
-3. Re-run unified pipeline (pending development)
+1. Update [docs/mapping.json](docs/mapping.json) with guide metadata
+1. Re-run unified pipeline (pending development)
 
 ### Scenario 3: Troubleshooting Failed Update
+
 1. Check [docs/SCRIPTS_USED.md](docs/SCRIPTS_USED.md) for debugging steps
-2. Review logs in `validation/` directory
-3. Contact maintainer (see IMPLEMENTATION_PLAN.md for escalation)
+1. Review logs in `validation/` directory
+1. Contact maintainer (see IMPLEMENTATION_PLAN.md for escalation)
 
 ***
 
 ## Integration with Main Application
 
 The processed outputs feed directly into:
+
 - **Backend:** `app/backend/approaches/` uses court guide content in RAG prompts
 - **Frontend:** Users see court guide citations in answer sources
 - **Search Index:** `legal-court-rag-index` in Azure AI Search
@@ -173,28 +179,32 @@ The processed outputs feed directly into:
 ## Maintenance Philosophy
 
 **Low-touch by design:**
+
 - Court guides update ~1 time per year
 - Docling extraction is proven and stable
 - Once automated (Phase 3-5), can be fully hands-off
 - Monitoring (Phase 4) detects changes automatically
 
 **When changes happen:**
+
 1. Automated detection alerts maintainer
-2. Manual review of diff to approve
-3. Re-run pipeline (1-2 hours)
-4. Validate output in staging index
-5. Promote to production
+1. Manual review of diff to approve
+1. Re-run pipeline (1-2 hours)
+1. Validate output in staging index
+1. Promote to production
 
 ***
 
 ## Next Steps
 
 ### For Immediate Action (This Week)
-✅ **Done:** Organized folder structure  
-✅ **Done:** Documented implementation plan  
+
+✅ **Done:** Organized folder structure
+✅ **Done:** Documented implementation plan
 ⏭️ **Next:** Review [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) with stakeholders
 
 ### For Implementation (Pending Decision)
+
 See [IMPLEMENTATION_PLAN.md - Implementation Timeline](docs/IMPLEMENTATION_PLAN.md#implementation-timeline)
 
 ***
@@ -220,6 +230,6 @@ See [IMPLEMENTATION_PLAN.md - Implementation Timeline](docs/IMPLEMENTATION_PLAN.
 
 ***
 
-**Folder Owner:** [To be assigned]  
-**Last Reviewed:** January 4, 2026  
+**Folder Owner:** [To be assigned]
+**Last Reviewed:** January 4, 2026
 **Next Review:** When Phase 1 of implementation plan begins

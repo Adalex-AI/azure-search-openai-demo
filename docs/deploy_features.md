@@ -172,7 +172,7 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
     azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-3-large
     ```
 
-2. Specify the desired dimensions of the model: (from 256-3072, model dependent)
+1. Specify the desired dimensions of the model: (from 256-3072, model dependent)
 
     Default dimensions for text-embedding-ada-002
 
@@ -192,7 +192,7 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
     azd env set AZURE_OPENAI_EMB_DIMENSIONS 3072
     ```
 
-3. Set the model version, depending on the model you are using:
+1. Set the model version, depending on the model you are using:
 
     For text-embedding-ada-002:
 
@@ -206,7 +206,7 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_VERSION 1
     ```
 
-4. To set the embedding model deployment SKU name, run this command with [the desired SKU name](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/deployment-types).
+1. To set the embedding model deployment SKU name, run this command with [the desired SKU name](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/deployment-types).
 
     For GlobalStandard:
 
@@ -220,7 +220,7 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_SKU Standard
     ```
 
-5. When prompted during `azd up`, make sure to select a region for the OpenAI resource group location that supports the desired embedding model and deployment SKU. There are [limited regions available](https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=global-standard%2Cstandard-chat-completions#models-by-deployment-type).
+1. When prompted during `azd up`, make sure to select a region for the OpenAI resource group location that supports the desired embedding model and deployment SKU. There are [limited regions available](https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=global-standard%2Cstandard-chat-completions#models-by-deployment-type).
 
 If you have already deployed:
 
@@ -371,7 +371,7 @@ This is necessary to disambiguate user-uploaded documents from admin-uploaded do
 By default, the deployed Azure web app will only allow requests from the same origin.  To enable CORS for a frontend hosted on a different origin, run:
 
 1. Run `azd env set ALLOWED_ORIGIN https://<your-domain.com>`
-2. Run `azd up`
+1. Run `azd up`
 
 For the frontend code, change `BACKEND_URI` in `api.ts` to point at the deployed backend URL, so that all fetch requests will be sent to the deployed backend.
 

@@ -20,10 +20,11 @@ Deployed system for automating the scraping, validation, embedding, and indexing
 The legal RAG scraper is a **fully automated GitHub Actions workflow** that maintains a current index of UK legal documents (~768 CPR Parts 1-89 and Practice Directions) in Azure Search.
 
 **Pipeline Components:**
+
 1. **Scraping** (`scrape_cpr.py`) - Fetches from justice.gov.uk using Selenium
-2. **Validation** (`validation.py`) - Quality and legal terminology checks
-3. **Embedding** (`upload_with_embeddings.py`) - Vector generation via Azure OpenAI
-4. **Upload** - Batch update to Azure Search index
+1. **Validation** (`validation.py`) - Quality and legal terminology checks
+1. **Embedding** (`upload_with_embeddings.py`) - Vector generation via Azure OpenAI
+1. **Upload** - Batch update to Azure Search index
 
 **Located in:** `scripts/legal-scraper/`
 
@@ -48,7 +49,7 @@ The production system uses a **GitHub Actions workflow** for fully automated leg
 
 **How It Works:**
 
-```
+```text
 Weekly Schedule (Sundays, 00:00 UTC)
               ↓
     Job 1: Scrape & Validate
@@ -78,7 +79,8 @@ Weekly Schedule (Sundays, 00:00 UTC)
 | **Pipeline Duration** | ~3-4 hours total |
 
 **GitHub Secrets (Production Environment):**
-```
+
+```text
 AZURE_CLIENT_ID              (Service principal ID)
 AZURE_TENANT_ID              (Entra ID tenant)
 AZURE_SUBSCRIPTION_ID        (Azure subscription)
@@ -99,6 +101,7 @@ AZURE_OPENAI_EMB_DEPLOYMENT  (text-embedding-3-large)
 | **Total** | **~3-4 hours** | Full pipeline (if changes found) |
 
 **Upload Behavior:**
+
 - Only uploads if **changes detected** in scraped content
 - Compares new documents against existing index
 - Skips upload if documents are unchanged (no redundant operations)
@@ -120,12 +123,14 @@ AZURE_OPENAI_EMB_DEPLOYMENT  (text-embedding-3-large)
 ### Setup & Testing
 
 **1. Install dependencies:**
+
 ```bash
 cd /path/to/azure-search-openai-demo-2
 pip install -r requirements-dev.txt
 ```
 
 **2. Configure Azure credentials:**
+
 ```bash
 azd auth login
 azd env new dev-env
@@ -153,7 +158,8 @@ python upload_with_embeddings.py        # Upload only
 ```
 
 **4. Output location:**
-```
+
+```text
 data/legal-scraper/
 ├── processed/
 │   ├── Upload/           # Scraped JSON documents
@@ -164,6 +170,7 @@ data/legal-scraper/
 ### Manual Testing via GitHub Actions
 
 **Dry-run (no upload):**
+
 ```bash
 gh workflow run legal-scraper.yml \
   --repo adalex-ai/azure-search-openai-demo \
@@ -171,12 +178,14 @@ gh workflow run legal-scraper.yml \
 ```
 
 **Production run (with upload):**
+
 ```bash
 gh workflow run legal-scraper.yml \
   --repo adalex-ai/azure-search-openai-demo
 ```
 
 **View results:**
+
 ```bash
 # Monitor workflow
 gh run list --workflow legal-scraper.yml --repo adalex-ai/azure-search-openai-demo
@@ -192,6 +201,7 @@ gh run download <run-id> --name artifacts
 ### Health Checks
 
 **Check latest workflow run:**
+
 ```bash
 # View GitHub Actions status
 gh run list --workflow legal-scraper.yml \
@@ -199,6 +209,7 @@ gh run list --workflow legal-scraper.yml \
 ```
 
 **Check Azure Search index:**
+
 ```bash
 # Count current documents
 curl -X GET "https://<search-service>.search.windows.net/indexes/cpr-index/docs/\$count?api-version=2023-11-01" \
@@ -269,6 +280,7 @@ gh workflow run legal-scraper.yml --repo adalex-ai/azure-search-openai-demo
 **Cause**: Documents missing vector embeddings.
 
 **Solution**:
+
 - Check GitHub Actions workflow logs for embedding failures
 - Verify Azure OpenAI `text-embedding-3-large` deployment is accessible
 - Run validation step separately: `python validation.py --input Upload`
@@ -279,12 +291,14 @@ gh workflow run legal-scraper.yml --repo adalex-ai/azure-search-openai-demo
 **Error**: `"Azure OpenAI 429 Too Many Requests"`
 
 **Status**: ✅ **Already handled** in `upload_with_embeddings.py`:
+
 - Batch size: 3 documents
 - Delay: 10 seconds between batches
 - Exponential backoff: 4s → 8s → 16s → 32s → 60s (5 attempts)
 - Automatic retry with exponential jitter
 
 **If still occurring**: Increase batch delay in `scripts/legal-scraper/upload_with_embeddings.py`:
+
 ```python
 BATCH_DELAY = 15  # Increase from 10 seconds
 ```
@@ -294,9 +308,11 @@ BATCH_DELAY = 15  # Increase from 10 seconds
 **Cause**: Chrome/Chromium not installed on runner.
 
 **Solution** (already handled in GitHub Actions):
+
 - Ubuntu runner includes Chrome pre-installed
 - Scraper uses headless mode by default
 - For local testing on macOS:
+
   ```bash
   brew install chromium
   # Or download ChromeDriver manually
@@ -307,6 +323,7 @@ BATCH_DELAY = 15  # Increase from 10 seconds
 **Cause**: Index name mismatch or doesn't exist.
 
 **Solution**:
+
 ```bash
 # List existing indexes
 az search index list --resource-group <rg> --search-service-name <search-service>
@@ -320,6 +337,7 @@ az search index show --resource-group <rg> --search-service-name <search-service
 **Cause**: Website structure changed or CSS selectors outdated.
 
 **Debugging**:
+
 ```bash
 # Test locally with debug output
 cd scripts/legal-scraper
@@ -337,12 +355,14 @@ gh run view <run-id> --log
 **Cause**: Documents don't meet quality standards.
 
 **Check**:
+
 - Legal terminology count (minimum 3 required)
 - Content length (minimum 500 characters)
 - UTF-8 encoding issues
 - Required fields missing (id, content, sourcepage)
 
 **Solution**:
+
 - Review validation report in workflow artifacts
 - Adjust thresholds in `scripts/legal-scraper/config.py`
 - Check if justice.gov.uk content structure changed
@@ -354,23 +374,27 @@ gh run view <run-id> --log
 **This is normal** - Upload only happens if changes are detected in content compared to existing index.
 
 **What's happening**:
+
 - Scraper fetched documents
 - Validation passed
 - Comparison found: documents match existing index
 - Upload skipped (prevents redundant operations)
 
 **To verify**:
+
 - Check workflow logs for "No changes detected" message
 - Ensure dry-run flag is not set to `true`
 - Verify justice.gov.uk documents actually changed
 
 **To force upload** (testing only):
+
 - Run with dry-run: `gh workflow run legal-scraper.yml -f dry_run=true`
 - Or manually modify documents in Azure Search index before next run
 
 ### Workflow Logs
 
 **View GitHub Actions logs:**
+
 ```bash
 # List recent runs
 gh run list --workflow legal-scraper.yml --repo adalex-ai/azure-search-openai-demo
@@ -383,6 +407,7 @@ gh run download <run-id> --name artifacts --dir ./debug-data
 ```
 
 **Artifacts included:**
+
 - `processed/Upload/` - Scraped JSON documents
 - `validation-reports/` - Quality check results
 - Workflow logs with full pipeline output

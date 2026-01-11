@@ -216,6 +216,6 @@ azd up
 If issues arise:
 
 1. Check backend logs in Terminal 1
-2. Review `feedback_data/local/` for saved files
-3. Verify Azure environment: `azd env get-values | grep AZURE_`
-4. Check thought filtering: `python verify_feedback_blob.py`
+1. Review `feedback_data/local/` for saved files
+1. Verify Azure environment: `azd env get-values | grep AZURE_`
+1. Check thought filtering: `python verify_feedback_blob.py`

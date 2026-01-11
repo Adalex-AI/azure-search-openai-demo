@@ -11,10 +11,12 @@ This file turns the verification + causality reports into a concrete remediation
 - Missing in Azure: **9**
 
 Source reports:
+
 - Causality: `docs/fresh_vs_index_causality.md`
 - Verification: `docs/fresh_vs_index_verification_summary.md`
 
 ## A. Update Azure Index (live matches local)
+
 These look like genuine website text drift relative to what is currently indexed.
 
 Count: **14**
@@ -37,6 +39,7 @@ Count: **14**
 | Practice Direction 74A | 2023-02-07T00:00:00Z | 2023-02-07T00:00:00Z | Practice_Direction_74A___Enforcement_of_Judgments_in_different_Jurisdictions | https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part74/pd_part74a |
 
 ## B. Investigate Scraper/Extraction (live matches azure)
+
 These are candidates for scraper logic issues or extraction differences.
 
 Count: **1**
@@ -46,6 +49,7 @@ Count: **1**
 | Part 82 | 2017-01-30T00:00:00Z | 2017-01-30T00:00:00Z | Part_82___Closed_material_procedure_chunk_001 | https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-82-closed-material-procedure |
 
 ## C. Needs Manual Confirmation (mixed/inconclusive)
+
 The heuristic did not find strong signal lines; review before changing the index or scraper.
 
 Count: **25**
@@ -79,6 +83,7 @@ Count: **25**
 | Practice Direction 7B | 2023-10-01T00:00:00Z | 2023-10-01T00:00:00Z | Practice_Direction_7B-_Production_Centre | https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part07/pd_part07c |
 
 ## D. Missing in Azure Index
+
 These sourcefiles were not found in the Azure index during verification.
 
 Count: **9**

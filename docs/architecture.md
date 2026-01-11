@@ -19,10 +19,10 @@ graph TB
         subgraph "Frontend"
             React[⚛️ React/TypeScript App<br/>Chat Interface<br/>Settings Panel<br/>Citation Display]
         end
-        
+
         subgraph "Backend"
             API[🐍 Python API<br/>Flask/Quart<br/>Chat Endpoints<br/>Document Upload<br/>Authentication]
-            
+
             subgraph "Approaches"
                 CRR[ChatReadRetrieveRead<br/>Approach]
                 RTR[RetrieveThenRead<br/>Approach]
@@ -38,12 +38,12 @@ graph TB
             Vision2[👁️ Azure AI Vision<br/>optional]
             Speech[🎤 Azure Speech<br/>Services optional]
         end
-        
+
         subgraph "Storage & Data"
             Blob[💾 Azure Blob Storage<br/>Document Storage<br/>User Uploads]
             Cosmos[🗃️ Azure Cosmos DB<br/>Chat History<br/>optional]
         end
-        
+
         subgraph "Platform Services"
             ContainerApps[📦 Azure Container Apps<br/>or App Service<br/>Application Hosting]
             AppInsights[📊 Application Insights<br/>Monitoring<br/>Telemetry]
@@ -63,25 +63,25 @@ graph TB
     %% Backend Processing
     API --> CRR
     API --> RTR
-    
+
     %% Azure Service Connections
     API <--> OpenAI
     API <--> Search
     API <--> Blob
     API <--> Cosmos
     API <--> Speech
-    
+
     %% Document Processing Flow
     Blob --> PrepDocs
     PrepDocs --> DocIntel
     PrepDocs --> OpenAI
     PrepDocs --> Search
-    
+
     %% Platform Integration
     ContainerApps --> API
     API --> AppInsights
     API --> KeyVault
-    
+
     %% Styling
     classDef userLayer fill:#e1f5fe
     classDef appLayer fill:#f3e5f5
@@ -89,7 +89,7 @@ graph TB
     classDef azureStorage fill:#fff3e0
     classDef azurePlatform fill:#fce4ec
     classDef processing fill:#f1f8e9
-    
+
     class User,Browser userLayer
     class React,API,CRR,RTR appLayer
     class OpenAI,Search,DocIntel,Vision2,Speech azureAI

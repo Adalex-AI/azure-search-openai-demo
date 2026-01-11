@@ -15,11 +15,11 @@ This document explains the chunking logic implemented in the [data ingestion pip
 The `SentenceTextSplitter` is designed to:
 
 1. Produce semantically coherent chunks that align with sentence boundaries.
-2. Respect a maximum token count per chunk (hard limit of 500 tokens) plus a soft character length guideline (default 1,000 characters with a 20% overflow tolerance for merges / normalization). Size limit does not apply to figure blocks (chunks containing a `<figure>` may exceed the token limit; figures are never split).
-3. Keep structural figure placeholders (`<figure>...</figure>`) atomic: never split internally and always attach them to preceding accumulated text if any exists.
-4. Repair mid‑sentence page breaks when possible, while enforcing token + soft character budgets.
-5. Avoid empty outputs or unclosed figure tags.
-6. Perform a light normalization pass (trim only minimal leading/trailing whitespace that would cause small overflows; do not modify figure chunks).
+1. Respect a maximum token count per chunk (hard limit of 500 tokens) plus a soft character length guideline (default 1,000 characters with a 20% overflow tolerance for merges / normalization). Size limit does not apply to figure blocks (chunks containing a `<figure>` may exceed the token limit; figures are never split).
+1. Keep structural figure placeholders (`<figure>...</figure>`) atomic: never split internally and always attach them to preceding accumulated text if any exists.
+1. Repair mid‑sentence page breaks when possible, while enforcing token + soft character budgets.
+1. Avoid empty outputs or unclosed figure tags.
+1. Perform a light normalization pass (trim only minimal leading/trailing whitespace that would cause small overflows; do not modify figure chunks).
 
 The splitter includes these components:
 
@@ -68,12 +68,12 @@ When a span is too large, recursive splitting applies. After figure extraction, 
 Steps:
 
 1. Measure token count for the span.
-2. If within the token cap, emit it as-is (subject to normal accumulation logic).
-3. Otherwise, search outward from the midpoint (within the central third of the text) first for a sentence-ending punctuation boundary.
-4. If none is found, search the same window for a word-break character (space or supported punctuation) to avoid splitting inside a word.
-5. If a boundary is found (sentence or word break), split just after that character (it remains in the first half) and recurse on each half.
-6. If no acceptable boundary is found within the search window, split at the midpoint with a symmetric 10% overlap. The overlap portion appears duplicated: once at the end of the first half and again at the start of the second.
-7. Recurse until all pieces are within the token cap.
+1. If within the token cap, emit it as-is (subject to normal accumulation logic).
+1. Otherwise, search outward from the midpoint (within the central third of the text) first for a sentence-ending punctuation boundary.
+1. If none is found, search the same window for a word-break character (space or supported punctuation) to avoid splitting inside a word.
+1. If a boundary is found (sentence or word break), split just after that character (it remains in the first half) and recurse on each half.
+1. If no acceptable boundary is found within the search window, split at the midpoint with a symmetric 10% overlap. The overlap portion appears duplicated: once at the end of the first half and again at the start of the second.
+1. Recurse until all pieces are within the token cap.
 
 > Note: The 10% overlap is computed on raw character length (`len(text)`), not tokens, so the duplicated region is 2 × floor(0.10 * character_count) characters. Token counts can differ across the two halves.
 > Clarification: Recursion is triggered only when the *span itself* exceeds the token cap. If adding a span to the current accumulator would overflow but the span alone fits, the accumulator is flushed—recursion is not used in that case.
@@ -100,7 +100,7 @@ Page boundaries frequently slice a sentence in half, due to the way PDFs and oth
 There are two strategies, attempted in order:
 
 1. Full merge (ideal path)
-2. Trailing sentence fragment carry‑forward
+1. Trailing sentence fragment carry‑forward
 
 ### 1. Full merge
 

@@ -16,7 +16,7 @@ After deploying the app to Azure, you may want to continue development locally. 
 You can only run locally **after** having successfully run the `azd up` command. If you haven't yet, follow the steps in [Azure deployment](../README.md#azure-deployment) above.
 
 1. Run `azd auth login`
-2. Start the server:
+1. Start the server:
 
   Windows:
 
@@ -53,7 +53,6 @@ You should see:
 ```shell
 > frontend@0.0.0 dev
 > vite
-
 
   VITE v4.5.1  ready in 957 ms
 

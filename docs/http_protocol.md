@@ -10,11 +10,15 @@ Table of contents:
   * [Request context properties](#request-context-properties)
 * [HTTP responses from RAG chat app endpoints](#http-responses-from-rag-chat-app-endpoints)
   * [Non-streaming response](#non-streaming-response)
+
     * [Successful response](#successful-response)
     * [Error response](#error-response)
+
   * [Streaming response](#streaming-response)
+
     * [Successful streamed response](#successful-streamed-response)
     * [Error in streamed response](#error-in-streamed-response)
+
   * [Answer formatting](#answer-formatting)
   * [Response context properties](#response-context-properties)
 

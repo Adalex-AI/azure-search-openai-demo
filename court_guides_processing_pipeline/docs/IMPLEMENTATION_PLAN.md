@@ -1,7 +1,7 @@
 # Court Guides Processing Pipeline — Implementation Plan
 
-**Status:** Planning (Not yet implemented)  
-**Last Updated:** January 4, 2026  
+**Status:** Planning (Not yet implemented)
+**Last Updated:** January 4, 2026
 **Priority:** Low (Court guides update ~annually)
 
 ***
@@ -11,6 +11,7 @@
 This document outlines a strategic plan to recover, consolidate, and automate the PDF-to-JSON conversion pipeline for UK court guides. Currently, the pipeline is **partially documented but missing critical extraction scripts**, and lacks automated change detection/monitoring capabilities.
 
 ### Current State
+
 - ✅ **5 processed JSON files** ready for Azure AI Search
 - ✅ **Documentation** of pipeline steps and field mappings
 - ⚠️ **Missing extraction scripts** (8+ referenced but not version-controlled)
@@ -18,6 +19,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 - ⚠️ **Manual process** for PDF extraction and validation
 
 ### Goal State
+
 - 🎯 **All scripts version-controlled** and reproducible
 - 🎯 **Single automated pipeline** for PDF → JSON → Embedding → Azure Search
 - 🎯 **Change monitoring system** to detect when UK Judiciary updates guides
@@ -31,6 +33,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 ### 1.1 Recover Missing Extraction Scripts
 
 **Missing scripts referenced in `SCRIPTS_USED.md`:**
+
 - `scripts/extract_court_guides.py` — Docling-based PDF extraction
 - `scripts/process_court_guides.py` — JSON processing and grouping
 - `scripts/reconstruct_and_compare_all.py` — Content validation
@@ -43,12 +46,14 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 - `scripts/validate_against_markdown.py` — Markdown comparison
 
 **Action Items:**
+
 1. Search codebase or archived repos for these scripts
-2. If unavailable, recreate based on `SCRIPTS_USED.md` specifications
-3. Add to `court_guides_processing_pipeline/scripts/` with documentation
-4. Test on existing court guides to validate correctness
+1. If unavailable, recreate based on `SCRIPTS_USED.md` specifications
+1. Add to `court_guides_processing_pipeline/scripts/` with documentation
+1. Test on existing court guides to validate correctness
 
 **Success Criteria:**
+
 - All extraction scripts produce identical JSON outputs to current `outputs/` directory
 - Scripts have clear docstrings and argument documentation
 - Each script has a corresponding test/validation
@@ -59,7 +64,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 
 ### 2.1 Docling vs Azure Document Intelligence
 
-**Current approach:** IBM Docling (open-source, local processing)  
+**Current approach:** IBM Docling (open-source, local processing)
 **Alternative approach:** Azure Document Intelligence (existing in `prepdocslib`)
 
 | Aspect | Docling | Azure DI |
@@ -72,6 +77,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 | **Maintenance** | Community-maintained | Microsoft-supported |
 
 **Recommendation:**
+
 - **Short-term (2026):** Keep Docling; it's proven and cost-effective for ~5 guides/year
 - **Long-term (2027+):** Consider Azure DI if:
   - Court guides become harder to parse (format changes)
@@ -79,10 +85,11 @@ This document outlines a strategic plan to recover, consolidate, and automate th
   - Budget allows for API costs
 
 **Action Items:**
+
 1. Run both Docling and Azure DI on 1-2 complex guides (Chancery, Patents)
-2. Compare output quality, speed, and content retention
-3. Document findings in `docs/PARSER_COMPARISON.md`
-4. Make final decision based on results
+1. Compare output quality, speed, and content retention
+1. Document findings in `docs/PARSER_COMPARISON.md`
+1. Make final decision based on results
 
 ***
 
@@ -93,6 +100,7 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 **Output:** `scripts/legal-scraper/process_court_guides_pipeline.py`
 
 **Features:**
+
 - Single entry point for entire PDF → Azure Search workflow
 - Modular design (extraction → processing → validation → upload)
 - Support for dry-run and staging modes
@@ -100,7 +108,8 @@ This document outlines a strategic plan to recover, consolidate, and automate th
 - Reuses existing `legal-scraper/` utilities where possible
 
 **Integration Points:**
-```
+
+```text
 process_court_guides_pipeline.py
 ├── extract_stage()
 │   └── Uses: Docling (or Azure DI)
@@ -120,6 +129,7 @@ process_court_guides_pipeline.py
 ```
 
 **Success Criteria:**
+
 - Single command to process all court guides
 - Produces identical outputs to current manual process
 - Can be scheduled as a cron job or triggered manually
@@ -136,6 +146,7 @@ process_court_guides_pipeline.py
 **Solution:** Multi-layered monitoring approach:
 
 #### Layer 1: Scheduled Download & Hash Check
+
 ```python
 # scripts/legal-scraper/monitor_court_guides.py
 
@@ -153,6 +164,7 @@ monitor_court_guides()
 ```
 
 #### Layer 2: Content Diff Analysis
+
 ```python
 # If PDF changed, compare extracted content
 
@@ -167,17 +179,20 @@ compare_extracted_content()
 ```
 
 #### Layer 3: Integration with CI/CD
+
 - Add GitHub Action to run `monitor_court_guides.py` weekly
 - Auto-open PR if changes detected with diff summary
 - Require manual approval before re-indexing (legal content = critical)
 
 **Implementation:**
+
 1. `scripts/legal-scraper/monitor_court_guides.py` — Download & hash check
-2. `scripts/legal-scraper/compare_guide_versions.py` — Content diffing
-3. `.github/workflows/monitor-court-guides.yml` — Weekly schedule
-4. Update `docs/monitoring.md` with runbook
+1. `scripts/legal-scraper/compare_guide_versions.py` — Content diffing
+1. `.github/workflows/monitor-court-guides.yml` — Weekly schedule
+1. Update `docs/monitoring.md` with runbook
 
 **Success Criteria:**
+
 - Detects new guide versions within 24 hours
 - Low false positive rate
 - Clear diff reports for manual review
@@ -189,6 +204,7 @@ compare_extracted_content()
 ### 5.1 Add to CI/CD Pipeline
 
 **New tests in `tests/`:**
+
 ```python
 test_court_guides_pipeline.py
 ├── test_extraction_completeness()
@@ -202,6 +218,7 @@ test_court_guides_pipeline.py
 ```
 
 **Integration with existing workflows:**
+
 - Add to `test_integration.sh`
 - Run on every commit to `scripts/legal-scraper/`
 - Run weekly for monitoring updates
@@ -209,6 +226,7 @@ test_court_guides_pipeline.py
 ### 5.2 Documentation for Operators
 
 Create `docs/OPERATOR_RUNBOOK.md`:
+
 - How to manually run pipeline
 - How to monitor guide changes
 - Troubleshooting common failures
@@ -222,12 +240,14 @@ Create `docs/OPERATOR_RUNBOOK.md`:
 ### 6.1 Documentation Package
 
 Create `docs/ARCHITECTURE.md`:
+
 - High-level pipeline architecture diagram
 - Docling configuration reference
 - Azure Search field mappings
 - Error handling and recovery procedures
 
 Update main `docs/` folder:
+
 - Add reference to court guides pipeline in `data_ingestion.md`
 - Link to new runbook from `monitoring.md`
 - Add court guides to architecture documentation
@@ -251,14 +271,14 @@ Update main `docs/` folder:
 | 5. CI/CD Integration | 2-3 weeks | W7 | W9 | Phase 3, 4 |
 | 6. Documentation & Handoff | 1 week | W9 | W10 | All previous |
 
-**Total Duration:** ~10 weeks (if done sequentially)  
+**Total Duration:** ~10 weeks (if done sequentially)
 **With Parallelization:** ~7-8 weeks
 
 ***
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                  COURT GUIDES PROCESSING PIPELINE                       │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -347,16 +367,16 @@ Update main `docs/` folder:
 ## Future Improvements (Post-Implementation)
 
 1. **ML-based change detection** — Train model to predict document importance changes
-2. **Webhook integration** — If Justice.gov.uk ever provides document change webhooks
-3. **Multi-language support** — Expand to Welsh Court Guide translations
-4. **Real-time indexing** — Stream updates to Azure Search instead of batch uploads
-5. **Version control for JSONs** — Git-track processed outputs for audit trail
+1. **Webhook integration** — If Justice.gov.uk ever provides document change webhooks
+1. **Multi-language support** — Expand to Welsh Court Guide translations
+1. **Real-time indexing** — Stream updates to Azure Search instead of batch uploads
+1. **Version control for JSONs** — Git-track processed outputs for audit trail
 
 ***
 
 ## Appendix: Current Folder Structure
 
-```
+```text
 court_guides_processing_pipeline/
 ├── docs/
 │   ├── README.md                 # Original documentation
@@ -390,12 +410,12 @@ court_guides_processing_pipeline/
 ## Questions for Stakeholders
 
 1. **Priority:** Is maintaining court guides important enough to automate, or is annual manual review acceptable?
-2. **Budget:** Are we open to Azure Document Intelligence costs (~$2-6/guide/year) for better quality?
-3. **Ownership:** Who will maintain this after implementation?
-4. **SLA:** What's the acceptable delay for court guide updates (24h, 1 week, monthly)?
+1. **Budget:** Are we open to Azure Document Intelligence costs (~$2-6/guide/year) for better quality?
+1. **Ownership:** Who will maintain this after implementation?
+1. **SLA:** What's the acceptable delay for court guide updates (24h, 1 week, monthly)?
 
 ***
 
-**Document Owner:** [To be assigned]  
-**Last Reviewed:** January 4, 2026  
+**Document Owner:** [To be assigned]
+**Last Reviewed:** January 4, 2026
 **Next Review:** [When phase 1 completes]
