@@ -72,7 +72,7 @@ sequenceDiagram
     Frontend->>User: Display Answer with Sources
 ```
 
----
+***
 
 ## 2. Routine Maintenance Tasks
 
@@ -82,7 +82,7 @@ Before deploying any changes, verify them locally.
 
 1.  **Start the Environment**:
 
-    ```bash
+```bash
     # Starts both Frontend (Port 5173) and Backend (Port 50505)
     ./app/start.sh
     ```
@@ -91,14 +91,14 @@ Before deploying any changes, verify them locally.
 
     Run this weekly or after prompt changes to ensure RAG quality (Precedent Matching > 95%).
 
-    ```bash
+```bash
     cd evals
     ../.venv/bin/python run_direct_evaluation.py
     ```
 
 1.  **Run Unit Tests**:
 
-    ```bash
+```bash
     # Backend Tests
     pytest tests/
 
@@ -116,7 +116,7 @@ Before deploying any changes, verify them locally.
     3.  Select **Log Stream** under the "Monitoring" section.
     4.  *(Optional)* Use **Application Insights** for historical query analysis.
 
----
+***
 
 ## 3. Deployment & Updates
 
@@ -149,17 +149,17 @@ To add a new setting (e.g., a new model version):
 
 1.  **Set the variable**:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_MODEL gpt-4-turbo
     ```
 
 1.  **Update the service**:
 
-    ```bash
+```bash
     azd up
     ```
 
----
+***
 
 ## 4. Upgrading from Upstream
 
@@ -184,13 +184,13 @@ gitGraph
 
 1.  **Configure Upstream Remote** (One time setup):
 
-    ```bash
+```bash
     git remote add upstream https://github.com/Azure-Samples/azure-search-openai-demo.git
     ```
 
 1.  **Fetch & Merge**:
 
-    ```bash
+```bash
     git fetch upstream
     git checkout main
     git merge upstream/main
@@ -204,11 +204,11 @@ gitGraph
 
 1.  **Verify**:
 
-    ```bash
+```bash
     ./test_integration.sh
     ```
 
----
+***
 
 ## 5. Adding New Features (DevOps Best Practices)
 
@@ -231,7 +231,7 @@ flowchart TD
 - [ ] Integration into core files is minimal (1-2 lines of imports).
 - [ ] Unit tests added to `tests/`.
 
----
+***
 
 ## 6. Troubleshooting Guide
 

@@ -390,14 +390,14 @@ Create entries following this template:
 
 1. Deploy an evaluation model:
 
-   ```bash
+```bash
    azd env set USE_EVAL true
    azd provision
    ```
 
 1. Set up the evaluation environment:
 
-   ```bash
+```bash
    python -m venv .evalenv
    source .evalenv/bin/activate
    pip install -r evals/requirements.txt

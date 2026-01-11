@@ -88,7 +88,7 @@ from customizations.approaches import source_processor
 
 # Process documents for frontend
 structured_sources = source_processor.process_documents(
-    documents, 
+    documents,
     use_semantic_captions=False
 )
 ```

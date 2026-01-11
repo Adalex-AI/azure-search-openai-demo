@@ -20,7 +20,7 @@ Status: ✅ Tested and Working
 ### Evaluation Model
 
 ```text
-Model: GPT-4.1-mini  
+Model: GPT-4.1-mini
 Deployment: searchagent
 Same as chat model (recommended)
 ```

@@ -26,7 +26,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For gpt-5:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-5
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-08-07
@@ -35,7 +35,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For gpt-5-mini:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-5-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-08-07
@@ -44,7 +44,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For gpt-5-nano:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-5-nano
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-nano
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-08-07
@@ -53,7 +53,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For o4-mini:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL o4-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT o4-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-04-16
@@ -62,7 +62,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For o3:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL o3
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT o3
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-04-16
@@ -71,7 +71,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For o3-mini: (No vision support)
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL o4-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT o4-mini
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-04-16
@@ -80,7 +80,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    For o1: (No streaming support)
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL o1
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT o1
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2024-12-17
@@ -93,7 +93,7 @@ This repository includes an optional feature that uses reasoning models to gener
 
    Set the environment variable for reasoning effort:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_REASONING_EFFORT minimal
    ```
 

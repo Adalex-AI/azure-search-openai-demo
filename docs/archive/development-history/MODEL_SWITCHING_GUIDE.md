@@ -146,13 +146,13 @@ If the backend hangs after switching to GPT-5-nano:
 
 1. **Check parameter compatibility**:
 
-   ```bash
+```bash
    python scripts/test_azure_connectivity.py
    ```
 
 1. **Apply diagnostic logging**:
 
-   ```bash
+```bash
    python scripts/add_diagnostic_logging.py
    ```
 

@@ -851,8 +851,8 @@ class M365CitationAdapter:
     """
 
     def format_response(
-        self, 
-        answer: str, 
+        self,
+        answer: str,
         sources: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
@@ -1753,7 +1753,7 @@ def create_legal_search_tool(connection_id: str, index_name: str) -> AzureAISear
     )
 
 def create_filtered_search_tool(
-    connection_id: str, 
+    connection_id: str,
     index_name: str,
     category: str = None
 ) -> AzureAISearchTool:
@@ -2273,8 +2273,8 @@ class FoundryAgentClient:
         self._threads: dict = {}
 
     async def ask(
-        self, 
-        question: str, 
+        self,
+        question: str,
         session_id: Optional[str] = None
     ) -> LegalResponse:
         """

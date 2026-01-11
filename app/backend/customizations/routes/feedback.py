@@ -4,8 +4,8 @@ import logging
 import json
 import os
 from datetime import datetime, timezone
-from azure.storage.blob.aio import ContainerClient
-from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
+from azure.storage.blob.aio import ContainerClient, BlobServiceClient
+from config import CONFIG_USER_BLOB_CONTAINER_CLIENT, CONFIG_CREDENTIAL
 # CUSTOM: Import deployment metadata
 from customizations import get_deployment_metadata
 
@@ -98,13 +98,35 @@ async def submit_feedback():
                 f.write(json_content)
             logger.info(f"Feedback saved locally: {local_path}")
         
-        # 2. Upload to blob storage (if configured)
-        container_client = current_app.config.get(CONFIG_USER_BLOB_CONTAINER_CLIENT)
-        if container_client:
-            # Note: CONFIG_USER_BLOB_CONTAINER_CLIENT is a FileSystemClient
-            file_client = container_client.get_file_client(blob_name)
+        # 2. Upload to blob storage
+        # Option A: User Storage (Data Lake Gen2 / HNS) - Configured via USE_USER_UPLOAD
+        user_container_client = current_app.config.get(CONFIG_USER_BLOB_CONTAINER_CLIENT)
+        
+        # Option B: Standard Blob Storage (Fallback) - Uses main content storage account
+        storage_account = os.environ.get("AZURE_STORAGE_ACCOUNT")
+        credential = current_app.config.get(CONFIG_CREDENTIAL)
+        
+        if user_container_client:
+            # Note: CONFIG_USER_BLOB_CONTAINER_CLIENT is a FileSystemClient for reduced latency/HNS
+            file_client = user_container_client.get_file_client(blob_name)
             await file_client.upload_data(json_content, overwrite=True)
-            logger.info(f"Feedback saved to blob storage: {blob_name}")
+            logger.info(f"Feedback saved to User Storage (HNS): {blob_name}")
+            
+        elif storage_account and credential:
+            # Fallback to standard blob storage in the main account
+            # This is "Option 1" for easiest implementation in public repos
+            blob_service_client = BlobServiceClient(
+                f"https://{storage_account}.blob.core.windows.net", 
+                credential=credential
+            )
+            # Use 'feedback' container
+            container_client = blob_service_client.get_container_client("feedback")
+            if not await container_client.exists():
+                await container_client.create_container()
+                
+            blob_client = container_client.get_blob_client(blob_name)
+            await blob_client.upload_blob(json_content, overwrite=True)
+            logger.info(f"Feedback saved to Standard Blob Storage: {blob_name}")
             
     except Exception as e:
         logger.error(f"Failed to save feedback: {e}")

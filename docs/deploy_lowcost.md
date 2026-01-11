@@ -8,13 +8,13 @@ However, if your goal is to minimize costs while prototyping your application, f
 
 1. Log in to your Azure account using the Azure Developer CLI:
 
-    ```shell
+```shell
     azd auth login
     ```
 
 1. Create a new azd environment for the free resource group:
 
-    ```shell
+```shell
     azd env new
     ```
 
@@ -30,13 +30,13 @@ However, if your goal is to minimize costs while prototyping your application, f
     * Comment out `host: containerapp` and uncomment `host: appservice` in the [azure.yaml](../azure.yaml) file.
     * Set the deployment target to `appservice`:
 
-        ```shell
+```shell
         azd env set DEPLOYMENT_TARGET appservice
         ```
 
     * Set the App Service SKU to the free tier:
 
-        ```shell
+```shell
         azd env set AZURE_APP_SERVICE_SKU F1
         ```
 
@@ -44,20 +44,24 @@ However, if your goal is to minimize costs while prototyping your application, f
 
 1. Use the free tier of Azure AI Search:
 
-    ```shell
+```shell
     azd env set AZURE_SEARCH_SERVICE_SKU free
     ```
 
     Limitations:
+
     1. You are only allowed one free search service across all regions.
+
     If you have one already, either delete that service or follow instructions to
     reuse your [existing search service](../README.md#existing-azure-ai-search-resource).
+
     2. The free tier does not support semantic ranker, so the app UI will no longer display
+
     the option to use the semantic ranker. Note that will generally result in [decreased search relevance](https://techcommunity.microsoft.com/blog/azure-ai-services-blog/azure-ai-search-outperforming-vector-search-with-hybrid-retrieval-and-ranking-ca/3929167).
 
 1. Use the free tier of Azure Document Intelligence (used in analyzing files):
 
-    ```shell
+```shell
     azd env set AZURE_DOCUMENTINTELLIGENCE_SKU F0
     ```
 
@@ -69,7 +73,7 @@ However, if your goal is to minimize costs while prototyping your application, f
       You can either use your own documents that are only 2-pages long,
       or you can use a local Python package for PDF parsing by setting:
 
-      ```shell
+```shell
       azd env set USE_LOCAL_PDF_PARSER true
       ```
 
@@ -80,13 +84,13 @@ However, if your goal is to minimize costs while prototyping your application, f
       You can either use your own files that are only 2-pages long,
       or you can use a local Python package for HTML parsing by setting:
 
-      ```shell
+```shell
       azd env set USE_LOCAL_HTML_PARSER true
       ```
 
 1. Use the free tier of Azure Cosmos DB:
 
-    ```shell
+```shell
     azd env set AZURE_COSMOSDB_SKU free
     ```
 
@@ -96,7 +100,7 @@ However, if your goal is to minimize costs while prototyping your application, f
 
     Turn off Azure Monitor (Application Insights):
 
-    ```shell
+```shell
     azd env set AZURE_USE_APPLICATION_INSIGHTS false
     ```
 
@@ -105,7 +109,7 @@ However, if your goal is to minimize costs while prototyping your application, f
 
 1. Use OpenAI.com instead of Azure OpenAI: This should not be necessary, as the costs are same for both services, but you may need this step if your account does not have access to Azure OpenAI for some reason.
 
-    ```shell
+```shell
     azd env set OPENAI_HOST openai
     azd env set OPENAI_ORGANIZATION {Your OpenAI organization}
     azd env set OPENAI_API_KEY {Your OpenAI API key}
@@ -116,7 +120,7 @@ However, if your goal is to minimize costs while prototyping your application, f
 
 1. Disable vector search:
 
-    ```shell
+```shell
     azd env set USE_VECTORS false
     ```
 

@@ -82,19 +82,19 @@ def _extract_multiple_subsections_from_document(self, doc):
     # Example input document:
     # "A4.1 Case Management Powers
     #  The court has power to extend time limits and make case management directions...
-    #  
+    #
     #  A4.2 Pre-Trial Review
     #  The court will conduct a pre-trial review in appropriate cases..."
 
     subsections = [
         {
-            "subsection": "A4.1", 
+            "subsection": "A4.1",
             "content": "The court has power to extend time limits...",
             "preview": "The court has power to extend time limits and make case management directions..."[:100]
         },
         {
             "subsection": "A4.2",
-            "content": "The court will conduct a pre-trial review...", 
+            "content": "The court will conduct a pre-trial review...",
             "preview": "The court will conduct a pre-trial review in appropriate cases..."[:100]
         }
     ]
@@ -135,7 +135,7 @@ self.citation_map = {
         "full_content": "A4.1 Case Management Powers\nThe court has power to extend..."
     },
     "2": {
-        "citation": "31.1, CPR Part 31, Disclosure Rules", 
+        "citation": "31.1, CPR Part 31, Disclosure Rules",
         "preview": "Standard disclosure requires a party to disclose documents...",
         "category": "Civil Procedure Rules",
         "full_content": "31.1 Standard disclosure\nStandard disclosure requires..."
@@ -153,7 +153,7 @@ Sources sent to AI (Commercial Court context):
 [2]: Standard disclosure requires a party to disclose documents on which they rely...
 
 AI Response:
-"In Commercial Court proceedings, case management powers include the ability to extend time limits [1]. 
+"In Commercial Court proceedings, case management powers include the ability to extend time limits [1].
 Standard disclosure obligations still apply [2]."
 ```
 
@@ -190,7 +190,7 @@ The frontend receives structured data with hover support:
 // Answer.tsx - Enhanced citation rendering
 const renderCitationWithPreview = (citationData) => {
     return (
-        <sup 
+        <sup
             className="citation-sup"
             data-citation-text={citationData.citation}
             data-citation-content={citationData.preview}
@@ -228,7 +228,7 @@ const formatCitationWithCategory = (citation, category) => {
 # User selects "High Court" but query mentions "Commercial Court"
 # User selection takes priority
 selected_category = "High Court"
-detected_court = "Commercial Court" 
+detected_court = "Commercial Court"
 # Result: Search High Court documents + CPR fallback
 ```
 
@@ -266,7 +266,7 @@ User clicks: [1]
 Opens panel with:
 - Full citation: "A4.1, Commercial Court Guide, Case Management Procedures"
 - Complete content: Full text of A4.1
-- Category: "Commercial Court" 
+- Category: "Commercial Court"
 - Direct link: Click to open source document
 ```
 

@@ -110,10 +110,10 @@ true                     | true                         | App Service | ✅ Requ
 
 1. **Token Caching Issue**
 
-   ```python
+```python
    # Current implementation
-   "This application uses an in-memory token cache. 
-    User sessions are only available in memory while 
+   "This application uses an in-memory token cache.
+    User sessions are only available in memory while
     the application is running."
    ```
 
@@ -133,7 +133,7 @@ true                     | true                         | App Service | ✅ Requ
 
 1. **Unauthenticated Access Option**
 
-   ```python
+```python
    AZURE_ENABLE_UNAUTHENTICATED_ACCESS = true
    ```
 
@@ -209,7 +209,7 @@ Use: Publicly available legal information
 
 - [ ] **Enable Entra ID Authentication**
 
-  ```bash
+```bash
   azd env set AZURE_USE_AUTHENTICATION true
   azd env set AZURE_AUTH_TENANT_ID <your-tenant-id>
   ```
@@ -221,7 +221,7 @@ Use: Publicly available legal information
 
 - [ ] **Set Up Document Access Control**
 
-  ```bash
+```bash
   # Option A: Manual per-document
   python ./scripts/manageacl.py --acl-action enable_acls
   python ./scripts/manageacl.py --acl-type groups --acl-action add --acl <group-id> --url <doc-url>
@@ -233,7 +233,7 @@ Use: Publicly available legal information
 
 - [ ] **Enable Access Control Enforcement**
 
-  ```bash
+```bash
   azd env set AZURE_ENFORCE_ACCESS_CONTROL true
   ```
 

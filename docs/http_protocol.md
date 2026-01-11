@@ -365,7 +365,7 @@ The response context object can contain the following properties:
 
     Example:
 
-    ```json
+```json
     "followup_questions": [
         "What types of prescription drugs are covered?",
         "Which services have lower out-of-pocket costs?"
@@ -378,7 +378,7 @@ The response context object can contain the following properties:
 
     Example:
 
-    ```json
+```json
     "data_points": {
         "text": [
             "Northwind_Standard_Benefits_Details.pdf#page=91:    Tips for Avoiding Intentionally False Or Misleading Statements:   When it comes to understanding a health plan, it is important to be aware of any intentionally false or misleading statements that the plan provider may make...(truncated)",
@@ -390,7 +390,7 @@ The response context object can contain the following properties:
 
     Example with images:
 
-    ```json
+```json
     "data_points": {
         "images": [
             {
@@ -413,7 +413,7 @@ The response context object can contain the following properties:
 
     Example:
 
-    ```json
+```json
     "thoughts": [
         {
             "title": "Original user query",

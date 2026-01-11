@@ -195,7 +195,7 @@ const handleCategoryChange = (category: string) => {
 
 ```typescript
 const CitationWithHover = ({ citationData }) => (
-    <sup 
+    <sup
         className="citation-sup"
         data-citation-text={citationData.citation}
         data-citation-content={citationData.preview}
@@ -247,7 +247,7 @@ def build_filter(self, overrides, auth_claims):
     if include_category and include_category != "All":
         return f"category eq '{include_category}'"
 
-    # Priority 2: Auto-detected court from query  
+    # Priority 2: Auto-detected court from query
     elif detected_court:
         normalized = self.normalize_court_to_category(detected_court)
         return f"(category eq '{normalized}' or category eq 'Civil Procedure Rules')"
@@ -300,7 +300,7 @@ def detect_court_in_query(self, query: str) -> Optional[str]:
 ```python
 court_category_map = {
     'circuit commercial court': 'Circuit Commercial Court',
-    'commercial court': 'Commercial Court', 
+    'commercial court': 'Commercial Court',
     'high court': 'High Court',
     'ccc': 'Circuit Commercial Court',
     'hc': 'High Court'
@@ -345,7 +345,7 @@ court_category_map = {
 ```text
 1. User keeps "All Categories" selected
 2. Types: "How does disclosure work in Circuit Commercial Court?"
-3. System auto-detects "Circuit Commercial Court" 
+3. System auto-detects "Circuit Commercial Court"
 4. Filters to Circuit Commercial + CPR rules
 5. Shows preview on hover: "Circuit Commercial Court procedures..."
 6. Provides both court-specific and general rules
@@ -367,7 +367,7 @@ court_category_map = {
 
 ```text
    Chat.tsx/Ask.tsx: Category selection UI
-   Answer.tsx: Hover citation implementation  
+   Answer.tsx: Hover citation implementation
    SupportingContent.tsx: Enhanced citation display
    AnalysisPanel.tsx: Category-aware content panels
    ```

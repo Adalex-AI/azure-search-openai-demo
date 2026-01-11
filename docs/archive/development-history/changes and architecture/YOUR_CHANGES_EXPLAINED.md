@@ -40,7 +40,7 @@ Your system now automatically detects when documents contain multiple legal subs
 def _extract_multiple_subsections_from_document(self, doc):
     # Detects patterns like:
     # - "31.1 Standard disclosure"
-    # - "Rule 1.1 Introduction"  
+    # - "Rule 1.1 Introduction"
     # - "A4.1 Court procedures"
     # - "Para 5.2 Requirements"
 
@@ -139,7 +139,7 @@ const handleCitationClick = (e: Event) => {
 
 ```html
 <!-- Your citation format includes preview content -->
-<sup class="citation-sup" 
+<sup class="citation-sup"
      data-citation-text="31.1, CPR Part 31, Civil Procedure Rules"
      data-citation-content="Standard disclosure requires a party to disclose..."
      title="31.1, CPR Part 31, Civil Procedure Rules">

@@ -399,7 +399,7 @@ Use the following table to plan your infrastructure based on the number of **con
 *   **Rule**: 1 Standard Replica handles ~10-15 Queries Per Second (QPS) with Semantic Ranker enabled.
 *   *Action*: For >50 concurrent users, run:
 
-    ```bash
+```bash
     az search service update --replica-count 2 --resource-group rg-cpr-rag --name cpr-rag
     ```
 
@@ -408,7 +408,7 @@ Use the following table to plan your infrastructure based on the number of **con
 *   **Rule**: A single Python container (Uvicorn) handles ~4-10 concurrent requests efficiently.
 *   *Action*: Set `Minimum Instances` to `Users / 10`.
 
-    ```bash
+```bash
     # Switch to Dedicated Profile D4 for stable performance
     azd env set AZURE_CONTAINER_APPS_WORKLOAD_PROFILE D4
     azd provision
@@ -474,7 +474,7 @@ azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-nano  # Use smaller model
 azd env set AZURE_CONTAINER_APPS_WORKLOAD_PROFILE ""    # Back to consumption
 azd provision
 
-# Scale up for testing (morning) 
+# Scale up for testing (morning)
 azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-mini  # Better quality
 azd provision
 ```

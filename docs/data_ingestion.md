@@ -141,13 +141,13 @@ This project includes an optional feature to perform data ingestion in the cloud
 
 1. If you've previously deployed, delete the existing search index or create a new index. This feature cannot be used on existing index. In the newly created index schema, a new field 'parent_id' is added. This is used internally by the indexer to manage life cycle of chunks. Run this command to set a new index name:
 
-    ```shell
+```shell
     azd env set AZURE_SEARCH_INDEX cloudindex
     ```
 
 1. Run this command:
 
-    ```shell
+```shell
     azd env set USE_CLOUD_INGESTION true
     ```
 
@@ -155,13 +155,13 @@ This project includes an optional feature to perform data ingestion in the cloud
 
 1. (Recommended) Increase the capacity for the embedding model to the maximum quota allowed for your region/subscription, so that the Azure Functions can generate embeddings without hitting rate limits:
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY 400
     ```
 
 1. Provision the new Azure Functions resources, deploy the function apps, and update the search indexer with:
 
-    ```shell
+```shell
     azd up
     ```
 

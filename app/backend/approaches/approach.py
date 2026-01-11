@@ -285,6 +285,17 @@ class Approach(ABC):
         
         return " ".join(fuzzy_words)
 
+    def should_use_vector_search(self, overrides: dict[str, Any]) -> bool:
+        """
+        Determine if vector search should be used based on overrides and configuration.
+        """
+        # If embedding deployment is not configured, we can't do vector search
+        if not self.embedding_deployment:
+            return False
+            
+        retrieval_mode = overrides.get("retrieval_mode")
+        return retrieval_mode in ["vectors", "hybrid", None]
+
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
         exclude_category = overrides.get("exclude_category")

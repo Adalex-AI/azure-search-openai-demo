@@ -130,7 +130,7 @@ flowchart LR
     subgraph "Subsection Detection"
         Doc --> Scan[Scan for Patterns]
         Scan --> P1["Pattern: 31.1"]
-        Scan --> P2["Pattern: Rule 1.1"]  
+        Scan --> P2["Pattern: Rule 1.1"]
         Scan --> P3["Pattern: A4.1"]
     end
 
@@ -292,7 +292,7 @@ graph TD
 {
     "id": "doc_123",
     "content": "31.1 Standard disclosure requires...",
-    "sourcepage": "CPR Part 31", 
+    "sourcepage": "CPR Part 31",
     "sourcefile": "Civil Procedure Rules",
     "category": "Circuit Commercial Court",
     "storageUrl": "https://storage.azure.com/...",

@@ -112,7 +112,7 @@ Response Time: ~9 seconds
 
 1. **Run Category Filtering Test**:
 
-   ```bash
+```bash
    python evals/test_category_filtering.py
    ```
 
@@ -122,13 +122,13 @@ Response Time: ~9 seconds
 
 1. **Authenticate with Azure**:
 
-   ```bash
+```bash
    az login --tenant 3bfe16b2-5fcc-4565-b1f1-15271d20fecf
    ```
 
 1. **Run Full Evaluation**:
 
-   ```bash
+```bash
    source .evalenv/bin/activate
    python evals/evaluate.py --numquestions=10
    ```
@@ -137,7 +137,7 @@ Response Time: ~9 seconds
 
 1. **Run Safety Evaluation** (Optional):
 
-   ```bash
+```bash
    python evals/safety_evaluation.py --max_simulations 200
    ```
 

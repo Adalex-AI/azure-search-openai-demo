@@ -313,7 +313,7 @@ BATCH_DELAY = 15  # Increase from 10 seconds
 - Scraper uses headless mode by default
 - For local testing on macOS:
 
-  ```bash
+```bash
   brew install chromium
   # Or download ChromeDriver manually
   ```

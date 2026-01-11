@@ -162,7 +162,7 @@ A related option is VS Code Dev Containers, which will open the project in your 
 1. Create a new folder and switch to it in the terminal.
 1. Run this command to download the project code:
 
-    ```shell
+```shell
     azd init -t azure-search-openai-demo
     ```
 
@@ -174,19 +174,19 @@ The steps below will provision Azure resources and deploy the application code t
 
 1. Login to your Azure account:
 
-    ```shell
+```shell
     azd auth login
     ```
 
     For GitHub Codespaces users, if the previous command fails, try:
 
-   ```shell
+```shell
     azd auth login --use-device-code
     ```
 
 1. Create a new azd environment:
 
-    ```shell
+```shell
     azd env new
     ```
 
@@ -230,13 +230,13 @@ You can only run a development server locally **after** having successfully run 
 
   Windows:
 
-  ```shell
+```shell
   ./app/start.ps1
   ```
 
   Linux/Mac:
 
-  ```shell
+```shell
   ./app/start.sh
   ```
 

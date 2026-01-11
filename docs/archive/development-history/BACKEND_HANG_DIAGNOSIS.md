@@ -197,7 +197,7 @@ Based on testing, GPT-5-nano requires:
 
 1. **Apply diagnostic logging** to identify exact hang point:
 
-   ```bash
+```bash
    python scripts/add_diagnostic_logging.py
    kill $(lsof -ti:50505)
    # Restart backend
@@ -226,7 +226,7 @@ Based on testing, GPT-5-nano requires:
 
 1. **Direct API test with curl**:
 
-   ```bash
+```bash
    # Get token
    TOKEN=$(azd auth token --scope https://cognitiveservices.azure.com/.default)
 

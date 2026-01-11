@@ -20,13 +20,13 @@ You can only run locally **after** having successfully run the `azd up` command.
 
   Windows:
 
-  ```shell
+```shell
   ./app/start.ps1
   ```
 
   Linux/Mac:
 
-  ```shell
+```shell
   ./app/start.sh
   ```
 

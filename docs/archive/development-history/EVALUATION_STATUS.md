@@ -125,14 +125,14 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 
 1. **Check Azure OpenAI quota**:
 
-   ```bash
+```bash
    azd config show
    # Check deployment status in Azure Portal
    ```
 
 1. **Verify model deployment**:
 
-   ```bash
+```bash
    az cognitiveservices account deployment show \
      --resource-group <rg-name> \
      --name cog-gz2m4s637t5me-us2 \
@@ -141,7 +141,7 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 
 1. **Test Azure Search connectivity**:
 
-   ```bash
+```bash
    curl -H "api-key: <key>" \
      "https://<search-service>.search.windows.net/indexes/legal-court-rag-index?api-version=2023-11-01"
    ```
@@ -152,7 +152,7 @@ INFO:app:Chat endpoint using approach: ChatReadRetrieveReadApproach
 
 1. **Refresh authentication**:
 
-   ```bash
+```bash
    /usr/local/bin/azd auth login --use-device-code
    ```
 
@@ -163,7 +163,7 @@ If the app is already deployed to Azure App Service:
 1. Get deployed URL from `.azure/cpr-rag/.env` (AZURE_WEBAPP_URL)
 1. Modify `evaluate.py` to point to deployed endpoint:
 
-   ```python
+```python
    target_url = os.getenv("AZURE_WEBAPP_URL", "http://localhost:50505") + "/chat"
    ```
 

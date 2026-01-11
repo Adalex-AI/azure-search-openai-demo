@@ -25,7 +25,7 @@ With this feature enabled, the following changes are made:
 
    Set the azd environment variable to enable the multimodal feature:
 
-   ```shell
+```shell
    azd env set USE_MULTIMODAL true
    ```
 
@@ -38,7 +38,7 @@ With this feature enabled, the following changes are made:
    If you have already indexed data, you will need to re-index it to include the new image embeddings.
    We recommend creating a new Azure AI Search index to avoid conflicts with the existing index.
 
-   ```shell
+```shell
    azd env set AZURE_SEARCH_INDEX multimodal-index
    ```
 
@@ -46,13 +46,13 @@ With this feature enabled, the following changes are made:
 
    Linux/Mac:
 
-   ```shell
+```shell
    ./scripts/prepdocs.sh
    ```
 
    Windows:
 
-   ```shell
+```shell
    .\scripts\prepdocs.ps1
    ```
 

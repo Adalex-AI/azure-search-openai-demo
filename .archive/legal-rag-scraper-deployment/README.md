@@ -13,7 +13,7 @@ This folder contains the necessary scripts and source code to scrape Civil Proce
 
 1.  **Install Dependencies:**
 
-    ```bash
+```bash
     pip install -r requirements.txt
     ```
 
@@ -21,11 +21,12 @@ This folder contains the necessary scripts and source code to scrape Civil Proce
 
     Copy `.env.example` to `.env` and fill in your Azure credentials.
 
-    ```bash
+```bash
     cp .env.example .env
     ```
 
     Edit `.env` with your specific values:
+
     - `AZURE_SEARCH_SERVICE`: Your Azure Search service URL.
     - `AZURE_SEARCH_KEY`: Your Azure Search admin key.
     - `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint.
@@ -113,7 +114,7 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
 
     Create a `Dockerfile` in the root of this folder:
 
-    ```dockerfile
+```dockerfile
     FROM python:3.11-slim
 
     # Install Chrome and dependencies for Selenium
@@ -141,7 +142,7 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
 
     Build the Docker image and push it to an Azure Container Registry (ACR).
 
-    ```bash
+```bash
     az acr build --registry <your-acr-name> --image legal-rag-scraper:v1 .
     ```
 
@@ -149,7 +150,7 @@ To run this solution in the cloud instead of locally, **Azure Container Apps (Jo
 
     Create a scheduled job in Azure Container Apps.
 
-    ```bash
+```bash
     az containerapp job create \
       --name legal-rag-scraper-job \
       --resource-group <your-resource-group> \

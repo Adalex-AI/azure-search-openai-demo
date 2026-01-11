@@ -73,7 +73,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   Run the following command to show the login UI and use Entra authentication by default:
 
-    ```shell
+```shell
     azd env set AZURE_USE_AUTHENTICATION true
     ```
 
@@ -81,7 +81,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   To ensure that the app restricts search results to only documents that the user has access to, run the following command:
 
-    ```shell
+```shell
     azd env set AZURE_ENFORCE_ACCESS_CONTROL true
     ```
 
@@ -89,7 +89,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   To allow upload of documents that have global access when there are no document-specific access controls assigned, run the following command:
 
-    ```shell
+```shell
     azd env set AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS true
     ```
 
@@ -97,7 +97,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   To allow unauthenticated users to use the app, run the following command:
 
-    ```shell
+```shell
     azd env set AZURE_ENABLE_UNAUTHENTICATED_ACCESS true
     ```
 
@@ -107,7 +107,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   Specify the tenant ID associated with authentication by running:
 
-    ```shell
+```shell
     azd env set AZURE_AUTH_TENANT_ID <YOUR-TENANT-ID>
     ```
 
@@ -115,7 +115,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   If your auth tenant ID is different from your currently logged in tenant ID, run:
 
-    ```shell
+```shell
     azd auth login --tenant-id <YOUR-TENANT-ID>
     ```
 
@@ -123,7 +123,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
     If your search index already exists, you need to enable access control on it:
 
-    ```shell
+```shell
     python ./scripts/manageacl.py --acl-action enable_acls
     ```
 
@@ -133,7 +133,7 @@ The easiest way to setup the two apps is to use the `azd` CLI. We've written scr
 
   Finally, run the following command to provision and deploy the app:
 
-    ```shell
+```shell
     azd up
     ```
 
@@ -282,7 +282,7 @@ The script supports the following commands. All commands support `-v` for verbos
 
   Example usage:
 
-  ```shell
+```shell
   python ./scripts/manageacl.py -v --acl-action enable_acls
   ```
 
@@ -290,7 +290,7 @@ The script supports the following commands. All commands support `-v` for verbos
 
   Example to view all Group IDs:
 
-  ```shell
+```shell
   python ./scripts/manageacl.py -v --acl-type groups --acl-action view --url https://st12345.blob.core.windows.net/content/Benefit_Options.pdf
   ```
 
@@ -298,7 +298,7 @@ The script supports the following commands. All commands support `-v` for verbos
 
   Example to add a Group ID:
 
-  ```shell
+```shell
   python ./scripts/manageacl.py -v --acl-type groups --acl-action add --acl xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx --url https://st12345.blob.core.windows.net/content/Benefit_Options.pdf
   ```
 
@@ -306,7 +306,7 @@ The script supports the following commands. All commands support `-v` for verbos
 
   Example to remove all Group IDs:
 
-  ```shell
+```shell
   python ./scripts/manageacl.py -v --acl-type groups --acl-action remove_all --url https://st12345.blob.core.windows.net/content/Benefit_Options.pdf
   ```
 
@@ -314,7 +314,7 @@ The script supports the following commands. All commands support `-v` for verbos
 
   Example to remove a specific User ID:
 
-  ```shell
+```shell
   python ./scripts/manageacl.py -v --acl-type oids --acl-action remove --acl xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx --url https://st12345.blob.core.windows.net/content/Benefit_Options.pdf
   ```
 

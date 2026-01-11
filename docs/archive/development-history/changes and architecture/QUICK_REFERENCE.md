@@ -70,7 +70,7 @@ court_category_map = {
 ```python
 # In chatreadretrieveread.py:
 response_token_limit = self.get_response_token_limit(
-    self.chatgpt_model, 
+    self.chatgpt_model,
     8192  # Change this number
 )
 ```

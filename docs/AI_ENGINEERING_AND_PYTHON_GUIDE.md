@@ -66,7 +66,7 @@ class OpenAIEmbeddings(ABC):
 
     Supported models:
     - text-embedding-ada-002: 1536 dimensions
-    - text-embedding-3-small: 512-1536 dimensions  
+    - text-embedding-3-small: 512-1536 dimensions
     - text-embedding-3-large: 256-3072 dimensions
     """
 
@@ -91,7 +91,7 @@ class OpenAIEmbeddings(ABC):
 # Vector query construction
 VectorizedQuery(
     vector=query_embedding,          # The query as a vector
-    k_nearest_neighbors=top,         # Number of results  
+    k_nearest_neighbors=top,         # Number of results
     fields=embedding_field,          # Field containing document embeddings
     exhaustive=use_semantic_ranker,  # Whether to search all vectors
 )
@@ -270,7 +270,7 @@ class ExtraArgs(TypedDict, total=False):
     dimensions: int
     temperature: float
 
-# Union types for multiple possibilities  
+# Union types for multiple possibilities
 def process(data: Union[str, bytes]) -> Optional[dict[str, Any]]:
     ...
 
@@ -551,8 +551,8 @@ def evaluate_statute_citation(response: str) -> float:
 ### Ground Truth Format
 
 ```jsonl
-{"question": "What is standard disclosure?", 
- "answer": "Standard disclosure requires...", 
+{"question": "What is standard disclosure?",
+ "answer": "Standard disclosure requires...",
  "sources": ["CPR_Part_31.pdf"]}
 ```
 

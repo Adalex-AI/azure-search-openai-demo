@@ -52,7 +52,7 @@ You might also decide to delete the VPN Gateway when not in use.
 
 1. Configure the azd environment variables to use private endpoints and a VPN gateway, with public network access disabled. This will allow you to connect to the chat app from inside the virtual network, but not from the public Internet.
 
-    ```shell
+```shell
     azd env set AZURE_USE_PRIVATE_ENDPOINT true
     azd env set AZURE_USE_VPN_GATEWAY true
     azd env set AZURE_PUBLIC_NETWORK_ACCESS Disabled
@@ -61,13 +61,13 @@ You might also decide to delete the VPN Gateway when not in use.
 
 1. Provision all the Azure resources:
 
-    ```bash
+```bash
     azd provision
     ```
 
 1. Once provisioning is complete, you will see an error when it tries to run the data ingestion script, because you are not yet connected to the VPN. That message should provide a URL for the VPN configuration file download. If you don't see that URL, run this command:
 
-    ```bash
+```bash
     azd env get-value AZURE_VPN_CONFIG_DOWNLOAD_LINK
     ```
 
@@ -75,7 +75,7 @@ You might also decide to delete the VPN Gateway when not in use.
 
 1. Open `AzureVPN/azurevpnconfig.xml`, and replace the `<clientconfig>` empty tag with the following:
 
-    ```xml
+```xml
       <clientconfig>
         <dnsservers>
           <dnsserver>10.0.11.4</dnsserver>
@@ -93,13 +93,13 @@ You might also decide to delete the VPN Gateway when not in use.
 
 1. Once you're successfully connected to VPN, you can run the data ingestion script:
 
-    ```bash
+```bash
     azd hooks run postprovision
     ```
 
 1. Finally, you can deploy the app:
 
-    ```bash
+```bash
     azd deploy
     ```
 

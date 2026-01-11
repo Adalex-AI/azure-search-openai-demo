@@ -77,82 +77,110 @@ async def check_blob_storage_feedback():
                         print(f"   ✓ {rel_path} ({file_size} bytes)")
         else:
             print("   No local feedback folder found.")
-        return
+        # Continue to check fallbacks
     
-    # Try to list feedback from blob storage
-    print("\n🔍 CHECKING BLOB STORAGE FOR FEEDBACK...")
-    
-    try:
-        credential = DefaultAzureCredential()
+    # Try to list feedback from user blob storage (if configured)
+    if user_storage_account:
+        print("\n🔍 CHECKING USER BLOB STORAGE FOR FEEDBACK...")
         
-        # Try as Data Lake Gen2 (FileSystemClient)
-        print(f"\n   Connecting to: https://{user_storage_account}.dfs.core.windows.net/{user_storage_container}")
-        fs_client = FileSystemClient(
-            f"https://{user_storage_account}.dfs.core.windows.net",
-            user_storage_container,
-            credential=credential
-        )
-        
-        feedback_files = []
-        async for path in fs_client.get_paths(path="feedback/"):
-            feedback_files.append(path)
-        
-        if feedback_files:
-            print(f"\n✅ FOUND {len(feedback_files)} FEEDBACK FILE(S):")
-            for f in feedback_files[:20]:  # Show first 20
-                print(f"   📄 {f.name} ({f.content_length or 'dir'} bytes)")
-                
-                # Read and display the most recent feedback
-                if f.is_directory == False and f.name.endswith(".json"):
-                    file_client = fs_client.get_file_client(f.name)
-                    download = await file_client.download_file()
-                    content = await download.readall()
-                    data = json.loads(content)
-                    print(f"      Rating: {data.get('payload', {}).get('rating', 'N/A')}")
-                    print(f"      Deployment: {data.get('metadata', {}).get('deployment_id', 'N/A')}")
-            
-            if len(feedback_files) > 20:
-                print(f"   ... and {len(feedback_files) - 20} more files")
-        else:
-            print("\n⚠️  No feedback files found in blob storage.")
-            print("   The feedback/ prefix may not exist yet or no feedback has been submitted.")
-            
-        await fs_client.close()
-        
-    except Exception as e:
-        print(f"\n❌ ERROR accessing blob storage: {e}")
-        print("   This could mean:")
-        print("   - The storage account doesn't have hierarchical namespace enabled")
-        print("   - Authentication failed (run 'az login' first)")
-        print("   - The container doesn't exist")
-        
-        # Fallback: Try as regular blob storage
-        print("\n   Trying as regular Blob Storage...")
         try:
-            blob_client = ContainerClient(
-                f"https://{user_storage_account}.blob.core.windows.net",
+            credential = DefaultAzureCredential()
+            
+            # Try as Data Lake Gen2 (FileSystemClient)
+            print(f"\n   Connecting to: https://{user_storage_account}.dfs.core.windows.net/{user_storage_container}")
+            fs_client = FileSystemClient(
+                f"https://{user_storage_account}.dfs.core.windows.net",
                 user_storage_container,
                 credential=credential
             )
             
-            blobs = []
-            async for blob in blob_client.list_blobs(name_starts_with="feedback/"):
-                blobs.append(blob)
+            feedback_files = []
+            async for path in fs_client.get_paths(path="feedback/"):
+                feedback_files.append(path)
             
-            if blobs:
-                print(f"\n✅ FOUND {len(blobs)} FEEDBACK BLOB(S):")
-                for b in blobs[:20]:
-                    print(f"   📄 {b.name} ({b.size} bytes)")
-            else:
-                print("   No feedback blobs found in container.")
+            if feedback_files:
+                print(f"\n✅ FOUND {len(feedback_files)} FEEDBACK FILE(S):")
+                for f in feedback_files[:20]:  # Show first 20
+                    print(f"   📄 {f.name} ({f.content_length or 'dir'} bytes)")
+                    
+                    # Read and display the most recent feedback
+                    if f.is_directory == False and f.name.endswith(".json"):
+                        file_client = fs_client.get_file_client(f.name)
+                        download = await file_client.download_file()
+                        content = await download.readall()
+                        data = json.loads(content)
+                        print(f"      Rating: {data.get('payload', {}).get('rating', 'N/A')}")
+                        print(f"      Deployment: {data.get('metadata', {}).get('deployment_id', 'N/A')}")
                 
-            await blob_client.close()
+                if len(feedback_files) > 20:
+                    print(f"   ... and {len(feedback_files) - 20} more files")
+            else:
+                print("\n⚠️  No feedback files found in blob storage.")
+                print("   The feedback/ prefix may not exist yet or no feedback has been submitted.")
+                
+            await fs_client.close()
             
-        except Exception as e2:
-            print(f"   Also failed as Blob Storage: {e2}")
+        except Exception as e:
+            print(f"\n❌ ERROR accessing blob storage: {e}")
+            print("   This could mean:")
+            print("   - The storage account doesn't have hierarchical namespace enabled")
+            print("   - Authentication failed (run 'az login' first)")
+            print("   - The container doesn't exist")
+            
+            # Fallback: Try as regular blob storage
+            print("\n   Trying as regular Blob Storage...")
+            try:
+                blob_client = ContainerClient(
+                    f"https://{user_storage_account}.blob.core.windows.net",
+                    user_storage_container,
+                    credential=credential
+                )
+                
+                blobs = []
+                async for blob in blob_client.list_blobs(name_starts_with="feedback/"):
+                    blobs.append(blob)
+                
+                if blobs:
+                    print(f"\n✅ FOUND {len(blobs)} FEEDBACK BLOB(S):")
+                    for b in blobs[:20]:
+                        print(f"   📄 {b.name} ({b.size} bytes)")
+                else:
+                    print("   No feedback blobs found in container.")
+                    
+                await blob_client.close()
+                
+            except Exception as e2:
+                print(f"   Also failed as Blob Storage: {e2}")
     
-    # Also check main storage account for feedback
-    print(f"\n📂 CHECKING MAIN STORAGE ({storage_account}) FOR FEEDBACK...")
+    # Also check main storage account for feedback in 'feedback' container (Fallback location)
+    print(f"\n📂 CHECKING MAIN STORAGE ({storage_account}) 'feedback' CONTAINER...")
+    try:
+        credential = DefaultAzureCredential()
+        # Check 'feedback' container specifically
+        blob_client = ContainerClient(
+            f"https://{storage_account}.blob.core.windows.net",
+            "feedback",
+            credential=credential
+        )
+        
+        blobs = []
+        async for blob in blob_client.list_blobs():
+             blobs.append(blob)
+        
+        if blobs:
+            print(f"\n✅ FOUND {len(blobs)} FEEDBACK BLOB(S) IN FALLBACK CONTAINER ('feedback'):")
+            for b in blobs[:10]:
+                print(f"   📄 {b.name} ({b.size} bytes)")
+        else:
+            print("   No feedback files in fallback 'feedback' container.")
+            
+        await blob_client.close()
+
+    except Exception as e:
+        print(f"   Could not check main storage feedback container: {e}")
+
+    # Also check main storage account for configured container (for legacy/other reasons)
+    print(f"\n📂 CHECKING MAIN STORAGE ({storage_account}) '{storage_container}' CONTAINER...")
     try:
         credential = DefaultAzureCredential()
         blob_client = ContainerClient(

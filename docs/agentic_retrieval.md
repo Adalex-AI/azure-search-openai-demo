@@ -8,7 +8,7 @@ This repository includes an optional feature that uses [agentic retrieval from A
 
    Set the azd environment variable to enable the agentic retrieval feature:
 
-   ```shell
+```shell
    azd env set USE_AGENTIC_KNOWLEDGEBASE true
    ```
 
@@ -18,7 +18,7 @@ This repository includes an optional feature that uses [agentic retrieval from A
 
    To change the model, set the following environment variables appropriately:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT knowledgebase
    azd env set AZURE_OPENAI_KNOWLEDGEBASE_MODEL gpt-4.1-mini
    azd env set AZURE_OPENAI_KNOWLEDGEBASE_MODEL_VERSION 2025-04-14
@@ -32,7 +32,7 @@ This repository includes an optional feature that uses [agentic retrieval from A
 
    Override the default by setting the following environment variable:
 
-   ```shell
+```shell
    azd env set AZURE_SEARCH_KNOWLEDGEBASE_RETRIEVAL_REASONING_EFFORT low
    ```
 
@@ -44,7 +44,7 @@ This repository includes an optional feature that uses [agentic retrieval from A
 
    **Web source:** Enables searching the public web for information.
 
-   ```shell
+```shell
    azd env set USE_WEB_SOURCE true
    ```
 
@@ -54,7 +54,7 @@ This repository includes an optional feature that uses [agentic retrieval from A
 
    **SharePoint source:** Enables searching SharePoint documents. Requires authentication to be enabled and uses the logged-in user's token via on-behalf-of flow.
 
-   ```shell
+```shell
    azd env set USE_SHAREPOINT_SOURCE true
    ```
 

@@ -27,7 +27,7 @@ GitHub Actions Workflow
 - **Output**: JSON files saved to `data/legal-scraper/processed/Upload/`
 - **Document Format**:
 
-  ```json
+```json
   {
     "id": "Insolvency Proceedings_chunk_001",
     "content": "Full document text...",
@@ -139,7 +139,7 @@ Options:
 - 10-second delay between batches
 - If still failing, increase delay in `upload_with_embeddings.py`:
 
-  ```python
+```python
   time.sleep(15)  # Increase from 10
   ```
 

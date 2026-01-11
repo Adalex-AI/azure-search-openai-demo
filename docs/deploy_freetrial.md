@@ -38,6 +38,6 @@ You have two options:
     * Comment out `host: containerapp` and uncomment `host: appservice` in the [azure.yaml](../azure.yaml) file.
     * Set the deployment target to `appservice`:
 
-        ```shell
+```shell
         azd env set DEPLOYMENT_TARGET appservice
         ```

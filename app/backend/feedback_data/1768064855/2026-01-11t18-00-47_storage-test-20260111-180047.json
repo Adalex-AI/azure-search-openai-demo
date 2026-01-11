@@ -1,0 +1,28 @@
+{
+  "event_type": "legal_feedback",
+  "context_shared": true,
+  "payload": {
+    "message_id": "storage-test-20260111-180047",
+    "rating": "helpful",
+    "issues": [],
+    "comment": "Test feedback for storage verification"
+  },
+  "context": {
+    "user_prompt": "Test question about CPR rules",
+    "ai_response": "Test response about Civil Procedure Rules",
+    "conversation_history": [],
+    "thoughts": [
+      {
+        "title": "Test Thought",
+        "description": "Storage verification test"
+      }
+    ]
+  },
+  "metadata": {
+    "deployment_id": "1768064855",
+    "app_version": "0.0.0",
+    "git_sha": "unknown",
+    "model_name": "gpt-5-nano",
+    "environment": "development"
+  }
+}

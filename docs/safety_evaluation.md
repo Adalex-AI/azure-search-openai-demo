@@ -12,13 +12,13 @@ In order to use the adversarial simulator and safety evaluators, you need an Azu
 
 1. Run this command to tell `azd` to provision an Azure AI project and hub:
 
-    ```shell
+```shell
     azd env set USE_AI_PROJECT true
     ```
 
 1. Then, run the following command to provision the project:
 
-    ```shell
+```shell
     azd provision
     ```
 

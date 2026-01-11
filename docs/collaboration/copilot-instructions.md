@@ -152,7 +152,7 @@ When pulling updates from `Azure-Samples/azure-search-openai-demo`:
 # Frontend tests
 cd app/frontend && npm test
 
-# Backend tests  
+# Backend tests
 cd . && python -m pytest tests/
 
 # Integration check

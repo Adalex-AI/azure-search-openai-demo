@@ -28,13 +28,13 @@ As of early June 2025, the default chat completion model is `gpt-4.1-mini`. If y
 
 1. To set the name of the deployment, run this command with a unique name in your Azure OpenAI account. You can use any deployment name, as long as it's unique in your Azure OpenAI account. For convenience, many developers use the same deployment name as the model name, but this is not required.
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT <your-deployment-name>
     ```
 
     For example:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT gpt-5-chat
     ```
 
@@ -42,37 +42,37 @@ As of early June 2025, the default chat completion model is `gpt-4.1-mini`. If y
 
    For gpt-5-chat:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-5-chat
    ```
 
     For gpt-4.1-mini:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4.1-mini
     ```
 
     For gpt-4o:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4o
     ```
 
     For gpt-4o mini:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4o-mini
     ```
 
     For gpt-4:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4
     ```
 
     For gpt-3.5-turbo:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-35-turbo
     ```
 
@@ -80,37 +80,37 @@ As of early June 2025, the default chat completion model is `gpt-4.1-mini`. If y
 
    For gpt-5-chat:
 
-   ```shell
+```shell
    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-08-07
    ```
 
     For gpt-4.1-mini:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2025-04-14
     ```
 
     For gpt-4o:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2024-05-13
     ```
 
     For gpt-4o mini:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2024-07-18
     ```
 
     For gpt-4:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION turbo-2024-04-09
     ```
 
     For gpt-3.5-turbo:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 0125
     ```
 
@@ -118,25 +118,25 @@ As of early June 2025, the default chat completion model is `gpt-4.1-mini`. If y
 
     For GlobalStandard:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU GlobalStandard
     ```
 
     For Standard:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU Standard
     ```
 
 1. To set the Azure OpenAI deployment capacity (TPM, measured in thousands of tokens per minute), run this command with the desired capacity. This is not necessary if you are using the default capacity of 30.
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY 20
     ```
 
 1. To update the deployment with the new parameters, run this command.
 
-    ```bash
+```bash
     azd up
     ```
 
@@ -160,15 +160,15 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
 
 1. Run one of the following commands to set the desired model:
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-ada-002
     ```
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-3-small
     ```
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-3-large
     ```
 
@@ -176,19 +176,19 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
 
     Default dimensions for text-embedding-ada-002
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DIMENSIONS 1536
     ```
 
     Default dimensions for text-embedding-3-small
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DIMENSIONS 1536
     ```
 
     Default dimensions for text-embedding-3-large
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DIMENSIONS 3072
     ```
 
@@ -196,13 +196,13 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
 
     For text-embedding-ada-002:
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_VERSION 2
     ```
 
     For text-embedding-3-small and text-embedding-3-large:
 
-    ```shell
+```shell
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_VERSION 1
     ```
 
@@ -210,13 +210,13 @@ By default, the deployed Azure web app uses the `text-embedding-3-large` embeddi
 
     For GlobalStandard:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_SKU GlobalStandard
     ```
 
     For Standard:
 
-    ```bash
+```bash
     azd env set AZURE_OPENAI_EMB_DEPLOYMENT_SKU Standard
     ```
 

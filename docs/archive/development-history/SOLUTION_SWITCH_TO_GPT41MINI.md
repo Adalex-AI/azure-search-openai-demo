@@ -74,7 +74,7 @@ Once you switch to gpt-4.1-mini:
 1. **Backend should work immediately** ✅
 1. **Run evaluation**:
 
-   ```bash
+```bash
    source .evalenv/bin/activate
    python evals/generate_ground_truth.py --numquestions=50
    python evals/evaluate.py --numquestions=10

@@ -45,13 +45,13 @@ After 1000 queries, you will get an error message about exceeding the semantic r
 
   you should upgrade the semantic ranker SKU from "free" to "standard" SKU:
 
-  ```shell
+```shell
   azd env set AZURE_SEARCH_SEMANTIC_RANKER standard
   ```
 
   Or disable semantic search entirely:
 
-  ```shell
+```shell
   azd env set AZURE_SEARCH_SEMANTIC_RANKER disabled
   ```
 
@@ -60,7 +60,7 @@ After 1000 queries, you will get an error message about exceeding the semantic r
 However, you [cannot change the SKU](https://learn.microsoft.com/azure/search/search-sku-tier#tier-upgrade-or-downgrade) of an existing search service, so you will need to re-index the data or manually copy it over.
 You can change the SKU by setting the `AZURE_SEARCH_SERVICE_SKU` azd environment variable to [an allowed SKU](https://learn.microsoft.com/azure/templates/microsoft.search/searchservices?pivots=deployment-language-bicep#sku).
 
-  ```shell
+```shell
   azd env set AZURE_SEARCH_SERVICE_SKU standard
   ```
 
