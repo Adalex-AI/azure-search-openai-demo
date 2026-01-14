@@ -180,6 +180,86 @@ def validate_documents(documents: list) -> tuple[list, list]:
     
     return valid, invalid
 
+def compute_content_hash(doc: dict) -> str:
+    """Compute a deterministic hash of the document content."""
+    # We use content, title and sourcefile as the primary identity of the document version
+    # This detects if content changed but ID stayed same
+    content = doc.get("content", "") or ""
+    title = doc.get("title", "") or ""
+    id_val = doc.get("id", "") or ""
+    
+    # Create a string to hash
+    to_hash = f"{id_val}|{title}|{content}"
+    return hashlib.md5(to_hash.encode("utf-8")).hexdigest()
+
+def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
+    """
+    Filter out documents that haven't changed in the index.
+    Returns (docs_to_upload, unchanged_count, new_count)
+    """
+    if not documents:
+        return [], 0, 0
+        
+    logger.info("Checking for existing documents to minimize updates...")
+    docs_to_upload = []
+    unchanged_count = 0
+    new_count = 0
+    changed_count = 0
+    
+    # Process in chunks to avoid huge filter strings
+    chunk_size = 50
+    
+    for i in range(0, len(documents), chunk_size):
+        chunk = documents[i:i+chunk_size]
+        chunk_map = {doc["id"]: doc for doc in chunk}
+        chunk_ids = list(chunk_map.keys())
+        
+        # Build filter query
+        filter_expr = " or ".join([f"id eq '{doc_id}'" for doc_id in chunk_ids])
+        
+        found_ids = set()
+        
+        try:
+            # We fetch content to compute hash comparison
+            results = client.search(
+                search_text="*",
+                filter=filter_expr,
+                select=["id", "title", "content"],
+                top=chunk_size
+            )
+            
+            for res in results:
+                rid = res["id"]
+                found_ids.add(rid)
+                
+                # Check if changed
+                local_doc = chunk_map.get(rid)
+                if local_doc:
+                    remote_hash = compute_content_hash(res)
+                    local_hash = compute_content_hash(local_doc)
+                    
+                    if remote_hash != local_hash:
+                        docs_to_upload.append(local_doc)
+                        changed_count += 1
+                        logger.info(f"📝 content changed: {rid}")
+                    else:
+                        unchanged_count += 1
+                        # logger.info(f"⏭️  Unchanged: {rid}")
+        
+        except Exception as e:
+            logger.warning(f"Error checking existing docs, defaulting to upload all: {e}")
+            docs_to_upload.extend(chunk)
+            continue
+            
+        # Add new docs (ids asked for but not returned by search)
+        for doc_id in chunk_ids:
+            if doc_id not in found_ids:
+                docs_to_upload.append(chunk_map[doc_id])
+                new_count += 1
+                logger.info(f"✨ New document: {doc_id}")
+
+    return docs_to_upload, unchanged_count, new_count, changed_count
+
 def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 100) -> int:
     """Upload documents to Azure Search."""
     try:
@@ -211,12 +291,30 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
             logger.error(f"❌ Index '{index_name}' does not exist")
             return 0
         
-        # Upload documents in batches
+        # Configure Search Client
         client = SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
         
+        # --- DIFFERENTIAL UPDATE LOGIC ---
+        # Only upload changed/new documents
+        docs_to_upload, unchanged, new_count, changed_count = filter_changed_documents(client, documents)
+        
+        logger.info("-" * 40)
+        logger.info(f"Diff Analysis:")
+        logger.info(f"   Total Input: {len(documents)}")
+        logger.info(f"   ✨ New:        {new_count}")
+        logger.info(f"   📝 Changed:    {changed_count}")
+        logger.info(f"   ⏭️  Unchanged:  {unchanged}")
+        logger.info("-" * 40)
+        
+        if not docs_to_upload:
+            logger.info("🎉 No changes detected. Index is up to date!")
+            return 0
+
+        logger.info(f"Uploading {len(docs_to_upload)} valid updates...")
+        
         uploaded = 0
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i:i+batch_size]
+        for i in range(0, len(docs_to_upload), batch_size):
+            batch = docs_to_upload[i:i+batch_size]
             try:
                 results = client.upload_documents(batch)
                 successful = sum(1 for r in results if r.succeeded)
@@ -226,7 +324,7 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
             except Exception as e:
                 logger.error(f"Error uploading batch: {e}")
         
-        logger.info(f"✅ Upload complete: {uploaded}/{len(documents)} documents")
+        logger.info(f"✅ Upload complete: {uploaded} documents updated")
         return uploaded
         
     except ImportError as e:
@@ -235,6 +333,7 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
     except Exception as e:
         logger.error(f"Upload failed: {e}")
         return 0
+
 
 def main():
     parser = argparse.ArgumentParser(description="Upload legal documents to Azure Search")

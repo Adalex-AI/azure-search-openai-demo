@@ -68,6 +68,24 @@ jobs:
           fi
         continue-on-error: true 
 
+      - name: Generate Upload Plan (Dry Run)
+        run: |
+          echo "Generating upload plan (Diff Analysis)..."
+          # Attempt to run dry-run to show changes. Will skip if secrets are missing.
+          if [[ -n "${{ secrets.AZURE_SEARCH_KEY }}" || -n "${{ secrets.AZURE_SEARCH_SERVICE }}" ]]; then
+            python scripts/legal-scraper/upload_with_embeddings.py --input Upload --dry-run
+          else
+            echo "⚠️  Skipping Upload Plan: Azure secrets not available in this job context."
+          fi
+        continue-on-error: true
+        env:
+          AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
+          AZURE_SEARCH_INDEX: ${{ secrets.AZURE_SEARCH_INDEX }}
+          AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+          AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
+
       - name: Upload Scraped Data
         uses: actions/upload-artifact@v4
         with:
@@ -127,7 +145,9 @@ jobs:
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_SEARCH_INDEX: ${{ secrets.AZURE_SEARCH_INDEX }}
+          AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
           AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
           AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
