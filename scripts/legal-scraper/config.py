@@ -100,7 +100,7 @@ class Config:
     # Document processing settings
     CHUNK_SIZE = 1000
     CHUNK_OVERLAP = 100
-    MIN_CONTENT_LENGTH = 500  # Minimum characters for valid document
+    MIN_CONTENT_LENGTH = 100  # Minimum characters for valid document
     
     # Legal terminology validation
     LEGAL_TERMS = {
@@ -109,7 +109,7 @@ class Config:
         "judgment", "application", "hearing", "parties",
         "section", "part", "paragraph", "regulation"
     }
-    MIN_LEGAL_TERMS = 3  # Minimum legal terms to consider valid
+    MIN_LEGAL_TERMS = 1  # Minimum legal terms to consider valid
     
     # Paths - relative to project root
     PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
