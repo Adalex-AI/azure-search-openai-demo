@@ -12,6 +12,7 @@ import random
 import re
 import logging
 import requests
+from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from typing import List, Dict, Optional
@@ -92,17 +93,57 @@ class CPRScraper:
         return list(unique_links)
 
     def _generate_id_from_url(self, url: str) -> str:
-        """Generate a clean ID from the URL."""
+        """Generate a clean ID from the URL.
+        
+        Note: This is a fallback ID. The actual ID will be generated
+        from the page title after scraping to match existing index format.
+        """
         # Extract the last part of the URL (e.g., 'part01')
         basename = url.strip('/').split('/')[-1]
         # Clean up
         clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', basename)
         return f"cpr_{clean_name}"
 
+    def _generate_id_from_title(self, title: str, content: str) -> str:
+        """Generate an ID from the page title to match existing index format.
+        
+        The existing index uses IDs like "Part 44 – General Rules about Costs"
+        which get sanitized to "Part_44___General_Rules_about_Costs".
+        
+        We need to extract the Part/Rule number and full title.
+        """
+        # Try to extract the PART title from content (usually in format "PART X - TITLE")
+        import re
+        
+        # Match "PART X - TITLE" or "PART X – TITLE" at the start of content
+        part_match = re.search(r'^(PART\s+\d+[A-Z]?)\s*[-–]\s*([A-Z][A-Z\s]+)', content, re.MULTILINE)
+        if part_match:
+            part_num = part_match.group(1).title()  # e.g., "Part 44"
+            part_title = part_match.group(2).strip().title()  # e.g., "General Rules About Costs"
+            return f"{part_num} – {part_title}"
+        
+        # Try Practice Direction format
+        pd_match = re.search(r'^(PRACTICE\s+DIRECTION\s+\d+[A-Z]*)\s*[-–]\s*([A-Z][A-Z\s]+)', content, re.MULTILINE | re.IGNORECASE)
+        if pd_match:
+            pd_num = pd_match.group(1).title()
+            pd_title = pd_match.group(2).strip().title()
+            return f"{pd_num} – {pd_title}"
+        
+        # Fallback: use the link title with em dash
+        if title:
+            # Clean up the title
+            clean_title = title.strip()
+            if ' - ' in clean_title:
+                clean_title = clean_title.replace(' - ', ' – ')  # Use em dash
+            return clean_title
+        
+        # Last resort: use URL-based ID
+        return None
+
     def scrape_rule_page(self, link_info: Dict[str, str]) -> bool:
         """Scrape a single rule page and save to JSON."""
         url = link_info['url']
-        doc_id = link_info['id']
+        fallback_id = link_info['id']
         logger.info(f"Scraping: {url}")
         
         soup = self.get_soup(url)
@@ -134,22 +175,36 @@ class CPRScraper:
             logger.warning(f"Content too short for {url} ({len(text)} chars)")
             return False
 
-        # Create document object
+        # Generate title-based ID to match existing index format
+        title_based_id = self._generate_id_from_title(link_info['title'], text)
+        doc_id = title_based_id if title_based_id else fallback_id
+        
+        # Extract sourcefile (Part number) from the ID
+        # e.g., "Part 44 – General Rules about Costs" -> "Part 44"
+        sourcefile = doc_id.split('–')[0].strip() if '–' in doc_id else doc_id.split('-')[0].strip() if '-' in doc_id else doc_id
+        
+        # Create document object matching existing schema
         doc = {
             "id": doc_id,
             "content": text,
-            "category": "Civil Procedure Rules",
-            "sourcepage": url,
-            "sourcefile": f"{doc_id}.json",
-            "title": link_info['title']
+            "category": "Civil Procedure Rules and Practice Directions",
+            "sourcepage": link_info['title'],  # Human-readable page name
+            "sourcefile": sourcefile,  # Part number (e.g., "Part 44")
+            "storageUrl": url,  # Original URL
+            "oids": [],
+            "groups": [],
+            "parent_id": doc_id,
+            "embedding": [],  # Will be generated during upload
+            "updated": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         }
 
-        # Save to file
-        output_path = os.path.join(self.output_dir, f"{doc_id}.json")
+        # Save to file using sanitized filename
+        safe_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', doc_id)[:100]  # Limit filename length
+        output_path = os.path.join(self.output_dir, f"{safe_filename}.json")
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(doc, f, indent=2, ensure_ascii=False)
-            logger.info(f"Saved: {output_path}")
+            logger.info(f"Saved: {output_path} (ID: {doc_id})")
             return True
         except Exception as e:
             logger.error(f"Failed to save {output_path}: {e}")

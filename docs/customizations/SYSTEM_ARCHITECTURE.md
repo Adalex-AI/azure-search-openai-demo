@@ -298,93 +298,23 @@ app/backend/
 
 ***
 
-## 🚀 Phase 2 Scraping Pipeline Architecture
+## � Feedback System Architecture
 
-### Workflow Execution Flow
+The feedback system provides a privacy-conscious loop for users to rate AI responses and provide textual feedback, which is stored for quality analysis.
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│  GitHub Actions Trigger                                  │
-│  ├─ Weekly Schedule (Sundays 00:00 UTC)                 │
-│  └─ Manual Dispatch (gh workflow run)                   │
-└────────────────────┬─────────────────────────────────────┘
-                     │
-         ┌───────────┴───────────┐
-         │ Activate Service      │
-         │ Principal via OIDC    │
-         │ (federated creds)     │
-         └───────────┬───────────┘
-                     │
-    ┌────────────────▼──────────────────┐
-    │  Job 1: Scrape & Validate         │
-    ├────────────────────────────────────┤
-    │                                    │
-    │  Step 1: Setup Python 3.10         │
-    │  Step 2: Install dependencies      │
-    │  Step 3: Run scraper               │
-    │    python scrape_cpr.py            │
-    │    └─ Output: ~768 JSON files      │
-    │                                    │
-    │  Step 4: Validate documents        │
-    │    python validation.py            │
-    │    ├─ Check legal terms            │
-    │    ├─ Verify structure             │
-    │    └─ Output: validation report    │
-    │                                    │
-    │  Step 5: Upload artifacts          │
-    │    (scraped files + reports)       │
-    │                                    │
-    └────────────────┬───────────────────┘
-                     │
-                     ▼
-         ┌──────────────────────┐
-         │  Generate Embeddings │
-         │  (if not --dry-run)  │
-         └──────────────┬───────┘
-                        │
-    ┌───────────────────▼──────────────────┐
-    │  Embedding Generation                │
-    ├────────────────────────────────────────┤
-    │                                        │
-    │  Process: 768 documents                │
-    │  ├─ Batch size: 3 documents            │
-    │  ├─ Delay: 10 seconds between batches  │
-    │  ├─ Retries: Exponential backoff       │
-    │  │   (4s → 8s → 16s → 32s → 60s)     │
-    │  └─ API: Azure OpenAI text-embedding- │
-    │      3-large                          │
-    │                                        │
-    │  Output: Embedding vectors (3072-D)   │
-    │  Duration: ~2.5-3 hours                │
-    │                                        │
-    └───────────────┬───────────────────────┘
-                    │
-    ┌───────────────▼───────────────────┐
-    │  Job 2: Upload (Conditional)      │
-    ├───────────────────────────────────┤
-    │                                   │
-    │  IF dry_run == "false":           │
-    │  ├─ Upload to Azure Search        │
-    │  ├─ Index: cpr-index              │
-    │  ├─ Batch size: 200 documents     │
-    │  └─ Complete with embeddings      │
-    │                                   │
-    │  ELSE (dry_run == "true"):        │
-    │  └─ Show what would be uploaded   │
-    │     (no actual changes)           │
-    │                                   │
-    └───────────────┬───────────────────┘
-                    │
-    ┌───────────────▼─────────────────┐
-    │  Workflow Complete              │
-    ├─────────────────────────────────┤
-    │  ✅ Success → Index updated     │
-    │  ❌ Failure → Check logs         │
-    │                                 │
-    │  Artifacts retained 7 days      │
-    │  (scraped files + reports)      │
-    └─────────────────────────────────┘
-```
+For in-depth documentation on the privacy-first feedback mechanism, storage redundancy, and data schemas, see **[Feedback System Documentation](./FEEDBACK_SYSTEM.md)**.
+
+The system allows users to rate responses and provide detailed diagnostics, ensuring privacy by filtering sensitive context unless explicitly shared.
+
+
+***
+
+## �🚀 Phase 2 Scraping Pipeline Architecture
+
+For detailed information on the automated scraper, validation rules, and GitHub Actions workflows, see **[Scraping Pipeline Documentation](./SCRAPING_PIPELINE.md)**.
+
+The pipeline ensures the index remains synchronized with official sources through a rigorous scrape → validate → embed → upload process.
+
 
 ***
 
@@ -653,7 +583,8 @@ The system is designed to support:
 ## 📚 Related Documentation
 
 - [Customizations Guide](./README.md) - Feature overview
-- [Phase 2 Automation](./PHASE_2_SCRAPER_AUTOMATION.md) - Workflow details
+- [Feedback System Documentation](./FEEDBACK_SYSTEM.md) - Privacy & storage
+- [Scraping Pipeline Documentation](./SCRAPING_PIPELINE.md) - Automation details
 - [Deployment & Operations](./DEPLOYMENT_AND_OPERATIONS.md) - Setup and maintenance
 - [Legal Evaluation](../legal_evaluation.md) - Quality metrics
 - [Main README](../../README.md) - Project overview

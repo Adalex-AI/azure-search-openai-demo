@@ -17,6 +17,10 @@ logger = logging.getLogger("azure")
 async def submit_feedback():
     data = await request.get_json()
 
+    message_id = data.get("message_id")
+    if not message_id:
+        return jsonify({"error": "message_id is required"}), 400
+
     # Check if user consented to share context
     context_shared = data.get("context_shared", False)
 
@@ -82,6 +86,7 @@ async def submit_feedback():
         # CUSTOM: Add comprehensive deployment metadata for debugging
         deployment_metadata = get_deployment_metadata()
         deployment_metadata["deployment_id"] = deployment_id  # Override with actual deployment ID
+        deployment_metadata["timestamp"] = timestamp
         
         log_payload["metadata"] = deployment_metadata
 

@@ -205,7 +205,7 @@ class TestFeedbackEndpoint:
         }
 
         with mock.patch("customizations.config.CUSTOM_FEATURES", {"enhanced_feedback": True}):
-            with mock.patch("customizations.config.get_deployment_metadata") as mock_metadata:
+            with mock.patch("customizations.routes.feedback.get_deployment_metadata") as mock_metadata:
                 mock_metadata.return_value = {
                     "deployment_id": "test-deploy-001",
                     "app_version": "1.0.0",
@@ -293,7 +293,7 @@ class TestEndpointErrorHandling:
             response = await client.post(
                 "/api/feedback",
                 data="invalid json",
-                content_type="application/json",
+                headers={"Content-Type": "application/json"},
             )
 
             # Should return error for invalid JSON

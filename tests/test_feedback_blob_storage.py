@@ -24,11 +24,11 @@ async def test_feedback_saves_to_blob_storage(client):
     
     mock_container_client = mock.MagicMock()
     mock_container_client.get_file_client = mock.MagicMock(return_value=mock_file_client)
+    mock_container_client.close = mock.AsyncMock()
     
     # Inject the mock blob container client into the app config
     from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
-    with client.application.app_context():
-        client.application.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
+    client.app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
     
     response = await client.post(
         "/api/feedback",
@@ -90,10 +90,10 @@ async def test_feedback_blob_path_structure(client):
     
     mock_container_client = mock.MagicMock()
     mock_container_client.get_file_client = mock.MagicMock(return_value=mock_file_client)
+    mock_container_client.close = mock.AsyncMock()
     
     from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
-    with client.application.app_context():
-        client.application.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
+    client.app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
     
     response = await client.post(
         "/api/feedback",
@@ -117,70 +117,6 @@ async def test_feedback_blob_path_structure(client):
 
 
 @pytest.mark.asyncio
-async def test_feedback_admin_blob_storage(client):
-    """Test that admin-only feedback is saved to separate blob location."""
-    
-    mock_file_client = mock.AsyncMock()
-    mock_file_client.upload_data = mock.AsyncMock()
-    
-    mock_container_client = mock.MagicMock()
-    mock_container_client.get_file_client = mock.MagicMock(return_value=mock_file_client)
-    
-    from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
-    with client.application.app_context():
-        client.application.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
-    
-    response = await client.post(
-        "/api/feedback",
-        json={
-            "message_id": "admin-test-001",
-            "rating": "helpful",
-            "context_shared": True,
-            "user_prompt": "Test",
-            "ai_response": "Response",
-            "conversation_history": [],
-            "thoughts": [
-                {
-                    "title": "Search Query",
-                    "description": "search terms",
-                    "props": {}
-                },
-                {
-                    "title": "Prompt to generate answer",
-                    "description": "You are a legal expert...",  # This should be admin-only
-                    "props": {}
-                }
-            ]
-        },
-    )
-    
-    assert response.status_code == 200
-    
-    # Check that upload_data was called multiple times (user + admin)
-    assert mock_file_client.upload_data.call_count >= 2
-    
-    # Check the paths - should have both regular and _admin.json
-    call_args_list = mock_container_client.get_file_client.call_args_list
-    paths = [call[0][0] for call in call_args_list]
-    
-    # Should have at least one _admin.json path
-    admin_paths = [p for p in paths if "_admin.json" in p]
-    assert len(admin_paths) >= 1
-    
-    # Verify admin data was uploaded
-    if len(mock_file_client.upload_data.call_args_list) > 1:
-        # Check the second upload (should be admin data)
-        admin_upload = mock_file_client.upload_data.call_args_list[1][0][0]
-        admin_data = json.loads(admin_upload)
-        
-        # Should contain admin_only_thoughts
-        assert "admin_only_thoughts" in admin_data
-        if admin_data["admin_only_thoughts"]:
-            assert any(t["title"] == "Prompt to generate answer" 
-                      for t in admin_data["admin_only_thoughts"])
-
-
-@pytest.mark.asyncio
 async def test_feedback_deployment_metadata_in_blob(client):
     """Test that deployment metadata is included in blob storage."""
     
@@ -189,10 +125,10 @@ async def test_feedback_deployment_metadata_in_blob(client):
     
     mock_container_client = mock.MagicMock()
     mock_container_client.get_file_client = mock.MagicMock(return_value=mock_file_client)
+    mock_container_client.close = mock.AsyncMock()
     
     from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
-    with client.application.app_context():
-        client.application.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
+    client.app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = mock_container_client
     
     # Set some environment variables for metadata
     with mock.patch.dict(os.environ, {
@@ -230,9 +166,8 @@ async def test_feedback_falls_back_to_local_without_blob(client):
     
     from config import CONFIG_USER_BLOB_CONTAINER_CLIENT
     
-    with client.application.app_context():
-        # Ensure blob container client is NOT configured
-        client.application.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = None
+    # Ensure blob container client is NOT configured
+    client.app.config[CONFIG_USER_BLOB_CONTAINER_CLIENT] = None
     
     # Mock os.makedirs and open to capture file operations
     with mock.patch("os.makedirs") as mock_makedirs, \

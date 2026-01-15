@@ -126,13 +126,16 @@ def generate_embeddings(documents: list) -> list:
     return documents
 
 def sanitize_id(doc_id: str) -> str:
-    """Sanitize document ID for Azure Search."""
-    # Lowercase
-    s = doc_id.lower()
-    # Replace invalid chars with underscore
-    s = re.sub(r'[^a-z0-9_\-=]', '_', s)
-    # Remove duplicate underscores
-    s = re.sub(r'_+', '_', s)
+    """Sanitize document ID for Azure Search.
+    
+    Preserves the case of the original ID to match existing index format.
+    Only replaces invalid characters with underscores.
+    Azure Search document keys support: letters, numbers, dashes, underscores, and equals signs.
+    """
+    # Replace invalid chars with underscore (preserve case)
+    s = re.sub(r'[^a-zA-Z0-9_\-=]', '_', doc_id)
+    # Replace multiple consecutive underscores with triple underscore (matches index convention)
+    s = re.sub(r'_{2,}', '___', s)
     # Strip leading/trailing underscores
     s = s.strip('_')
     return s

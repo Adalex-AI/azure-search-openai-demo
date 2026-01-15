@@ -2,6 +2,9 @@
 .azure
 *_env
 
+# Feedback blob storage sync (local mirror of Azure blobs)
+feedback_blob_sync/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

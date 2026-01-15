@@ -15,7 +15,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should return initial state with loading=true", () => {
-        global.fetch = vi.fn();
+        // @ts-ignore
+        globalThis.fetch = vi.fn();
         const { result } = renderHook(() => useCategories());
 
         expect(result.current.loading).toBe(true);
@@ -29,7 +30,8 @@ describe("useCategories Hook", () => {
             { key: "Commercial Court", text: "Commercial Court Guide", count: 42 }
         ];
 
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({ categories: mockCategories })
@@ -47,7 +49,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should handle fetch errors gracefully", async () => {
-        global.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
 
         const { result } = renderHook(() => useCategories());
 
@@ -61,7 +64,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should handle API errors (non-200 response)", async () => {
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: false,
                 status: 404
@@ -79,7 +83,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should handle missing categories in response", async () => {
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({}) // No categories key
@@ -106,7 +111,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should handle invalid JSON response", async () => {
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.reject(new Error("Invalid JSON"))
@@ -119,12 +125,13 @@ describe("useCategories Hook", () => {
             expect(result.current.loading).toBe(false);
         });
 
-        expect(result.current.error).toTruthy();
+        expect(result.current.error).toBeTruthy();
     });
 
     test("should not update state after unmount", async () => {
         let resolveResponse: any;
-        global.fetch = vi.fn(
+        // @ts-ignore
+        globalThis.fetch = vi.fn(
             () =>
                 new Promise(resolve => {
                     resolveResponse = resolve;
@@ -150,7 +157,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should handle empty categories array", async () => {
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({ categories: [] })
@@ -174,7 +182,8 @@ describe("useCategories Hook", () => {
             { key: "Court B", text: "Court B Guide", count: 15 }
         ];
 
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({ categories: mockCategories })
@@ -193,7 +202,8 @@ describe("useCategories Hook", () => {
     });
 
     test("should call /api/categories endpoint", async () => {
-        global.fetch = vi.fn(() =>
+        // @ts-ignore
+        globalThis.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({ categories: [] })
@@ -203,7 +213,7 @@ describe("useCategories Hook", () => {
         renderHook(() => useCategories());
 
         await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith("/api/categories");
+            expect(globalThis.fetch).toHaveBeenCalledWith("/api/categories");
         });
     });
 });
