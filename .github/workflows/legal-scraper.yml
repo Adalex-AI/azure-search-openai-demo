@@ -30,6 +30,7 @@ jobs:
     environment: Production
     outputs:
       validation_status: ${{ steps.validate.outputs.status }}
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     
     steps:
       - name: Checkout code
@@ -70,6 +71,7 @@ jobs:
         continue-on-error: true 
 
       - name: Generate Upload Plan (Dry Run)
+        id: plan
         run: |
           echo "Generating upload plan (Diff Analysis)..."
           # Attempt to run dry-run to show changes. Will skip if secrets are missing.
@@ -77,8 +79,9 @@ jobs:
             python scripts/legal-scraper/upload_with_embeddings.py --input Upload --dry-run
           else
             echo "⚠️  Skipping Upload Plan: Azure secrets not available in this job context."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
-        continue-on-error: true
+        continue-on-error: false
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_SEARCH_INDEX: ${{ secrets.AZURE_SEARCH_INDEX }}
@@ -105,7 +108,7 @@ jobs:
     needs: scrape-and-validate
     runs-on: ubuntu-latest
     environment: Production
-    if: ${{ github.event.inputs.dry_run != 'true' && (needs.scrape-and-validate.outputs.validation_status == 'success' || github.event.inputs.force_upload == 'true') }}
+    if: ${{ github.event.inputs.dry_run != 'true' && ((needs.scrape-and-validate.outputs.validation_status == 'success' && needs.scrape-and-validate.outputs.has_changes == 'true') || github.event.inputs.force_upload == 'true') }}
     
     steps:
       - name: Checkout code

@@ -317,6 +317,16 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
             f.write(f"⏭️  Unchanged:  {unchanged}\n")
             f.write("="*40 + "\n")
             
+            if docs_to_upload:
+                f.write("\nDetails of changes:\n")
+                for doc in docs_to_upload[:50]: # Limit details
+                    status = "New" if doc.get('id') not in [d.get('id') for d in documents] else "Changed"
+                    f.write(f"- {doc.get('id')} ({status})\n")
+                if len(docs_to_upload) > 50:
+                    f.write(f"... and {len(docs_to_upload) - 50} more\n")
+            else:
+                f.write("\nNo changes detected.\n")
+            
         logger.info(f"Upload plan written to {report_path}")
 
         logger.info("-" * 40)
@@ -329,11 +339,25 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         
         if not docs_to_upload:
             logger.info("🎉 No changes detected. Index is up to date!")
+            # Write to GITHUB_OUTPUT if present
+            if os.getenv('GITHUB_OUTPUT'):
+                with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
+                    fh.write("has_changes=false\n")
             return 0
+
+        # Write to GITHUB_OUTPUT if present
+        if os.getenv('GITHUB_OUTPUT'):
+            with open(os.getenv('GITHUB_OUTPUT'), 'a') as fh:
+                fh.write("has_changes=true\n")
 
         if dry_run:
             logger.info(f"🔍 DRY-RUN: Would upload {len(docs_to_upload)} documents to {index_name}")
             return 0
+
+        # --- GENERATE EMBEDDINGS LATE ---
+        # Only generate embeddings for the docs we are actually going to upload
+        logger.info(f"Generating embeddings for {len(docs_to_upload)} updates...")
+        docs_to_upload = generate_embeddings(docs_to_upload)
 
         logger.info(f"Uploading {len(docs_to_upload)} valid updates...")
         
@@ -388,8 +412,9 @@ def main():
         logger.error("No documents to upload")
         return 1
     
-    # Generate embeddings if missing
-    documents = generate_embeddings(documents)
+    # NOTE: We do NOT generate embeddings here anymore. 
+    # We delay it until after diff analysis to save costs.
+    # documents = generate_embeddings(documents)
     
     # Validate documents
     logger.info(f"\n📋 Validating {len(documents)} documents...")
