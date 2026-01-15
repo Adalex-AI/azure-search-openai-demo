@@ -190,15 +190,33 @@ def validate_documents(documents: list, check_embeddings: bool = False) -> tuple
     return valid, invalid
 
 def compute_content_hash(doc: dict) -> str:
-    """Compute a deterministic hash of the document content."""
-    # We use content, sourcefile and id as the primary identity of the document version
-    # This detects if content changed but ID stayed same
+    """Compute a deterministic hash of the document content.
+    
+    Includes all fields that represent meaningful content changes:
+    - id: Document identifier
+    - content: The actual text content
+    - sourcefile: Part/section reference
+    - sourcepage: Human-readable title
+    - category: Document classification
+    - storageUrl: Source location
+    - updated: Official update date from the government website
+    
+    Excludes fields that don't represent content changes:
+    - embedding: Derived from content
+    - oids, groups: Access control metadata
+    - parent_id: Usually redundant with id
+    """
+    id_val = doc.get("id", "") or ""
     content = doc.get("content", "") or ""
     sourcefile = doc.get("sourcefile", "") or ""
-    id_val = doc.get("id", "") or ""
+    sourcepage = doc.get("sourcepage", "") or ""
+    category = doc.get("category", "") or ""
+    storage_url = doc.get("storageUrl", "") or ""
+    updated = doc.get("updated", "") or ""
     
-    # Create a string to hash
-    to_hash = f"{id_val}|{sourcefile}|{content}"
+    # Create a deterministic string to hash
+    # Using pipe separator as it's unlikely to appear in the data
+    to_hash = f"{id_val}|{sourcefile}|{sourcepage}|{category}|{storage_url}|{updated}|{content}"
     return hashlib.md5(to_hash.encode("utf-8")).hexdigest()
 
 def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
@@ -229,11 +247,12 @@ def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
         found_ids = set()
         
         try:
-            # Fetch only fields that exist in the index schema
+            # Fetch all fields needed for content hash comparison
+            # (excluding embedding, oids, groups, parent_id which aren't part of content identity)
             results = client.search(
                 search_text="*",
                 filter=filter_expr,
-                select=["id", "content", "sourcefile"],
+                select=["id", "content", "sourcefile", "sourcepage", "category", "storageUrl", "updated"],
                 top=chunk_size
             )
             
