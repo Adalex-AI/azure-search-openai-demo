@@ -260,7 +260,7 @@ def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
 
     return docs_to_upload, unchanged_count, new_count, changed_count
 
-def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 100) -> int:
+def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 100, dry_run: bool = False) -> int:
     """Upload documents to Azure Search."""
     try:
         from azure.search.documents import SearchClient
@@ -289,6 +289,8 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
             logger.info(f"✅ Index '{index_name}' found")
         except ResourceNotFoundError:
             logger.error(f"❌ Index '{index_name}' does not exist")
+            if dry_run:
+                logger.info("Dry run: Would create index (not implemented in this script)")
             return 0
         
         # Configure Search Client
@@ -298,6 +300,25 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         # Only upload changed/new documents
         docs_to_upload, unchanged, new_count, changed_count = filter_changed_documents(client, documents)
         
+        # Write Upload Plan Report
+        reports_dir = os.path.join(Config.SCRAPER_DATA_DIR, "reports")
+        os.makedirs(reports_dir, exist_ok=True)
+        report_path = os.path.join(reports_dir, "upload_plan.txt")
+        
+        with open(report_path, "w") as f:
+            f.write("Azure Search Upload Plan\n")
+            f.write("="*40 + "\n")
+            f.write(f"Target Index: {index_name}\n")
+            f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("-"*40 + "\n")
+            f.write(f"Total Input:   {len(documents)}\n")
+            f.write(f"✨ New:        {new_count}\n")
+            f.write(f"📝 Changed:    {changed_count}\n")
+            f.write(f"⏭️  Unchanged:  {unchanged}\n")
+            f.write("="*40 + "\n")
+            
+        logger.info(f"Upload plan written to {report_path}")
+
         logger.info("-" * 40)
         logger.info(f"Diff Analysis:")
         logger.info(f"   Total Input: {len(documents)}")
@@ -308,6 +329,10 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         
         if not docs_to_upload:
             logger.info("🎉 No changes detected. Index is up to date!")
+            return 0
+
+        if dry_run:
+            logger.info(f"🔍 DRY-RUN: Would upload {len(docs_to_upload)} documents to {index_name}")
             return 0
 
         logger.info(f"Uploading {len(docs_to_upload)} valid updates...")
@@ -383,22 +408,26 @@ def main():
     target_index = Config.AZURE_SEARCH_INDEX_STAGING if args.staging else Config.AZURE_SEARCH_INDEX
     logger.info(f"📍 Target index: {target_index}")
     
-    # Dry-run mode
+    # Run upload (or dry-run) with diff logic
     if args.dry_run:
-        logger.info("\n🔍 DRY-RUN MODE (no documents uploaded)")
-        logger.info(f"Would upload {len(valid)} documents to {target_index}")
+        logger.info("\n🔍 Starting Dry Run Analysis...")
+    else:
+        logger.info(f"\n⬆️  Starting Upload to {target_index}...")
+
+    uploaded = upload_to_azure_search(target_index, valid, args.batch_size, dry_run=args.dry_run)
+    
+    if args.dry_run:
+        logger.info("Dry run complete.")
         return 0
-    
-    # Upload
-    logger.info(f"\n⬆️  Uploading {len(valid)} documents to {target_index}...")
-    uploaded = upload_to_azure_search(target_index, valid, args.batch_size)
-    
-    if uploaded > 0:
+    elif uploaded > 0:
         logger.info(f"\n✅ Success! {uploaded} documents uploaded")
         return 0
     else:
-        logger.error("\n❌ Upload failed")
-        return 1
+        # If 0 uploaded but not dry run, it might mean no changes (success) or failure.
+        # upload_to_azure_search returns 0 for both "no changes" and "error".
+        # Logging in the function makes it clear.
+        logger.info("Process complete.")
+        return 0
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -96,6 +96,25 @@ def validate_directory(input_dir_name: str) -> bool:
     logger.info(f"❌ Invalid:    {stats['invalid']}")
     logger.info("="*40)
     
+    # Write report to file
+    reports_dir = os.path.join(Config.SCRAPER_DATA_DIR, "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    report_path = os.path.join(reports_dir, "validation_summary.txt")
+    
+    with open(report_path, "w") as f:
+        f.write(f"Validation Summary for {input_dir_name}\n")
+        f.write("="*40 + "\n")
+        f.write(f"Total Files: {stats['total']}\n")
+        f.write(f"Valid:       {stats['valid']}\n")
+        f.write(f"Invalid:     {stats['invalid']}\n")
+        f.write("="*40 + "\n")
+        if stats['invalid'] > 0:
+            f.write("Status: FAILED\n")
+        else:
+            f.write("Status: PASSED\n")
+            
+    logger.info(f"Report written to {report_path}")
+    
     return validation_passed
 
 def main():
