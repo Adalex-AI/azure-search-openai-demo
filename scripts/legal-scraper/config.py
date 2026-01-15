@@ -74,7 +74,7 @@ class Config:
         '',
         AZD_ENV_MAPPING
     )
-    AZURE_SEARCH_INDEX = os.getenv('AZURE_SEARCH_INDEX', 'legal-court-rag')
+    AZURE_SEARCH_INDEX = os.getenv('AZURE_SEARCH_INDEX', 'legal-court-rag-index')
     AZURE_SEARCH_INDEX_STAGING = os.getenv('AZURE_SEARCH_INDEX_STAGING', 'legal-court-rag-staging')
     
     # Azure OpenAI settings for embeddings
