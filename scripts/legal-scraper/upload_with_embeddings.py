@@ -16,7 +16,7 @@ import hashlib
 import time
 import re
 from pathlib import Path
-from openai import AzureOpenAI, RateLimitError
+from openai import AzureOpenAI, RateLimitError, APIConnectionError, APIError
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
@@ -58,7 +58,7 @@ def load_documents_from_files(input_dir: str) -> list:
     return documents
 
 @retry(
-    retry=retry_if_exception_type(RateLimitError),
+    retry=retry_if_exception_type((RateLimitError, APIConnectionError, APIError)),
     wait=wait_exponential(multiplier=1, min=4, max=60),
     stop=stop_after_attempt(5)
 )

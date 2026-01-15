@@ -27,6 +27,7 @@ concurrency:
 jobs:
   scrape-and-validate:
     runs-on: ubuntu-latest
+    environment: Production
     outputs:
       validation_status: ${{ steps.validate.outputs.status }}
     
