@@ -158,8 +158,13 @@ def map_document_to_schema(doc: dict) -> dict:
         "parent_id": doc.get("parent_id", ""),
     }
 
-def validate_documents(documents: list) -> tuple[list, list]:
-    """Validate documents before upload. Returns (valid, invalid)."""
+def validate_documents(documents: list, check_embeddings: bool = False) -> tuple[list, list]:
+    """Validate documents before upload. Returns (valid, invalid).
+    
+    Args:
+        documents: List of documents to validate
+        check_embeddings: If True, validate embedding dimensions. Set False during dry-run.
+    """
     valid = []
     invalid = []
     
@@ -170,7 +175,8 @@ def validate_documents(documents: list) -> tuple[list, list]:
             errors.append("Missing id")
         if not doc.get("content"):
             errors.append("Missing content")
-        if "embedding" in doc and len(doc.get("embedding", [])) != Config.EMBEDDING_DIMENSIONS:
+        # Only check embeddings if explicitly requested (during actual upload)
+        if check_embeddings and "embedding" in doc and len(doc.get("embedding", [])) != Config.EMBEDDING_DIMENSIONS:
             errors.append(f"Embedding has wrong dimensions: {len(doc.get('embedding', []))} vs {Config.EMBEDDING_DIMENSIONS}")
         
         if errors:
@@ -305,37 +311,80 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         os.makedirs(reports_dir, exist_ok=True)
         report_path = os.path.join(reports_dir, "upload_plan.txt")
         
+        total_changes = new_count + changed_count
+        
         with open(report_path, "w") as f:
-            f.write("Azure Search Upload Plan\n")
-            f.write("="*40 + "\n")
+            f.write("=" * 60 + "\n")
+            f.write("        LEGAL DOCUMENT SCRAPER - DIFF REPORT\n")
+            f.write("=" * 60 + "\n\n")
             f.write(f"Target Index: {index_name}\n")
-            f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write("-"*40 + "\n")
-            f.write(f"Total Input:   {len(documents)}\n")
-            f.write(f"✨ New:        {new_count}\n")
-            f.write(f"📝 Changed:    {changed_count}\n")
-            f.write(f"⏭️  Unchanged:  {unchanged}\n")
-            f.write("="*40 + "\n")
+            f.write(f"Timestamp:    {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             
-            if docs_to_upload:
-                f.write("\nDetails of changes:\n")
-                for doc in docs_to_upload[:50]: # Limit details
-                    status = "New" if doc.get('id') not in [d.get('id') for d in documents] else "Changed"
-                    f.write(f"- {doc.get('id')} ({status})\n")
-                if len(docs_to_upload) > 50:
-                    f.write(f"... and {len(docs_to_upload) - 50} more\n")
+            f.write("-" * 60 + "\n")
+            f.write("                    SUMMARY\n")
+            f.write("-" * 60 + "\n")
+            f.write(f"Total Documents Scraped:    {len(documents)}\n")
+            f.write(f"✨ New Documents:           {new_count}\n")
+            f.write(f"📝 Changed Documents:       {changed_count}\n")
+            f.write(f"⏭️  Unchanged Documents:     {unchanged}\n")
+            f.write("-" * 60 + "\n\n")
+            
+            if total_changes > 0:
+                f.write("=" * 60 + "\n")
+                f.write("⚠️  ACTION REQUIRED: DIFFERENCES DETECTED\n")
+                f.write("=" * 60 + "\n\n")
+                f.write(f"There are {total_changes} document(s) that need to be updated.\n")
+                f.write("The following sections require embedding generation and upload:\n\n")
+                
+                # List new documents
+                if new_count > 0:
+                    f.write("NEW DOCUMENTS (to be added):\n")
+                    f.write("-" * 40 + "\n")
+                    new_docs = [d for d in docs_to_upload if d.get('_is_new', False)]
+                    for i, doc in enumerate(docs_to_upload[:30], 1):
+                        f.write(f"  {i}. {doc.get('id')}\n")
+                    if len(docs_to_upload) > 30:
+                        f.write(f"  ... and {len(docs_to_upload) - 30} more\n")
+                    f.write("\n")
+                
+                # List changed documents  
+                if changed_count > 0:
+                    f.write("CHANGED DOCUMENTS (to be updated):\n")
+                    f.write("-" * 40 + "\n")
+                    for i, doc in enumerate(docs_to_upload[:30], 1):
+                        f.write(f"  {i}. {doc.get('id')}\n")
+                    if len(docs_to_upload) > 30:
+                        f.write(f"  ... and {len(docs_to_upload) - 30} more\n")
+                    f.write("\n")
+                
+                f.write("=" * 60 + "\n")
+                f.write("NEXT STEPS:\n")
+                f.write("  1. Review the changes above\n")
+                f.write("  2. Approve the upload job in GitHub Actions\n")
+                f.write("  3. Embeddings will be generated for changed docs only\n")
+                f.write("  4. Documents will be uploaded to Azure Search\n")
+                f.write("=" * 60 + "\n")
             else:
-                f.write("\nNo changes detected.\n")
+                f.write("=" * 60 + "\n")
+                f.write("✅ NO ACTION REQUIRED: INDEX IS UP TO DATE\n")
+                f.write("=" * 60 + "\n\n")
+                f.write("All scraped documents match the current Azure Search index.\n")
+                f.write("No embedding generation or upload is needed.\n")
             
         logger.info(f"Upload plan written to {report_path}")
 
-        logger.info("-" * 40)
+        logger.info("-" * 60)
+        if total_changes > 0:
+            logger.info("⚠️  DIFFERENCES DETECTED - ACTION REQUIRED")
+        else:
+            logger.info("✅ NO DIFFERENCES - INDEX IS UP TO DATE")
+        logger.info("-" * 60)
         logger.info(f"Diff Analysis:")
-        logger.info(f"   Total Input: {len(documents)}")
-        logger.info(f"   ✨ New:        {new_count}")
-        logger.info(f"   📝 Changed:    {changed_count}")
-        logger.info(f"   ⏭️  Unchanged:  {unchanged}")
-        logger.info("-" * 40)
+        logger.info(f"   Total Input:     {len(documents)}")
+        logger.info(f"   ✨ New:          {new_count}")
+        logger.info(f"   📝 Changed:      {changed_count}")
+        logger.info(f"   ⏭️  Unchanged:    {unchanged}")
+        logger.info("-" * 60)
         
         if not docs_to_upload:
             logger.info("🎉 No changes detected. Index is up to date!")
@@ -416,9 +465,9 @@ def main():
     # We delay it until after diff analysis to save costs.
     # documents = generate_embeddings(documents)
     
-    # Validate documents
-    logger.info(f"\n📋 Validating {len(documents)} documents...")
-    valid, invalid = validate_documents(documents)
+    # Validate documents (don't check embeddings yet - they'll be generated later for changed docs only)
+    logger.info(f"\n📋 Validating {len(documents)} documents (structure only, embeddings checked later)...")
+    valid, invalid = validate_documents(documents, check_embeddings=False)
     
     if invalid:
         logger.error(f"❌ {len(invalid)} documents failed validation:")
