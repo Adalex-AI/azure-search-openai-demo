@@ -188,14 +188,14 @@ def validate_documents(documents: list, check_embeddings: bool = False) -> tuple
 
 def compute_content_hash(doc: dict) -> str:
     """Compute a deterministic hash of the document content."""
-    # We use content, title and sourcefile as the primary identity of the document version
+    # We use content, sourcefile and id as the primary identity of the document version
     # This detects if content changed but ID stayed same
     content = doc.get("content", "") or ""
-    title = doc.get("title", "") or ""
+    sourcefile = doc.get("sourcefile", "") or ""
     id_val = doc.get("id", "") or ""
     
     # Create a string to hash
-    to_hash = f"{id_val}|{title}|{content}"
+    to_hash = f"{id_val}|{sourcefile}|{content}"
     return hashlib.md5(to_hash.encode("utf-8")).hexdigest()
 
 def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
@@ -226,11 +226,11 @@ def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
         found_ids = set()
         
         try:
-            # We fetch content to compute hash comparison
+            # Fetch only fields that exist in the index schema
             results = client.search(
                 search_text="*",
                 filter=filter_expr,
-                select=["id", "title", "content"],
+                select=["id", "content", "sourcefile"],
                 top=chunk_size
             )
             
