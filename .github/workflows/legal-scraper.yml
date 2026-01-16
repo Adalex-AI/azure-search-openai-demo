@@ -179,6 +179,14 @@ jobs:
           AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
+      - name: Upload Statistics Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-statistics
+          path: data/legal-scraper/processed/upload_statistics.txt
+          retention-days: 90
+
       # Optional: Slack Notification
       # - name: Slack Notification
       #   uses: slackapi/slack-github-action@v1.24.0

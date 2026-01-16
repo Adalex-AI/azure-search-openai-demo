@@ -59,7 +59,7 @@ def load_documents_from_files(input_dir: str) -> list:
 
 @retry(
     retry=retry_if_exception_type((RateLimitError, APIConnectionError, APIError)),
-    wait=wait_exponential(multiplier=1, min=4, max=60),
+    wait=wait_exponential(multiplier=1, min=2, max=20),
     stop=stop_after_attempt(5)
 )
 def create_embeddings_with_retry(client, texts: list, model: str):
@@ -101,12 +101,22 @@ def generate_embeddings(documents: list) -> list:
             timeout=120.0
         )
         
-    # Process in batches with aggressive rate limiting
-    batch_size = 3  # Very small batches to minimize rate limit issues
+    # Process in batches optimized for high rate limits
+    # With 12,000 requests/min and 2M tokens/min, we can be aggressive
+    batch_size = 100  # Larger batches for faster processing
     success_count = 0
     for i in range(0, len(docs_to_embed), batch_size):
         batch = docs_to_embed[i:i+batch_size]
-        texts = [doc["content"].replace("\n", " ")[:8000] for doc in batch]  # Truncate to token limit
+        # Handle content that might be a list (join with newlines) or string
+        texts = []
+        for doc in batch:
+            content = doc["content"]
+            if isinstance(content, list):
+                # Join list elements with newlines
+                text = "\n".join(content)
+            else:
+                text = content
+            texts.append(text.replace("\n", " ")[:8000])  # Truncate to token limit
         
         try:
             response = create_embeddings_with_retry(client, texts, deployment)
@@ -115,9 +125,9 @@ def generate_embeddings(documents: list) -> list:
             success_count += len(batch)
             logger.info(f"✅ Generated embeddings: {success_count}/{len(docs_to_embed)} ({(success_count/len(docs_to_embed)*100):.1f}%)")
             
-            # Aggressive rate limiting: wait longer between batches
+            # Minimal delay with high rate limits (12K req/min, 2M tokens/min)
             if i + batch_size < len(docs_to_embed):
-                time.sleep(10)  # 10 second delay between batches
+                time.sleep(0.5)  # 0.5 second delay between batches
         except Exception as e:
             logger.error(f"❌ Error generating embeddings for batch {i//batch_size + 1}: {e}")
             logger.warning(f"Skipping {len(batch)} documents in this batch")
@@ -147,10 +157,15 @@ def map_document_to_schema(doc: dict) -> dict:
     
     if doc_id != sanitized_id:
         logger.info(f"Sanitized ID: '{doc_id}' -> '{sanitized_id}'")
+    
+    # Handle content that might be a list (join with newlines) or string
+    content = doc.get("content", "")
+    if isinstance(content, list):
+        content = "\n".join(content)
         
     return {
         "id": sanitized_id,
-        "content": doc.get("content", ""),
+        "content": content,
         "embedding": doc.get("embedding", []),
         "category": doc.get("category", "Legal Document"),
         "sourcepage": doc.get("sourcepage", ""),
@@ -208,6 +223,9 @@ def compute_content_hash(doc: dict) -> str:
     """
     id_val = doc.get("id", "") or ""
     content = doc.get("content", "") or ""
+    # Handle content that might be a list
+    if isinstance(content, list):
+        content = "\n".join(content)
     sourcefile = doc.get("sourcefile", "") or ""
     sourcepage = doc.get("sourcepage", "") or ""
     category = doc.get("category", "") or ""
@@ -219,13 +237,14 @@ def compute_content_hash(doc: dict) -> str:
     to_hash = f"{id_val}|{sourcefile}|{sourcepage}|{category}|{storage_url}|{updated}|{content}"
     return hashlib.md5(to_hash.encode("utf-8")).hexdigest()
 
-def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
+def filter_changed_documents(client, documents: list) -> tuple[list, int, int, int]:
     """
     Filter out documents that haven't changed in the index.
-    Returns (docs_to_upload, unchanged_count, new_count)
+    Uses filterable 'id' field for efficient lookups.
+    Returns (docs_to_upload, unchanged_count, new_count, changed_count)
     """
     if not documents:
-        return [], 0, 0
+        return [], 0, 0, 0
         
     logger.info("Checking for existing documents to minimize updates...")
     docs_to_upload = []
@@ -233,7 +252,7 @@ def filter_changed_documents(client, documents: list) -> tuple[list, int, int]:
     new_count = 0
     changed_count = 0
     
-    # Process in chunks to avoid huge filter strings
+    # Process in chunks to avoid huge filter strings (Azure Search has filter length limits)
     chunk_size = 50
     
     for i in range(0, len(documents), chunk_size):
@@ -298,6 +317,10 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         from azure.core.exceptions import ResourceNotFoundError
         
         endpoint = Config.AZURE_SEARCH_SERVICE
+        # Ensure endpoint is a full URL
+        if endpoint and not endpoint.startswith("https://"):
+            endpoint = f"https://{endpoint}.search.windows.net"
+        
         key = Config.AZURE_SEARCH_KEY
         
         if key:
@@ -395,18 +418,50 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
             
         logger.info(f"Upload plan written to {report_path}")
 
-        logger.info("-" * 60)
+        # === ENHANCED STATISTICS LOGGING ===
+        logger.info("\n" + "=" * 80)
+        logger.info("📊 DIFFERENTIAL UPLOAD STATISTICS")
+        logger.info("=" * 80)
+        
         if total_changes > 0:
-            logger.info("⚠️  DIFFERENCES DETECTED - ACTION REQUIRED")
+            logger.info("⚠️  STATUS: DIFFERENCES DETECTED - UPLOAD REQUIRED")
         else:
-            logger.info("✅ NO DIFFERENCES - INDEX IS UP TO DATE")
-        logger.info("-" * 60)
-        logger.info(f"Diff Analysis:")
-        logger.info(f"   Total Input:     {len(documents)}")
-        logger.info(f"   ✨ New:          {new_count}")
-        logger.info(f"   📝 Changed:      {changed_count}")
-        logger.info(f"   ⏭️  Unchanged:    {unchanged}")
-        logger.info("-" * 60)
+            logger.info("✅ STATUS: NO DIFFERENCES - INDEX IS UP TO DATE")
+        
+        logger.info("\nDocument Analysis:")
+        logger.info(f"  Total Input Documents:     {len(documents):>6}")
+        logger.info(f"  ✨ New Documents:           {new_count:>6}  ({new_count/len(documents)*100:.1f}%)")
+        logger.info(f"  📝 Changed Documents:       {changed_count:>6}  ({changed_count/len(documents)*100:.1f}%)")
+        logger.info(f"  ⏭️  Unchanged Documents:    {unchanged:>6}  ({unchanged/len(documents)*100:.1f}%)")
+        logger.info(f"\n  🎯 Total Requiring Upload:  {total_changes:>6}")
+        logger.info("=" * 80 + "\n")
+        
+        # Write detailed statistics file for workflow artifacts
+        stats_file = os.path.join(Config.PROCESSED_DIR, "upload_statistics.txt")
+        with open(stats_file, 'w') as f:
+            f.write("=" * 80 + "\n")
+            f.write("DIFFERENTIAL UPLOAD STATISTICS\n")
+            f.write("=" * 80 + "\n\n")
+            
+            f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Target Index: {index_name}\n")
+            f.write(f"Mode: {'DRY RUN' if dry_run else 'PRODUCTION UPLOAD'}\n\n")
+            
+            f.write("Document Counts:\n")
+            f.write(f"  Total Input:        {len(documents):>6}\n")
+            f.write(f"  New:                {new_count:>6}  ({new_count/len(documents)*100:>5.1f}%)\n")
+            f.write(f"  Changed:            {changed_count:>6}  ({changed_count/len(documents)*100:>5.1f}%)\n")
+            f.write(f"  Unchanged:          {unchanged:>6}  ({unchanged/len(documents)*100:>5.1f}%)\n")
+            f.write(f"  Total to Upload:    {total_changes:>6}\n\n")
+            
+            if total_changes > 0:
+                f.write("Status: UPLOAD REQUIRED\n")
+            else:
+                f.write("Status: INDEX UP TO DATE\n")
+            
+            f.write("\n" + "=" * 80 + "\n")
+        
+        logger.info(f"📄 Statistics written to {stats_file}")
         
         if not docs_to_upload:
             logger.info("🎉 No changes detected. Index is up to date!")
@@ -433,16 +488,54 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         logger.info(f"Uploading {len(docs_to_upload)} valid updates...")
         
         uploaded = 0
+        failed = 0
+        total_batches = (len(docs_to_upload) + batch_size - 1) // batch_size
+        
         for i in range(0, len(docs_to_upload), batch_size):
             batch = docs_to_upload[i:i+batch_size]
+            batch_num = i//batch_size + 1
             try:
                 results = client.upload_documents(batch)
                 successful = sum(1 for r in results if r.succeeded)
+                batch_failed = len(batch) - successful
                 uploaded += successful
-                logger.info(f"Batch {i//batch_size + 1}: uploaded {successful}/{len(batch)} documents")
+                failed += batch_failed
+                
+                logger.info(f"Batch {batch_num}/{total_batches}: uploaded {successful}/{len(batch)} documents")
+                if batch_failed > 0:
+                    logger.warning(f"  ⚠️  {batch_failed} documents failed in this batch")
+                
                 time.sleep(0.5)  # Rate limiting
             except Exception as e:
-                logger.error(f"Error uploading batch: {e}")
+                logger.error(f"Error uploading batch {batch_num}: {e}")
+                failed += len(batch)
+        
+        # Final statistics
+        logger.info("\n" + "=" * 80)
+        logger.info("📊 UPLOAD COMPLETION STATISTICS")
+        logger.info("=" * 80)
+        logger.info(f"  Documents to Upload:  {len(docs_to_upload):>6}")
+        logger.info(f"  ✅ Successfully Uploaded: {uploaded:>6}")
+        if failed > 0:
+            logger.info(f"  ❌ Failed:                {failed:>6}")
+        logger.info("\n  Breakdown by Change Type:")
+        logger.info(f"    ✨ New:                 {new_count:>6}")
+        logger.info(f"    📝 Changed:             {changed_count:>6}")
+        logger.info("=" * 80 + "\n")
+        
+        # Update statistics file with upload results
+        stats_file = os.path.join(Config.PROCESSED_DIR, "upload_statistics.txt")
+        with open(stats_file, 'a') as f:
+            f.write("\nUPLOAD RESULTS:\n")
+            f.write(f"  Attempted:          {len(docs_to_upload):>6}\n")
+            f.write(f"  Successful:         {uploaded:>6}\n")
+            if failed > 0:
+                f.write(f"  Failed:             {failed:>6}\n")
+            f.write(f"\n  Breakdown:\n")
+            f.write(f"    New:              {new_count:>6}\n")
+            f.write(f"    Changed:          {changed_count:>6}\n")
+            f.write(f"\n  Completion Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("\n" + "=" * 80 + "\n")
         
         logger.info(f"✅ Upload complete: {uploaded} documents updated")
         return uploaded
