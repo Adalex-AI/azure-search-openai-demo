@@ -90,17 +90,10 @@ def generate_embeddings(documents: list) -> list:
             timeout=120.0
         )
     else:
-        # In GitHub Actions, use AzureCliCredential which leverages the azure/login action
-        is_ci = os.getenv('GITHUB_ACTIONS') == 'true'
-        if is_ci:
-            from azure.identity import AzureCliCredential
-            token_provider = get_bearer_token_provider(
-                AzureCliCredential(), "https://cognitiveservices.azure.com/.default"
-            )
-        else:
-            token_provider = get_bearer_token_provider(
-                DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
-            )
+        # Use DefaultAzureCredential which supports Environment, WorkloadIdentity (OIDC), ManagedIdentity, and AzureCLI
+        token_provider = get_bearer_token_provider(
+            DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+        )
         client = AzureOpenAI(
             azure_ad_token_provider=token_provider,
             api_version="2023-05-15",
@@ -334,15 +327,9 @@ def upload_to_azure_search(index_name: str, documents: list, batch_size: int = 1
         if key:
             credential = AzureKeyCredential(key)
         else:
-            # In GitHub Actions, use AzureCliCredential which leverages the azure/login action
-            # In local dev, use DefaultAzureCredential which tries multiple auth methods
-            is_ci = os.getenv('GITHUB_ACTIONS') == 'true'
-            if is_ci:
-                logger.info("Using AzureCliCredential for authentication (GitHub Actions)")
-                credential = AzureCliCredential()
-            else:
-                logger.info("Using DefaultAzureCredential for authentication")
-                credential = DefaultAzureCredential()
+            # Use DefaultAzureCredential which supports Environment, WorkloadIdentity (OIDC), ManagedIdentity, and AzureCLI
+            logger.info("Using DefaultAzureCredential for authentication")
+            credential = DefaultAzureCredential()
         
         if not endpoint:
             logger.error("Azure Search endpoint not configured")

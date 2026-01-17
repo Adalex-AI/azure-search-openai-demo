@@ -69,12 +69,10 @@ class Config:
         '',
         AZD_ENV_MAPPING
     )
-    AZURE_SEARCH_KEY = get_env_var(
-        'AZURE_SEARCH_KEY',
-        '',
-        AZD_ENV_MAPPING
-    )
-    AZURE_SEARCH_INDEX = os.getenv('AZURE_SEARCH_INDEX', 'legal-court-rag-index')
+    # Prefer RBAC: Don't auto-load keys from AZD. Only use if explicitly set in environment.
+    AZURE_SEARCH_KEY = os.getenv('AZURE_SEARCH_KEY', '')
+
+    AZURE_SEARCH_INDEX = os.getenv('AZURE_SEARCH_INDEX', 'legal-court-rag-index-v2')
     AZURE_SEARCH_INDEX_STAGING = os.getenv('AZURE_SEARCH_INDEX_STAGING', 'legal-court-rag-staging')
     
     # Azure OpenAI settings for embeddings
@@ -83,11 +81,9 @@ class Config:
         '',
         AZD_ENV_MAPPING
     )
-    AZURE_OPENAI_KEY = get_env_var(
-        'AZURE_OPENAI_KEY',
-        '',
-        AZD_ENV_MAPPING
-    )
+    # Prefer RBAC: Don't auto-load keys from AZD. Only use if explicitly set in environment.
+    AZURE_OPENAI_KEY = os.getenv('AZURE_OPENAI_KEY', '')
+
     AZURE_OPENAI_EMB_DEPLOYMENT = get_env_var(
         'AZURE_OPENAI_EMB_DEPLOYMENT',
         'text-embedding-3-large',
