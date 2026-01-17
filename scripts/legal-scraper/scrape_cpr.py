@@ -223,10 +223,14 @@ class CPRScraper:
             links = links[:limit]
             logger.info(f"Limiting to first {limit} pages")
 
+        import concurrent.futures
+        
+        logger.info(f"Starting parallel scrape with 5 workers...")
         success_count = 0
-        for link in links:
-            if self.scrape_rule_page(link):
-                success_count += 1
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(self.scrape_rule_page, links))
+            success_count = sum(1 for r in results if r)
             
         logger.info(f"Scraping complete. Successfully scraped {success_count}/{len(links)} pages.")
 

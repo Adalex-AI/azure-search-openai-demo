@@ -6,7 +6,7 @@ This folder contains the local pipeline for scraping, validating, and uploading 
 
 **Core Pipeline Scripts:**
 
-- **scrape_cpr.py**: Selenium-based web scraper for Civil Procedure Rules from justice.gov.uk
+- **scrape_cpr.py**: High-performance concurrent web scraper for Civil Procedure Rules (using requests/BeautifulSoup)
 - **validation.py**: Content quality checks and legal terminology validation
 - **upload_with_embeddings.py**: Azure Search upload with automatic vector embedding generation from Azure OpenAI
 - **run_pipeline.sh**: Orchestration script that runs scrape → validate → upload pipeline
