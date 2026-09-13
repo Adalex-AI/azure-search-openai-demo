@@ -5,8 +5,9 @@ Tests feature flag management and deployment metadata functions.
 """
 
 import os
-import pytest
 from unittest import mock
+
+import pytest
 
 
 class TestFeatureFlags:
@@ -31,7 +32,7 @@ class TestFeatureFlags:
 
     def test_is_feature_enabled_returns_false_for_explicitly_disabled_feature(self):
         """Test that is_feature_enabled respects disabled features."""
-        from customizations.config import is_feature_enabled, CUSTOM_FEATURES
+        from customizations.config import CUSTOM_FEATURES, is_feature_enabled
 
         # Temporarily disable a feature
         original_value = CUSTOM_FEATURES.get("category_filter")

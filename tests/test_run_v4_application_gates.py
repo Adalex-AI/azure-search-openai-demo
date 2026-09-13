@@ -4,7 +4,6 @@ import pytest
 
 from scripts.run_v4_application_gates import ApplicationGatesError, load_gate_reports
 
-
 PROVENANCE = {
     "release_id": "release-1",
     "git_sha": "git-1",

@@ -2,9 +2,16 @@ import json
 
 import pytest
 
-from scripts.build_v4_evidence_bundle import EvidenceError, artifact_search_gate, build_bundle
-from scripts.promote_v4_candidate import PromotionError, load_and_validate, validate_evidence_bundle
-
+from scripts.build_v4_evidence_bundle import (
+    EvidenceError,
+    artifact_search_gate,
+    build_bundle,
+)
+from scripts.promote_v4_candidate import (
+    PromotionError,
+    load_and_validate,
+    validate_evidence_bundle,
+)
 
 VALID_BUNDLE = {
     "approved": True,

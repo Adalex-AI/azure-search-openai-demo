@@ -50,13 +50,6 @@ from approaches.approach import Approach, DataPoints
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.promptmanager import PromptManager
 from chat_history.cosmosdb import chat_history_cosmosdb_bp
-from customizations.config import (
-    fetch_available_sources,
-    is_deployed_ui_compat_enabled,
-    is_feature_enabled,
-    validate_v4_runtime_contract,
-)
-from customizations.routes import categories_bp, feedback_bp, provenance_bp, proxy_source_bp
 from config import (
     CONFIG_AGENTIC_KNOWLEDGEBASE_ENABLED,
     CONFIG_AUTH_CLIENT,
@@ -100,6 +93,18 @@ from config import (
 )
 from core.authentication import AuthenticationHelper
 from core.sessionhelper import create_session_id
+from customizations.config import (
+    fetch_available_sources,
+    is_deployed_ui_compat_enabled,
+    is_feature_enabled,
+    validate_v4_runtime_contract,
+)
+from customizations.routes import (
+    categories_bp,
+    feedback_bp,
+    provenance_bp,
+    proxy_source_bp,
+)
 from decorators import authenticated, authenticated_path
 from error import error_dict, error_response
 from prepdocs import (

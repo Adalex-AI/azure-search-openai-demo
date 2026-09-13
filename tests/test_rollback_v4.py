@@ -1,9 +1,11 @@
 import json
 import subprocess
 
-import pytest
-
-from scripts.rollback_v4 import CONFIRMATION, RollbackError, build_rollback_plan, execute_plan
+from scripts.rollback_v4 import (
+    CONFIRMATION,
+    build_rollback_plan,
+    execute_plan,
+)
 
 
 def approved_evidence():

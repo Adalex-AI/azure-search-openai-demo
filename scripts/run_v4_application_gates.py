@@ -12,7 +12,11 @@ from typing import Any
 
 import httpx
 
-from application_gate import ApplicationGateError, validate_candidate_url, validate_provenance
+from application_gate import (
+    ApplicationGateError,
+    validate_candidate_url,
+    validate_provenance,
+)
 
 try:
     from .gate_highlight_browser import BrowserGateError, validate_browser_evidence

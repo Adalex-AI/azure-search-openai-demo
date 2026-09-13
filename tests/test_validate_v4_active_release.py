@@ -4,7 +4,11 @@ import sys
 
 import pytest
 
-from scripts.validate_v4_active_release import ActiveReleaseError, validate_active_release, validate_appservice_release
+from scripts.validate_v4_active_release import (
+    ActiveReleaseError,
+    validate_active_release,
+    validate_appservice_release,
+)
 
 
 def app_with_release(release_id):

@@ -1,6 +1,9 @@
 import pytest
 
-from scripts.validate_rollback_active_release import RollbackValidationError, validate_active_rollback
+from scripts.validate_rollback_active_release import (
+    RollbackValidationError,
+    validate_active_rollback,
+)
 
 
 def plan(platform="containerapps"):

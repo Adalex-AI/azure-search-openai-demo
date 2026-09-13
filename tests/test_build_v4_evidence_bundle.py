@@ -11,7 +11,6 @@ from scripts.build_v4_evidence_bundle import (
     fidelity_gate,
 )
 
-
 PROVENANCE = {
     "release_id": "release-1",
     "git_sha": "git-1",

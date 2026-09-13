@@ -59,7 +59,21 @@ jobs:
           run: |
             uv pip install -r requirements-dev.txt
         - name: Lint with ruff
-          run: ruff check .
+          shell: bash
+          run: |
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              changed_python_files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              changed_python_files=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              changed_python_files=$(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            if [ -n "$changed_python_files" ]; then
+              ruff check $changed_python_files
+            else
+              echo "No changed Python files to lint."
+            fi
         - name: Check types with ty
           run: ty check
         - name: Check formatting with black

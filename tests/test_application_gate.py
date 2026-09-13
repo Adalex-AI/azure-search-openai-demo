@@ -1,8 +1,11 @@
 import pytest
 
-from scripts.application_gate import ApplicationGateError, validate_candidate_url, validate_provenance
+from scripts.application_gate import (
+    ApplicationGateError,
+    validate_candidate_url,
+    validate_provenance,
+)
 from scripts.gate_common import GateFailure, auth_headers, fetch_live_provenance
-
 
 VALID_PROVENANCE = {
     "schema_version": 1,

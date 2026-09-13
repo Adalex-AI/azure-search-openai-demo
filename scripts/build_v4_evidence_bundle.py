@@ -14,7 +14,10 @@ if TYPE_CHECKING:
     from gate_highlight_browser import BrowserGateError, validate_browser_evidence
 else:
     try:
-        from scripts.gate_highlight_browser import BrowserGateError, validate_browser_evidence
+        from scripts.gate_highlight_browser import (
+            BrowserGateError,
+            validate_browser_evidence,
+        )
     except ImportError:
         from gate_highlight_browser import BrowserGateError, validate_browser_evidence
 

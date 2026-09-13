@@ -1,12 +1,13 @@
 import hashlib
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
-from scripts.court_guides_processing_pipeline.scripts import extract_court_guides_azure_di as extractor
-
+from scripts.court_guides_processing_pipeline.scripts import (
+    extract_court_guides_azure_di as extractor,
+)
 
 WORKFLOW = Path(".github/workflows/update-index-v4.yml")
 AZD_WORKFLOW = Path(".github/workflows/azure-dev.yml")

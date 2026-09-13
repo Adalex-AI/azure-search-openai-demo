@@ -7,9 +7,23 @@ from typing import Any
 import httpx
 
 try:
-    from .gate_common import gate_parser, passing_report, post_chat, response_answer, response_sources, run_gate
+    from .gate_common import (
+        gate_parser,
+        passing_report,
+        post_chat,
+        response_answer,
+        response_sources,
+        run_gate,
+    )
 except ImportError:
-    from gate_common import gate_parser, passing_report, post_chat, response_answer, response_sources, run_gate
+    from gate_common import (
+        gate_parser,
+        passing_report,
+        post_chat,
+        response_answer,
+        response_sources,
+        run_gate,
+    )
 
 CASES = (
     ("cpr_part_31", "What is the standard disclosure process under CPR Part 31?", ("part 31", "disclosure")),
