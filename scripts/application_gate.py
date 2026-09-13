@@ -18,6 +18,9 @@ PROVENANCE_FIELDS = (
     "search_service",
     "search_index",
     "knowledge_base",
+    "image_digest",
+    "revision_name",
+    "agentic_mode",
 )
 
 
@@ -41,11 +44,9 @@ def validate_provenance(payload: object, expected: dict[str, str]) -> dict[str, 
         raise ApplicationGateError("Candidate provenance must be a JSON object")
     if payload.get("schema_version") != 1:
         raise ApplicationGateError("Candidate provenance schema version is unsupported")
-
     missing = [field for field in PROVENANCE_FIELDS if not str(payload.get(field) or "").strip()]
     if missing:
         raise ApplicationGateError(f"Candidate provenance is missing: {', '.join(missing)}")
-
     mismatched = [
         field
         for field in PROVENANCE_FIELDS
@@ -53,5 +54,4 @@ def validate_provenance(payload: object, expected: dict[str, str]) -> dict[str, 
     ]
     if mismatched:
         raise ApplicationGateError(f"Candidate provenance mismatch: {', '.join(mismatched)}")
-
     return {field: str(payload[field]).strip() for field in PROVENANCE_FIELDS}

@@ -23,6 +23,22 @@ class BrowserGateError(ValueError):
     """Raised when the live browser behavior is not proven."""
 
 
+def validate_browser_evidence(evidence: Any) -> dict[str, Any]:
+    """Validate the evidence shape emitted by ``run_browser_gate``."""
+    if not isinstance(evidence, dict):
+        raise BrowserGateError("run_browser_gate shape must be an object")
+    browser = evidence.get("browser")
+    if not isinstance(browser, dict):
+        raise BrowserGateError("run_browser_gate shape is missing browser evidence")
+    for field in ("supporting_content_visible", "highlight_visible", "citation_path_present"):
+        if browser.get(field) is not True:
+            raise BrowserGateError(f"run_browser_gate shape requires {field}")
+    for field in ("case_id", "subsection_id"):
+        if not str(evidence.get(field) or "").strip():
+            raise BrowserGateError(f"run_browser_gate shape requires {field}")
+    return evidence
+
+
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip().casefold()
 

@@ -14,20 +14,39 @@ PROVENANCE = {
     "search_service": "search-1",
     "search_index": "index-1",
     "knowledge_base": "kb-1",
+    "agentic_mode": "agentic",
+    "image_digest": "registry.example.test/legal-rag@sha256:" + "a" * 64,
+    "revision_name": "legal-rag--release-1",
 }
+
+
+def producer_browser_evidence():
+    return {
+        "browser": {
+            "candidate_url": "http://candidate",
+            "question": "What is CPR 24.2?",
+            "citation_count": 1,
+            "clicked_selector": ".supContainer[data-subsection-id=\"24.2\"]",
+            "supporting_content_visible": True,
+            "highlight_visible": True,
+            "highlighted_text_sha256": "highlight-hash",
+            "citation_path_present": True,
+        },
+        "case_id": "case-24.2",
+        "subsection_id": "24.2",
+    }
 
 
 def write_report(tmp_path, name, status="PASS", provenance=None):
     path = tmp_path / f"{name}.json"
-    payload = {"status": status, "checks": [name], "provenance": provenance or PROVENANCE}
+    payload = {"status": status, "gate": name, "checks": [name], "provenance": provenance or PROVENANCE}
     if name == "highlight":
         payload.update({
-            "gate": "highlight",
             "oracle_version": "2026-07-15",
             "case_count": 10,
             "source_count": 2,
             "snapshot_manifest_sha256": "manifest-hash",
-            "browser_evidence": {"highlight_visible": True},
+            "browser_evidence": producer_browser_evidence(),
         })
     path.write_text(json.dumps(payload))
     return f"{name}={path}"
@@ -54,27 +73,46 @@ def test_load_gate_reports_fails_closed(tmp_path, items, message):
     if items == [write_report.__name__]:
         items = [write_report.__name__]
     with pytest.raises(ApplicationGatesError, match=message):
-        load_gate_reports(items)
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_skipped_gate(tmp_path):
     items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
     skipped = tmp_path / "highlight.json"
-    skipped.write_text(json.dumps({"status": "SKIPPED"}))
+    skipped.write_text(json.dumps({"status": "SKIPPED", "gate": "highlight", "provenance": PROVENANCE}))
     items.append(f"highlight={skipped}")
 
-    with pytest.raises(ApplicationGatesError, match="highlight.*status PASS"):
-        load_gate_reports(items)
+    with pytest.raises(ApplicationGatesError, match="highlight.*matching PASS report"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_incomplete_highlight_oracle(tmp_path):
     items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
     incomplete = tmp_path / "highlight.json"
-    incomplete.write_text(json.dumps({"status": "PASS", "gate": "highlight"}))
+    incomplete.write_text(json.dumps({"status": "PASS", "gate": "highlight", "provenance": PROVENANCE}))
     items.append(f"highlight={incomplete}")
 
     with pytest.raises(ApplicationGatesError, match="missing oracle evidence"):
-        load_gate_reports(items)
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+def test_load_gate_reports_rejects_incompatible_browser_evidence_shape(tmp_path):
+    items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
+    incompatible = tmp_path / "highlight.json"
+    incompatible.write_text(json.dumps({
+        "status": "PASS",
+        "gate": "highlight",
+        "oracle_version": "2026-07-15",
+        "case_count": 10,
+        "source_count": 2,
+        "snapshot_manifest_sha256": "manifest-hash",
+        "browser_evidence": {"highlight_visible": True},
+        "provenance": PROVENANCE,
+    }))
+    items.append(f"highlight={incompatible}")
+
+    with pytest.raises(ApplicationGatesError, match="run_browser_gate shape"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_stale_provenance(tmp_path):

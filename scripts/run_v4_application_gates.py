@@ -14,6 +14,11 @@ import httpx
 
 from application_gate import ApplicationGateError, validate_candidate_url, validate_provenance
 
+try:
+    from .gate_highlight_browser import BrowserGateError, validate_browser_evidence
+except ImportError:
+    from gate_highlight_browser import BrowserGateError, validate_browser_evidence
+
 REQUIRED_GATES = ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
 
 
@@ -39,7 +44,7 @@ async def fetch_provenance(candidate_url: str, token: str = "") -> dict[str, Any
     return payload
 
 
-def load_gate_reports(paths: list[str], expected_provenance: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
+def load_gate_reports(paths: list[str], expected_provenance: dict[str, str]) -> dict[str, dict[str, Any]]:
     reports: dict[str, dict[str, Any]] = {}
     for item in paths:
         try:
@@ -50,40 +55,31 @@ def load_gate_reports(paths: list[str], expected_provenance: dict[str, str] | No
             raise ApplicationGatesError(f"Unknown application gate: {name}")
         if name in reports:
             raise ApplicationGatesError(f"Duplicate application gate: {name}")
-        path = Path(path_text)
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload = json.loads(Path(path_text).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
-            raise ApplicationGatesError(f"Cannot load {name} gate report: {path}") from error
-        if not isinstance(payload, dict) or payload.get("status") != "PASS":
-            raise ApplicationGatesError(f"Application gate {name} is missing status PASS")
-        if payload.get("gate") not in (None, name):
-            raise ApplicationGatesError(f"Application gate {name} is missing matching gate identity")
-        if expected_provenance is not None:
-            provenance = payload.get("provenance")
-            if not isinstance(provenance, dict):
-                raise ApplicationGatesError(f"Application gate {name} is missing provenance")
-            mismatched = [
-                field
-                for field, value in expected_provenance.items()
-                if str(provenance.get(field) or "").strip() != str(value).strip()
-            ]
-            if mismatched:
-                raise ApplicationGatesError(
-                    f"Application gate {name} provenance mismatch: {', '.join(mismatched)}"
-                )
+            raise ApplicationGatesError(f"Cannot load {name} gate report: {path_text}") from error
+        if not isinstance(payload, dict) or payload.get("status") != "PASS" or payload.get("gate") != name:
+            raise ApplicationGatesError(f"Application gate {name} is not a matching PASS report")
+        provenance = payload.get("provenance")
+        if not isinstance(provenance, dict):
+            raise ApplicationGatesError(f"Application gate {name} is missing provenance")
+        mismatched = [field for field, value in expected_provenance.items()
+                      if str(provenance.get(field) or "").strip() != str(value).strip()]
+        if mismatched:
+            raise ApplicationGatesError(f"Application gate {name} provenance mismatch: {', '.join(mismatched)}")
         if name == "highlight":
-            required = ("gate", "oracle_version", "case_count", "source_count", "snapshot_manifest_sha256")
-            if payload.get("gate") != "highlight" or any(not str(payload.get(field) or "").strip() for field in required[1:]):
+            required = ("oracle_version", "case_count", "source_count", "snapshot_manifest_sha256")
+            if any(not str(payload.get(field) or "").strip() for field in required):
                 raise ApplicationGatesError("Application gate highlight is missing oracle evidence")
-            if int(payload.get("case_count", 0)) <= 0 or int(payload.get("source_count", 0)) <= 0:
+            if int(payload["case_count"]) <= 0 or int(payload["source_count"]) <= 0:
                 raise ApplicationGatesError("Application gate highlight has no oracle cases or sources")
             browser_evidence = payload.get("browser_evidence")
-            if not isinstance(browser_evidence, dict) or browser_evidence.get("highlight_visible") is not True:
-                raise ApplicationGatesError("Application gate highlight is missing live browser evidence")
-            payload = {"gate": name, **payload}
+            try:
+                validate_browser_evidence(browser_evidence)
+            except BrowserGateError as error:
+                raise ApplicationGatesError(f"Application gate highlight is missing live browser evidence: {error}") from error
         reports[name] = payload
-
     missing = [name for name in REQUIRED_GATES if name not in reports]
     if missing:
         raise ApplicationGatesError(f"Application gate reports are missing: {', '.join(missing)}")
@@ -100,6 +96,9 @@ def expected_provenance(args: argparse.Namespace) -> dict[str, str]:
         "search_service": args.search_service,
         "search_index": args.search_index,
         "knowledge_base": args.knowledge_base,
+        "agentic_mode": args.agentic_mode,
+        "image_digest": args.image_digest,
+        "revision_name": args.revision_name,
     }
 
 
@@ -120,15 +119,11 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("release_id", "git_sha", "deployment_id", "artifact_sha256", "search_snapshot_sha256",
+                 "search_service", "search_index", "knowledge_base", "image_digest", "revision_name"):
+        parser.add_argument(f"--{name.replace('_', '-')}", required=True)
+    parser.add_argument("--agentic-mode", required=True)
     parser.add_argument("--candidate-url", required=True)
-    parser.add_argument("--release-id", required=True)
-    parser.add_argument("--git-sha", required=True)
-    parser.add_argument("--deployment-id", required=True)
-    parser.add_argument("--artifact-sha256", required=True)
-    parser.add_argument("--search-snapshot-sha256", required=True)
-    parser.add_argument("--search-service", required=True)
-    parser.add_argument("--search-index", required=True)
-    parser.add_argument("--knowledge-base", required=True)
     parser.add_argument("--provenance-token", default="")
     parser.add_argument("--gate-report", action="append", default=[], metavar="NAME=PATH")
     parser.add_argument("--output", type=Path, required=True)
@@ -143,9 +138,8 @@ def main() -> int:
         print(json.dumps({"schema_version": 1, "status": "FAIL", "error": str(error)}, sort_keys=True))
         return 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", dir=args.output.parent, prefix=f".{args.output.name}.", delete=False
-    ) as temporary:
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=args.output.parent,
+                                     prefix=f".{args.output.name}.", delete=False) as temporary:
         temporary.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
         temporary_path = Path(temporary.name)
     temporary_path.replace(args.output)

@@ -52,6 +52,37 @@ def is_deployed_ui_compat_enabled() -> bool:
     return os.getenv("DEPLOYED_UI_COMPAT", "false").lower() == "true"
 
 
+V4_EMBEDDING_MODEL = "text-embedding-3-large"
+V4_EMBEDDING_DIMENSIONS = 3072
+V4_EMBEDDING_FIELD = "embedding3"
+
+
+def validate_v4_runtime_contract(
+    *,
+    release_id: str | None,
+    search_index: str,
+    embedding_model: str,
+    embedding_dimensions: int,
+    embedding_field: str,
+) -> None:
+    """Reject runtime settings that cannot serve a V4 release safely."""
+    is_v4_index = search_index.startswith("v4-") or "-v4-" in search_index
+    if not release_id and not is_v4_index:
+        return
+
+    mismatches = []
+    if is_v4_index and not release_id:
+        mismatches.append("release_id must be set for a V4 search index")
+    if embedding_model != V4_EMBEDDING_MODEL:
+        mismatches.append(f"embedding model must be {V4_EMBEDDING_MODEL}")
+    if embedding_dimensions != V4_EMBEDDING_DIMENSIONS:
+        mismatches.append(f"embedding dimensions must be {V4_EMBEDDING_DIMENSIONS}")
+    if embedding_field != V4_EMBEDDING_FIELD:
+        mismatches.append(f"embedding field must be {V4_EMBEDDING_FIELD}")
+    if mismatches:
+        raise ValueError("Invalid V4 runtime contract: " + "; ".join(mismatches))
+
+
 # CUSTOM: Display name mapping shared between categories route and prompt source list
 SOURCE_DISPLAY_NAMES = {
     "Commercial Court": "Commercial Court Guide",
