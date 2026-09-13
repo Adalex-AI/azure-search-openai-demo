@@ -41,9 +41,17 @@ def load_provenance(path: Path) -> dict[str, str]:
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
         raise GateFailure("Candidate provenance must be a schema version 1 object")
     fields = (
-        "release_id", "git_sha", "deployment_id", "artifact_sha256",
-        "search_snapshot_sha256", "search_service", "search_index", "knowledge_base",
-        "image_digest", "revision_name", "agentic_mode",
+        "release_id",
+        "git_sha",
+        "deployment_id",
+        "artifact_sha256",
+        "search_snapshot_sha256",
+        "search_service",
+        "search_index",
+        "knowledge_base",
+        "image_digest",
+        "revision_name",
+        "agentic_mode",
     )
     missing = [field for field in fields if not str(payload.get(field) or "").strip()]
     if missing:
@@ -67,7 +75,9 @@ def auth_headers(auth_token: str = "", auth_cookie: str = "") -> dict[str, str]:
     return headers
 
 
-async def fetch_live_provenance(base_url: str, expected: dict[str, str], token: str, headers: dict[str, str]) -> dict[str, str]:
+async def fetch_live_provenance(
+    base_url: str, expected: dict[str, str], token: str, headers: dict[str, str]
+) -> dict[str, str]:
     request_headers = {**headers}
     if token.strip():
         request_headers["X-V4-Provenance-Token"] = token.strip()
@@ -94,10 +104,19 @@ async def post_chat(
 ) -> dict[str, Any]:
     payload = {
         "messages": [{"role": "user", "content": question}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True,
-            "semantic_captions": False, "top": top, "include_category": category,
-            "send_text_sources": True, "suggest_followup_questions": False, "seed": 42,
-            "use_agentic_knowledgebase": use_agentic_retrieval}},
+        "context": {
+            "overrides": {
+                "retrieval_mode": "hybrid",
+                "semantic_ranker": True,
+                "semantic_captions": False,
+                "top": top,
+                "include_category": category,
+                "send_text_sources": True,
+                "suggest_followup_questions": False,
+                "seed": 42,
+                "use_agentic_knowledgebase": use_agentic_retrieval,
+            }
+        },
     }
     try:
         response = await client.post(f"{base_url}/chat", json=payload)
@@ -126,9 +145,16 @@ def response_sources(result: dict[str, Any]) -> list[dict[str, Any]]:
     return sources
 
 
-def passing_report(gate: str, checks: list[dict[str, Any]], details: Any = None, provenance: dict[str, str] | None = None) -> dict[str, Any]:
-    report: dict[str, Any] = {"schema_version": 1, "status": "PASS", "gate": gate,
-        "created_at_utc": datetime.now(timezone.utc).isoformat(), "checks": checks}
+def passing_report(
+    gate: str, checks: list[dict[str, Any]], details: Any = None, provenance: dict[str, str] | None = None
+) -> dict[str, Any]:
+    report: dict[str, Any] = {
+        "schema_version": 1,
+        "status": "PASS",
+        "gate": gate,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "checks": checks,
+    }
     if provenance is not None:
         report["provenance"] = provenance
     if details is not None:
@@ -137,11 +163,25 @@ def passing_report(gate: str, checks: list[dict[str, Any]], details: Any = None,
 
 
 def failing_report(gate: str, error: Exception) -> dict[str, Any]:
-    return {"schema_version": 1, "status": "FAIL", "gate": gate,
-        "created_at_utc": datetime.now(timezone.utc).isoformat(), "error": str(error)}
+    return {
+        "schema_version": 1,
+        "status": "FAIL",
+        "gate": gate,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "error": str(error),
+    }
 
 
-def run_gate(gate: str, output: Path, operation: Callable[[str, dict[str, str], dict[str, str]], Awaitable[dict[str, Any]]], base_url: str, provenance_path: Path, provenance_token: str = "", auth_token: str = "", auth_cookie: str = "") -> int:
+def run_gate(
+    gate: str,
+    output: Path,
+    operation: Callable[[str, dict[str, str], dict[str, str]], Awaitable[dict[str, Any]]],
+    base_url: str,
+    provenance_path: Path,
+    provenance_token: str = "",
+    auth_token: str = "",
+    auth_cookie: str = "",
+) -> int:
     try:
         provenance = load_provenance(provenance_path)
         live_url = validate_candidate_url(base_url)

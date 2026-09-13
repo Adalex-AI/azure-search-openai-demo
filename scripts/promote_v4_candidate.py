@@ -85,7 +85,11 @@ def validate_evidence_bundle(bundle: dict[str, Any], expected_release_id: str | 
     if index_name.casefold() not in knowledgebase_name.casefold():
         raise PromotionError("Knowledge-base target must identify the candidate index")
     application_gates = bundle.get("application_gates")
-    if not isinstance(application_gates, dict) or application_gates.get("schema_version") != 1 or application_gates.get("status") != "PASS":
+    if (
+        not isinstance(application_gates, dict)
+        or application_gates.get("schema_version") != 1
+        or application_gates.get("status") != "PASS"
+    ):
         raise PromotionError("Application-gate validation is not clean")
     gates = application_gates.get("gates")
     required_gates = {"retrieval", "category", "source_hierarchy", "citation", "acl", "highlight"}
@@ -100,7 +104,15 @@ def validate_evidence_bundle(bundle: dict[str, Any], expected_release_id: str | 
     application_provenance = application_gates.get("provenance")
     if not isinstance(application_provenance, dict):
         raise PromotionError("Application-gate evidence is missing provenance")
-    for field in ("release_id", "git_sha", "deployment_id", "search_service", "image_digest", "revision_name", "agentic_mode"):
+    for field in (
+        "release_id",
+        "git_sha",
+        "deployment_id",
+        "search_service",
+        "image_digest",
+        "revision_name",
+        "agentic_mode",
+    ):
         if not str(application_provenance.get(field) or "").strip():
             raise PromotionError(f"Application-gate provenance is missing {field}")
     if "@sha256:" not in application_provenance["image_digest"]:
@@ -131,7 +143,11 @@ def validate_evidence_bundle(bundle: dict[str, Any], expected_release_id: str | 
                 raise PromotionError(f"Evidence hash does not match {path_field}")
     if bundle.get("evidence_sha256"):
         canonical = json.dumps(
-            {key: value for key, value in bundle.items() if key not in {"created_at_utc", "approved", "approval_environment", "evidence_sha256"}},
+            {
+                key: value
+                for key, value in bundle.items()
+                if key not in {"created_at_utc", "approved", "approval_environment", "evidence_sha256"}
+            },
             ensure_ascii=True,
             sort_keys=True,
             separators=(",", ":"),
@@ -185,7 +201,9 @@ def load_and_validate(path: Path, expected_release_id: str | None = None) -> dic
             raise PromotionError("Evidence manifest is empty")
         base_path = path.parent.resolve()
         for entry in evidence_manifest:
-            if not isinstance(entry, dict) or not all(str(entry.get(field) or "").strip() for field in ("name", "path", "sha256")):
+            if not isinstance(entry, dict) or not all(
+                str(entry.get(field) or "").strip() for field in ("name", "path", "sha256")
+            ):
                 raise PromotionError("Evidence manifest contains an invalid entry")
             relative_path = Path(str(entry["path"]))
             if relative_path.is_absolute() or ".." in relative_path.parts:

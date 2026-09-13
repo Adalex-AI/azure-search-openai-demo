@@ -76,7 +76,9 @@ def validate_active_release(
     if expected_image_digest and image != expected_image_digest.strip():
         raise ActiveReleaseError(f"Active image mismatch: deployed {image!r}, expected {expected_image_digest!r}")
     if expected_revision_name and revision != expected_revision_name.strip():
-        raise ActiveReleaseError(f"Active revision mismatch: deployed {revision!r}, expected {expected_revision_name!r}")
+        raise ActiveReleaseError(
+            f"Active revision mismatch: deployed {revision!r}, expected {expected_revision_name!r}"
+        )
     _validate_active_traffic(app, revision)
     return actual
 
@@ -108,7 +110,9 @@ def validate_appservice_release(
     if expected_image_digest and image != expected_image_digest.strip():
         raise ActiveReleaseError(f"Active image mismatch: deployed {image!r}, expected {expected_image_digest!r}")
     if expected_revision_name and revision != expected_revision_name.strip():
-        raise ActiveReleaseError(f"Active revision mismatch: deployed {revision!r}, expected {expected_revision_name!r}")
+        raise ActiveReleaseError(
+            f"Active revision mismatch: deployed {revision!r}, expected {expected_revision_name!r}"
+        )
     return actual
 
 

@@ -25,7 +25,7 @@ def producer_browser_evidence():
             "candidate_url": "http://candidate",
             "question": "What is CPR 24.2?",
             "citation_count": 1,
-            "clicked_selector": ".supContainer[data-subsection-id=\"24.2\"]",
+            "clicked_selector": '.supContainer[data-subsection-id="24.2"]',
             "supporting_content_visible": True,
             "highlight_visible": True,
             "highlighted_text_sha256": "highlight-hash",
@@ -40,20 +40,25 @@ def write_report(tmp_path, name, status="PASS", provenance=None):
     path = tmp_path / f"{name}.json"
     payload = {"status": status, "gate": name, "checks": [name], "provenance": provenance or PROVENANCE}
     if name == "highlight":
-        payload.update({
-            "oracle_version": "2026-07-15",
-            "case_count": 10,
-            "source_count": 2,
-            "snapshot_manifest_sha256": "manifest-hash",
-            "browser_evidence": producer_browser_evidence(),
-        })
+        payload.update(
+            {
+                "oracle_version": "2026-07-15",
+                "case_count": 10,
+                "source_count": 2,
+                "snapshot_manifest_sha256": "manifest-hash",
+                "browser_evidence": producer_browser_evidence(),
+            }
+        )
     path.write_text(json.dumps(payload))
     return f"{name}={path}"
 
 
 def test_load_gate_reports_requires_all_release_gates(tmp_path):
     reports = load_gate_reports(
-        [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")],
+        [
+            write_report(tmp_path, name)
+            for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+        ],
         expected_provenance=PROVENANCE,
     )
 
@@ -65,7 +70,15 @@ def test_load_gate_reports_requires_all_release_gates(tmp_path):
     [
         ([write_report.__name__], "name=path"),
         (["retrieval=/missing.json"], "Cannot load retrieval"),
-        (["retrieval=/missing.json", "category=/missing.json", "source_hierarchy=/missing.json", "citation=/missing.json"], "Cannot load retrieval"),
+        (
+            [
+                "retrieval=/missing.json",
+                "category=/missing.json",
+                "source_hierarchy=/missing.json",
+                "citation=/missing.json",
+            ],
+            "Cannot load retrieval",
+        ),
     ],
 )
 def test_load_gate_reports_fails_closed(tmp_path, items, message):
@@ -98,16 +111,20 @@ def test_load_gate_reports_rejects_incomplete_highlight_oracle(tmp_path):
 def test_load_gate_reports_rejects_incompatible_browser_evidence_shape(tmp_path):
     items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
     incompatible = tmp_path / "highlight.json"
-    incompatible.write_text(json.dumps({
-        "status": "PASS",
-        "gate": "highlight",
-        "oracle_version": "2026-07-15",
-        "case_count": 10,
-        "source_count": 2,
-        "snapshot_manifest_sha256": "manifest-hash",
-        "browser_evidence": {"highlight_visible": True},
-        "provenance": PROVENANCE,
-    }))
+    incompatible.write_text(
+        json.dumps(
+            {
+                "status": "PASS",
+                "gate": "highlight",
+                "oracle_version": "2026-07-15",
+                "case_count": 10,
+                "source_count": 2,
+                "snapshot_manifest_sha256": "manifest-hash",
+                "browser_evidence": {"highlight_visible": True},
+                "provenance": PROVENANCE,
+            }
+        )
+    )
     items.append(f"highlight={incompatible}")
 
     with pytest.raises(ApplicationGatesError, match="run_browser_gate shape"):

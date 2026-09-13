@@ -159,7 +159,9 @@ def test_fidelity_gate_rejects_missing_source_identity_digest():
     report.pop("source_identity_digest")
 
     with pytest.raises(EvidenceError, match="missing source identity digest"):
-        fidelity_gate(report, expected_snapshot=snapshot, expected_source_count=1, expected_source_identity_digest="sources-1")
+        fidelity_gate(
+            report, expected_snapshot=snapshot, expected_source_count=1, expected_source_identity_digest="sources-1"
+        )
 
 
 def test_extraction_manifest_binds_packaged_processed_guides(tmp_path):

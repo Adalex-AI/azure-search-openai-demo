@@ -15,28 +15,29 @@ def app_with_release(release_id):
     return {
         "properties": {
             "template": {
-                "containers": [{
-                    "image": "registry.example.test/legal-rag@sha256:" + "a" * 64,
-                    "env": [{"name": "V4_RELEASE_ID", "value": release_id}],
-                }],
+                "containers": [
+                    {
+                        "image": "registry.example.test/legal-rag@sha256:" + "a" * 64,
+                        "env": [{"name": "V4_RELEASE_ID", "value": release_id}],
+                    }
+                ],
             },
             "latestRevisionName": "legal-rag--release-1",
-            "configuration": {
-                "ingress": {
-                    "traffic": [{"revisionName": "legal-rag--release-1", "weight": 100}]
-                }
-            }
+            "configuration": {"ingress": {"traffic": [{"revisionName": "legal-rag--release-1", "weight": 100}]}},
         }
     }
 
 
 def test_active_release_matches_exactly():
-    assert validate_active_release(
-        app_with_release("release-1"),
-        "release-1",
-        expected_image_digest="registry.example.test/legal-rag@sha256:" + "a" * 64,
-        expected_revision_name="legal-rag--release-1",
-    ) == "release-1"
+    assert (
+        validate_active_release(
+            app_with_release("release-1"),
+            "release-1",
+            expected_image_digest="registry.example.test/legal-rag@sha256:" + "a" * 64,
+            expected_revision_name="legal-rag--release-1",
+        )
+        == "release-1"
+    )
 
 
 @pytest.mark.parametrize("app", [{}, app_with_release(""), {"properties": {"template": {"containers": []}}}])
@@ -86,17 +87,27 @@ def test_appservice_active_release_matches_identity():
         {"name": "V4_IMAGE_DIGEST", "value": image},
         {"name": "V4_REVISION_NAME", "value": "production-v4"},
     ]
-    assert validate_appservice_release(settings, "release-1", expected_image_digest=image, expected_revision_name="production-v4") == "release-1"
+    assert (
+        validate_appservice_release(
+            settings, "release-1", expected_image_digest=image, expected_revision_name="production-v4"
+        )
+        == "release-1"
+    )
 
 
 def test_validator_cli_accepts_appservice_settings_array(tmp_path):
     image = "registry.example.test/legal-rag@sha256:" + "a" * 64
     settings_path = tmp_path / "settings.json"
-    settings_path.write_text(json.dumps([
-        {"name": "V4_RELEASE_ID", "value": "release-1"},
-        {"name": "V4_IMAGE_DIGEST", "value": image},
-        {"name": "V4_REVISION_NAME", "value": "production-v4"},
-    ]), encoding="utf-8")
+    settings_path.write_text(
+        json.dumps(
+            [
+                {"name": "V4_RELEASE_ID", "value": "release-1"},
+                {"name": "V4_IMAGE_DIGEST", "value": image},
+                {"name": "V4_REVISION_NAME", "value": "production-v4"},
+            ]
+        ),
+        encoding="utf-8",
+    )
 
     result = subprocess.run(
         [

@@ -33,7 +33,9 @@ def source_matches(source: Any, source_filter: str | None) -> bool:
     if not source_filter:
         return True
     value = source_filter.casefold()
-    return value in source.identity.casefold() or value in source.sourcefile.casefold() or value in source.url.casefold()
+    return (
+        value in source.identity.casefold() or value in source.sourcefile.casefold() or value in source.url.casefold()
+    )
 
 
 def is_retryable_error(error: Exception) -> bool:
@@ -148,7 +150,9 @@ def run(
     output_dir.mkdir(parents=True, exist_ok=True)
     session = requests.Session()
     session.headers.update({"User-Agent": "legal-rag-html-oracle/1.0"})
-    results = [capture_source(session, source, output_dir, timeout, refresh, retries, retry_delay) for source in sources]
+    results = [
+        capture_source(session, source, output_dir, timeout, refresh, retries, retry_delay) for source in sources
+    ]
     summary = {
         "schema_version": 1,
         "oracle_version": ORACLE_VERSION,
@@ -167,7 +171,9 @@ def run(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--source", dest="source_filter", help="Capture only sources matching identity, filename, or URL")
+    parser.add_argument(
+        "--source", dest="source_filter", help="Capture only sources matching identity, filename, or URL"
+    )
     parser.add_argument("--limit", type=int, help="Capture at most this many selected sources")
     parser.add_argument("--timeout", type=int, default=30)
     parser.add_argument("--retries", type=int, default=2, help="Retry transient HTTP failures this many times")
@@ -178,7 +184,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    summary = run(args.output_dir, args.source_filter, args.limit, args.timeout, args.refresh, args.retries, args.retry_delay)
+    summary = run(
+        args.output_dir, args.source_filter, args.limit, args.timeout, args.refresh, args.retries, args.retry_delay
+    )
     print(json.dumps({key: value for key, value in summary.items() if key != "results"}, sort_keys=True))
     return 0 if summary["unavailable_count"] == 0 else 1
 

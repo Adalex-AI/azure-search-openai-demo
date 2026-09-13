@@ -6,31 +6,22 @@ import os
 CUSTOM_FEATURES = {
     # Category filtering feature - adds /api/categories endpoint and UI dropdown
     "category_filter": True,
-    
     # Custom citation formatting in prompts
     "legal_domain_prompts": True,
-    
     # Frontend citation sanitization
     "citation_sanitizer": True,
-    
     # Custom evaluation scripts
     "custom_evals": True,
-    
     # Enhanced feedback with deployment metadata and thought filtering
     "enhanced_feedback": True,
-
     # Force agentic retrieval to always query sources when initial attempt returns no references
     "agentic_force_query_on_empty": True,
-
     # Fallback to direct search using agentic query plan when references are missing
     "agentic_fallback_search": True,
-
     # Retry retrieval when initial results do not match the user's apparent section intent
     "adaptive_search_retry": True,
-
     # Allow agentic retrieval to fall back to direct search when references are weak, not just empty
     "agentic_retry_on_weak_matches": True,
-
     # Supplemental search for related sub-concepts identified by query rewrite
     "related_aspects_search": True,
 }
@@ -131,13 +122,13 @@ async def fetch_available_sources(search_client) -> list[str]:
 def get_deployment_metadata() -> dict[str, str]:
     """
     Get deployment and version metadata for feedback tracking.
-    
+
     Includes deployment ID, app version, and Git commit hash if available.
     This information is stored with feedback to enable version-specific debugging.
-    
+
     Returns:
         Dictionary containing deployment metadata
-        
+
     Example:
         {
             "deployment_id": "1767305857",

@@ -46,7 +46,7 @@ VALID_BUNDLE = {
             "release_id": "20260713-r3",
             "git_sha": "git-hash",
             "deployment_id": "deployment-1",
-                "search_service": "search-service",
+            "search_service": "search-service",
             "search_index": "legal-court-rag-v4-prod-20260713",
             "knowledge_base": "legal-court-rag-v4-prod-20260713-agent-upgrade",
             "artifact_sha256": "artifact-hash",
@@ -114,7 +114,10 @@ def test_promotion_rejects_evidence_for_a_different_release():
         ({"fidelity": {"substantive_coverage": 1.0, "ambiguous": 1}}, "not clean"),
         ({"fidelity": {"substantive_coverage": 0.99}}, "100%"),
         ({"application_gates": {"schema_version": 1, "status": "FAIL"}}, "Application-gate"),
-        ({"application_gates": {"schema_version": 1, "status": "PASS", "provenance": {}, "gates": {}}}, "all six required gates"),
+        (
+            {"application_gates": {"schema_version": 1, "status": "PASS", "provenance": {}, "gates": {}}},
+            "all six required gates",
+        ),
     ],
 )
 def test_invalid_evidence_bundle_cannot_promote(change, message):
@@ -183,8 +186,16 @@ def test_promotion_validates_portable_evidence_manifest(tmp_path):
     bundle = {
         **VALID_BUNDLE,
         "evidence_manifest": [
-            {"name": artifact.name, "path": artifact.name, "sha256": __import__("hashlib").sha256(artifact.read_bytes()).hexdigest()},
-            {"name": snapshot.name, "path": snapshot.name, "sha256": __import__("hashlib").sha256(snapshot.read_bytes()).hexdigest()},
+            {
+                "name": artifact.name,
+                "path": artifact.name,
+                "sha256": __import__("hashlib").sha256(artifact.read_bytes()).hexdigest(),
+            },
+            {
+                "name": snapshot.name,
+                "path": snapshot.name,
+                "sha256": __import__("hashlib").sha256(snapshot.read_bytes()).hexdigest(),
+            },
         ],
     }
     evidence.write_text(json.dumps(bundle))
@@ -196,10 +207,16 @@ def test_promotion_validates_portable_evidence_manifest(tmp_path):
 
 
 def test_promotion_rejects_mutable_application_image():
-    bundle = {**VALID_BUNDLE, "application_gates": {
-        **VALID_BUNDLE["application_gates"],
-        "provenance": {**VALID_BUNDLE["application_gates"]["provenance"], "image_digest": "registry.example.test/legal-rag:latest"},
-    }}
+    bundle = {
+        **VALID_BUNDLE,
+        "application_gates": {
+            **VALID_BUNDLE["application_gates"],
+            "provenance": {
+                **VALID_BUNDLE["application_gates"]["provenance"],
+                "image_digest": "registry.example.test/legal-rag:latest",
+            },
+        },
+    }
 
     with pytest.raises(PromotionError, match="image_digest must be immutable"):
         validate_evidence_bundle(bundle)
@@ -210,46 +227,84 @@ def test_evidence_builder_requires_clean_fidelity(tmp_path):
     snapshot = tmp_path / "search.json"
     fidelity = tmp_path / "fidelity.json"
     transition = tmp_path / "transition.json"
-    artifact.write_text(json.dumps({
-        "release_id": "legal-court-rag-v4",
-        "embedding_model": "text-embedding-3-large",
-        "embedding_dimensions": 3072,
-        "document_count": 1,
-        "source_count": 1,
-        "snapshot_count": 1,
-        "source_identity_digest": "sources-1",
-    }))
+    artifact.write_text(
+        json.dumps(
+            {
+                "release_id": "legal-court-rag-v4",
+                "embedding_model": "text-embedding-3-large",
+                "embedding_dimensions": 3072,
+                "document_count": 1,
+                "source_count": 1,
+                "snapshot_count": 1,
+                "source_identity_digest": "sources-1",
+            }
+        )
+    )
     (tmp_path / "documents_with_embeddings.jsonl").write_text(json.dumps({"id": "doc-1"}) + "\n")
     snapshot.write_text(json.dumps({"documents_sha256": "docs"}))
     fidelity.write_text(json.dumps({"summary": {"source_count": 2, "statuses": {"PASS": 1, "WARN": 1}}}))
     transition.write_text(json.dumps({"snapshot_count": 1, "failed_count": 0, "blocked_count": 0}))
     candidate_validation = tmp_path / "candidate-validation.json"
-    candidate_validation.write_text(json.dumps({"candidate": {"status": "PASS"}, "provenance": {
-        "schema_version": 1,
-        "service": "search.test",
-        "index": "v4",
-        "captured_at_utc": "2026-07-13T00:00:00Z",
-        "selected_fields": ["id", "content", "category", "sourcepage", "sourcefile", "storageUrl", "updated", "parent_id", "subsection_id", "subsections"],
-        "document_count": 1,
-        "documents_sha256": "snapshot-hash",
-    }}))
+    candidate_validation.write_text(
+        json.dumps(
+            {
+                "candidate": {"status": "PASS"},
+                "provenance": {
+                    "schema_version": 1,
+                    "service": "search.test",
+                    "index": "v4",
+                    "captured_at_utc": "2026-07-13T00:00:00Z",
+                    "selected_fields": [
+                        "id",
+                        "content",
+                        "category",
+                        "sourcepage",
+                        "sourcefile",
+                        "storageUrl",
+                        "updated",
+                        "parent_id",
+                        "subsection_id",
+                        "subsections",
+                    ],
+                    "document_count": 1,
+                    "documents_sha256": "snapshot-hash",
+                },
+            }
+        )
+    )
 
     with pytest.raises(EvidenceError, match="schema version 2"):
         application_gates = tmp_path / "application-gates.json"
         rollback_application = tmp_path / "rollback-application.json"
-        rollback_application.write_text(json.dumps({
-            "release_id": "20260301-r12",
-            "image_digest": "registry.example.test/legal-rag@sha256:" + "b" * 64,
-            "revision_name": "legal-rag--production-v3",
-            "search_index": "v3",
-            "knowledge_base": "v3-agent",
-        }))
-        application_gates.write_text(json.dumps({"schema_version": 1, "status": "PASS", "provenance": {
-            "search_index": "legal-court-rag-v4",
-            "knowledge_base": "legal-court-rag-v4-agent",
-            "artifact_sha256": "placeholder",
-            "search_snapshot_sha256": "placeholder",
-        }, "gates": {name: {"status": "PASS"} for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")}}))
+        rollback_application.write_text(
+            json.dumps(
+                {
+                    "release_id": "20260301-r12",
+                    "image_digest": "registry.example.test/legal-rag@sha256:" + "b" * 64,
+                    "revision_name": "legal-rag--production-v3",
+                    "search_index": "v3",
+                    "knowledge_base": "v3-agent",
+                }
+            )
+        )
+        application_gates.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "PASS",
+                    "provenance": {
+                        "search_index": "legal-court-rag-v4",
+                        "knowledge_base": "legal-court-rag-v4-agent",
+                        "artifact_sha256": "placeholder",
+                        "search_snapshot_sha256": "placeholder",
+                    },
+                    "gates": {
+                        name: {"status": "PASS"}
+                        for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")
+                    },
+                }
+            )
+        )
         build_bundle(
             artifact,
             snapshot,
@@ -309,7 +364,9 @@ def test_artifact_search_equality_gate_rejects_duplicate_artifact_ids(tmp_path):
     manifest = tmp_path / "manifest.json"
     documents = tmp_path / "documents_with_embeddings.jsonl"
     manifest.write_text("{}")
-    documents.write_text(json.dumps({"id": "doc-1", "content": "one"}) + "\n" + json.dumps({"id": "doc-1", "content": "two"}) + "\n")
+    documents.write_text(
+        json.dumps({"id": "doc-1", "content": "one"}) + "\n" + json.dumps({"id": "doc-1", "content": "two"}) + "\n"
+    )
 
     with pytest.raises(EvidenceError, match="Artifact/Search equality gate"):
         artifact_search_gate(manifest, {"documents": [{"id": "doc-1", "content": "one"}]})

@@ -21,11 +21,21 @@ def container_app():
     return {
         "properties": {
             "latestRevisionName": "production-v3",
-            "template": {"containers": [{"image": plan()["image_digest"], "env": [
-                {"name": "V4_RELEASE_ID", "value": "release-0"},
-                {"name": "AZURE_SEARCH_INDEX", "value": "legal-court-rag-index-v3"},
-                {"name": "AZURE_SEARCH_KNOWLEDGEBASE_NAME", "value": "legal-court-rag-index-v3-agent-upgrade"},
-            ]}]},
+            "template": {
+                "containers": [
+                    {
+                        "image": plan()["image_digest"],
+                        "env": [
+                            {"name": "V4_RELEASE_ID", "value": "release-0"},
+                            {"name": "AZURE_SEARCH_INDEX", "value": "legal-court-rag-index-v3"},
+                            {
+                                "name": "AZURE_SEARCH_KNOWLEDGEBASE_NAME",
+                                "value": "legal-court-rag-index-v3-agent-upgrade",
+                            },
+                        ],
+                    }
+                ]
+            },
             "configuration": {"ingress": {"traffic": [{"revisionName": "production-v3", "weight": 100}]}},
         }
     }
@@ -44,12 +54,14 @@ def test_rejects_non_v3_search_pair():
 
 def test_validates_previous_v4_pair():
     rollback = plan()
-    rollback.update({
-        "revision_name": "production-v4-previous",
-        "release_id": "release-previous",
-        "search_index": "legal-court-rag-v4-release-previous",
-        "knowledge_base": "legal-court-rag-v4-release-previous-agent-upgrade",
-    })
+    rollback.update(
+        {
+            "revision_name": "production-v4-previous",
+            "release_id": "release-previous",
+            "search_index": "legal-court-rag-v4-release-previous",
+            "knowledge_base": "legal-court-rag-v4-release-previous-agent-upgrade",
+        }
+    )
     app = container_app()
     app["properties"]["latestRevisionName"] = rollback["revision_name"]
     app["properties"]["template"]["containers"][0]["env"] = [

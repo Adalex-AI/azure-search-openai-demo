@@ -20,8 +20,7 @@ _PROVENANCE_FIELDS = {
 def _configured_provenance() -> dict[str, str]:
     values = {field: os.getenv(environment_name, "").strip() for field, environment_name in _PROVENANCE_FIELDS.items()}
     values["revision_name"] = (
-        os.getenv("V4_REVISION_NAME", "").strip()
-        or os.getenv("CONTAINER_APP_REVISION_NAME", "").strip()
+        os.getenv("V4_REVISION_NAME", "").strip() or os.getenv("CONTAINER_APP_REVISION_NAME", "").strip()
     )
     values["search_service"] = os.getenv("AZURE_SEARCH_SERVICE", "").strip()
     values["search_index"] = str(current_app.config.get("PROVENANCE_SEARCH_INDEX", "")).strip()

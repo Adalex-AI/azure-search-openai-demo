@@ -521,8 +521,10 @@ async def setup_clients():
     USE_SHAREPOINT_SOURCE = os.getenv("USE_SHAREPOINT_SOURCE", "").lower() == "true"
     AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT = os.getenv(
         "AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT",
-        os.getenv("AGENTIC_RETRIEVAL_REASONING_EFFORT",
-                   os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_RETRIEVAL_REASONING_EFFORT", "low"))
+        os.getenv(
+            "AGENTIC_RETRIEVAL_REASONING_EFFORT",
+            os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_RETRIEVAL_REASONING_EFFORT", "low"),
+        ),
     )
     USE_VECTORS = os.getenv("USE_VECTORS", "").lower() != "false"
 
@@ -548,7 +550,8 @@ async def setup_clients():
             azure_credential = ManagedIdentityCredential()
     elif AZURE_TENANT_ID:
         current_app.logger.info(
-            "Setting up Azure credential using AzureDeveloperCliCredential with tenant_id %s (with AzureCliCredential fallback)", AZURE_TENANT_ID
+            "Setting up Azure credential using AzureDeveloperCliCredential with tenant_id %s (with AzureCliCredential fallback)",
+            AZURE_TENANT_ID,
         )
         # CUSTOM: Fall back to AzureCliCredential if azd token is expired (e.g. >90 day inactivity)
         azure_credential = ChainedTokenCredential(

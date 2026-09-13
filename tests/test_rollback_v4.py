@@ -48,7 +48,27 @@ def approved_evidence():
                 "agentic_mode": "agentic",
             },
             "gates": {
-                name: {"gate": name, "status": "PASS", **({"case_count": 1, "source_count": 1, "browser_evidence": {"browser": {"supporting_content_visible": True, "highlight_visible": True, "citation_path_present": True}, "case_id": "case", "subsection_id": "1"}} if name == "highlight" else {})}
+                name: {
+                    "gate": name,
+                    "status": "PASS",
+                    **(
+                        {
+                            "case_count": 1,
+                            "source_count": 1,
+                            "browser_evidence": {
+                                "browser": {
+                                    "supporting_content_visible": True,
+                                    "highlight_visible": True,
+                                    "citation_path_present": True,
+                                },
+                                "case_id": "case",
+                                "subsection_id": "1",
+                            },
+                        }
+                        if name == "highlight"
+                        else {}
+                    ),
+                }
                 for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
             },
         },

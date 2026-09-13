@@ -101,7 +101,22 @@ jobs:
               echo "No changed backend Python files to type-check."
             fi
         - name: Check formatting with black
-          run: black . --check --verbose
+          shell: bash
+          run: |
+            changed_python_files=()
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              mapfile -t changed_python_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            if [ "${#changed_python_files[@]}" -gt 0 ]; then
+              black "${changed_python_files[@]}" --check --verbose
+            else
+              echo "No changed Python files to format-check."
+            fi
         - name: Run Python tests
           if: runner.os != 'Windows'
           run: pytest -s -vv --cov --cov-report=xml --cov-fail-under=90

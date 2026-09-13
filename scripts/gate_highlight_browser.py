@@ -94,7 +94,10 @@ def run_browser_gate(candidate_url: str, oracle: dict[str, Any], question: str) 
             highlighted_text = normalize(highlight.inner_text())
             if not highlighted_text:
                 raise BrowserGateError("Supporting Content rendered an empty highlighted subsection")
-            if expected_heading not in highlighted_text and str(target_case["subsection_id"]).casefold() not in highlighted_text:
+            if (
+                expected_heading not in highlighted_text
+                and str(target_case["subsection_id"]).casefold() not in highlighted_text
+            ):
                 raise BrowserGateError("Highlighted subsection does not identify the canonical target heading")
             if expected_body not in highlighted_text and highlighted_text not in expected_body:
                 raise BrowserGateError("Highlighted subsection text does not match canonical oracle evidence")
@@ -120,7 +123,9 @@ def run_browser_gate(candidate_url: str, oracle: dict[str, Any], question: str) 
             browser.close()
 
 
-def build_report(candidate_url: str, oracle_path: Path, snapshot_dir: Path, provenance: dict[str, str], question: str) -> dict[str, Any]:
+def build_report(
+    candidate_url: str, oracle_path: Path, snapshot_dir: Path, provenance: dict[str, str], question: str
+) -> dict[str, Any]:
     oracle = json.loads(oracle_path.read_text(encoding="utf-8"))
     validated_oracle = validate_oracle(oracle, snapshot_dir, provenance=None)
     browser_evidence = run_browser_gate(candidate_url, oracle, question)

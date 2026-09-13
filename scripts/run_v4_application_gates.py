@@ -68,8 +68,11 @@ def load_gate_reports(paths: list[str], expected_provenance: dict[str, str]) -> 
         provenance = payload.get("provenance")
         if not isinstance(provenance, dict):
             raise ApplicationGatesError(f"Application gate {name} is missing provenance")
-        mismatched = [field for field, value in expected_provenance.items()
-                      if str(provenance.get(field) or "").strip() != str(value).strip()]
+        mismatched = [
+            field
+            for field, value in expected_provenance.items()
+            if str(provenance.get(field) or "").strip() != str(value).strip()
+        ]
         if mismatched:
             raise ApplicationGatesError(f"Application gate {name} provenance mismatch: {', '.join(mismatched)}")
         if name == "highlight":
@@ -82,7 +85,9 @@ def load_gate_reports(paths: list[str], expected_provenance: dict[str, str]) -> 
             try:
                 validate_browser_evidence(browser_evidence)
             except BrowserGateError as error:
-                raise ApplicationGatesError(f"Application gate highlight is missing live browser evidence: {error}") from error
+                raise ApplicationGatesError(
+                    f"Application gate highlight is missing live browser evidence: {error}"
+                ) from error
         reports[name] = payload
     missing = [name for name in REQUIRED_GATES if name not in reports]
     if missing:
@@ -123,8 +128,18 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("release_id", "git_sha", "deployment_id", "artifact_sha256", "search_snapshot_sha256",
-                 "search_service", "search_index", "knowledge_base", "image_digest", "revision_name"):
+    for name in (
+        "release_id",
+        "git_sha",
+        "deployment_id",
+        "artifact_sha256",
+        "search_snapshot_sha256",
+        "search_service",
+        "search_index",
+        "knowledge_base",
+        "image_digest",
+        "revision_name",
+    ):
         parser.add_argument(f"--{name.replace('_', '-')}", required=True)
     parser.add_argument("--agentic-mode", required=True)
     parser.add_argument("--candidate-url", required=True)
@@ -142,8 +157,9 @@ def main() -> int:
         print(json.dumps({"schema_version": 1, "status": "FAIL", "error": str(error)}, sort_keys=True))
         return 1
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=args.output.parent,
-                                     prefix=f".{args.output.name}.", delete=False) as temporary:
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=args.output.parent, prefix=f".{args.output.name}.", delete=False
+    ) as temporary:
         temporary.write(json.dumps(report, indent=2, sort_keys=True) + "\n")
         temporary_path = Path(temporary.name)
     temporary_path.replace(args.output)

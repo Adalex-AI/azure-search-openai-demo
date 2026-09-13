@@ -121,7 +121,11 @@ def fidelity_gate(
     if not isinstance(sources, list):
         raise EvidenceError("Fidelity report is missing source-level evidence required for 100% coverage")
     source_count = int(summary.get("source_count", 0) or 0)
-    if source_count <= 0 or report.get("expected_source_count") != source_count or report.get("processed_source_count") != source_count:
+    if (
+        source_count <= 0
+        or report.get("expected_source_count") != source_count
+        or report.get("processed_source_count") != source_count
+    ):
         raise EvidenceError("Fidelity report source completion counts are incomplete")
     if expected_source_count is not None and source_count != expected_source_count:
         raise EvidenceError("Fidelity report does not cover the complete canonical source set")
@@ -188,8 +192,13 @@ def fidelity_gate(
         "substantive_block_count": substantive_block_count,
         "dispositions": remediation_counts,
     }
-    if coverage != 1.0 or any(statuses.get(status, 0) for status in ("WARN", "FAIL", "UNAVAILABLE", "MISSING_FROM_INDEX", "INDEX_ONLY", "UNMAPPED")) or any(
-        gate[field] for field in ("unmatched", "ambiguous", "unavailable", "unclassified")
+    if (
+        coverage != 1.0
+        or any(
+            statuses.get(status, 0)
+            for status in ("WARN", "FAIL", "UNAVAILABLE", "MISSING_FROM_INDEX", "INDEX_ONLY", "UNMAPPED")
+        )
+        or any(gate[field] for field in ("unmatched", "ambiguous", "unavailable", "unclassified"))
     ):
         raise EvidenceError(f"Fidelity gate is not clean or 100% substantive: {gate}")
     return gate
@@ -213,9 +222,7 @@ def artifact_search_gate(artifact_path: Path, snapshot: dict[str, Any]) -> dict[
     if not documents_path.exists():
         raise EvidenceError(f"Artifact documents are missing: {documents_path}")
     artifact_documents = [
-        json.loads(line)
-        for line in documents_path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in documents_path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
     snapshot_documents = snapshot.get("documents")
     if not isinstance(snapshot_documents, list):
@@ -307,11 +314,21 @@ def candidate_validation_matches_snapshot(report: dict[str, Any], snapshot: dict
         raise EvidenceError("Candidate validation report is missing provenance")
     expected = {
         key: snapshot.get(key)
-        for key in ("schema_version", "service", "index", "captured_at_utc", "selected_fields", "document_count", "documents_sha256")
+        for key in (
+            "schema_version",
+            "service",
+            "index",
+            "captured_at_utc",
+            "selected_fields",
+            "document_count",
+            "documents_sha256",
+        )
     }
     mismatched = [field for field, value in expected.items() if provenance.get(field) != value]
     if mismatched:
-        raise EvidenceError("Candidate validation provenance does not match the Search snapshot: " + ", ".join(mismatched))
+        raise EvidenceError(
+            "Candidate validation provenance does not match the Search snapshot: " + ", ".join(mismatched)
+        )
 
 
 def application_gate_gate(
@@ -351,7 +368,14 @@ def application_gate_gate(
         if mismatched:
             raise EvidenceError("Application-gate provenance does not match expected release: " + ", ".join(mismatched))
     gates = report.get("gates")
-    if not isinstance(gates, dict) or set(gates) != {"retrieval", "category", "source_hierarchy", "citation", "acl", "highlight"}:
+    if not isinstance(gates, dict) or set(gates) != {
+        "retrieval",
+        "category",
+        "source_hierarchy",
+        "citation",
+        "acl",
+        "highlight",
+    }:
         raise EvidenceError("Application-gate report must contain all required gates")
     if any(not isinstance(gate, dict) or gate.get("status") != "PASS" for gate in gates.values()):
         raise EvidenceError("Application-gate report contains a non-passing gate")
@@ -489,7 +513,11 @@ def build_bundle(
         },
     }
     canonical = json.dumps(
-        {key: value for key, value in bundle.items() if key not in {"created_at_utc", "approved", "approval_environment"}},
+        {
+            key: value
+            for key, value in bundle.items()
+            if key not in {"created_at_utc", "approved", "approval_environment"}
+        },
         ensure_ascii=True,
         sort_keys=True,
         separators=(",", ":"),
@@ -541,7 +569,16 @@ def main() -> int:
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(bundle, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({"output": str(args.output), "artifact_sha256": bundle["artifact_sha256"], "search_snapshot_sha256": bundle["search_snapshot_sha256"]}, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "output": str(args.output),
+                "artifact_sha256": bundle["artifact_sha256"],
+                "search_snapshot_sha256": bundle["search_snapshot_sha256"],
+            },
+            sort_keys=True,
+        )
+    )
     return 0
 
 

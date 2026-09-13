@@ -28,7 +28,11 @@ except ImportError:
 CASES = (
     ("cpr_part_31", "What is the standard disclosure process under CPR Part 31?", ("part 31", "disclosure")),
     ("cpr_part_52", "What are the time limits for filing an appeal under CPR Part 52?", ("part 52", "appeal")),
-    ("commercial_court", "How does the Commercial Court handle case management conferences?", ("commercial court", "case management")),
+    (
+        "commercial_court",
+        "How does the Commercial Court handle case management conferences?",
+        ("commercial court", "case management"),
+    ),
     ("pre_action", "Can I obtain pre-action disclosure under CPR 31.16?", ("31.16", "pre-action disclosure")),
 )
 
@@ -50,18 +54,29 @@ async def run(candidate: str, provenance: dict[str, str], headers: dict[str, str
             }
             if "Agentic retrieval response" not in agentic_steps:
                 raise ValueError(f"{case_id}: response does not prove agentic retrieval was used")
-            checks.append({
-                "id": case_id,
-                "source_count": len(sources),
-                "retrieval_mode": "agentic",
-                "status": "PASS",
-            })
+            checks.append(
+                {
+                    "id": case_id,
+                    "source_count": len(sources),
+                    "retrieval_mode": "agentic",
+                    "status": "PASS",
+                }
+            )
     return passing_report("retrieval", checks, provenance=provenance)
 
 
 def main() -> int:
     args = gate_parser(__doc__).parse_args()
-    return run_gate("retrieval", args.output, run, args.candidate_url, args.provenance, args.provenance_token, args.auth_token, args.auth_cookie)
+    return run_gate(
+        "retrieval",
+        args.output,
+        run,
+        args.candidate_url,
+        args.provenance,
+        args.provenance_token,
+        args.auth_token,
+        args.auth_cookie,
+    )
 
 
 if __name__ == "__main__":
