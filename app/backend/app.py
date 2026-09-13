@@ -50,8 +50,6 @@ from approaches.approach import Approach, DataPoints
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.promptmanager import PromptManager
 from chat_history.cosmosdb import chat_history_cosmosdb_bp
-from customizations.config import fetch_available_sources, is_deployed_ui_compat_enabled, is_feature_enabled
-from customizations.routes import categories_bp, feedback_bp, proxy_source_bp
 from config import (
     CONFIG_AGENTIC_KNOWLEDGEBASE_ENABLED,
     CONFIG_AUTH_CLIENT,
@@ -95,6 +93,18 @@ from config import (
 )
 from core.authentication import AuthenticationHelper
 from core.sessionhelper import create_session_id
+from customizations.config import (
+    fetch_available_sources,
+    is_deployed_ui_compat_enabled,
+    is_feature_enabled,
+    validate_v4_runtime_contract,
+)
+from customizations.routes import (
+    categories_bp,
+    feedback_bp,
+    provenance_bp,
+    proxy_source_bp,
+)
 from decorators import authenticated, authenticated_path
 from error import error_dict, error_response
 from prepdocs import (
@@ -421,6 +431,7 @@ async def setup_clients():
     AZURE_SEARCH_SERVICE = os.environ["AZURE_SEARCH_SERVICE"]
     AZURE_SEARCH_ENDPOINT = f"https://{AZURE_SEARCH_SERVICE}.search.windows.net"
     AZURE_SEARCH_INDEX = os.environ["AZURE_SEARCH_INDEX"]
+    V4_RELEASE_ID = os.getenv("V4_RELEASE_ID", "").strip()
     AZURE_SEARCH_KNOWLEDGEBASE_NAME = os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_NAME", "")
     # Shared by all OpenAI deployments
     OPENAI_HOST = OpenAIHost(os.getenv("OPENAI_HOST", "azure"))
@@ -476,6 +487,13 @@ async def setup_clients():
     AZURE_SEARCH_QUERY_REWRITING = os.getenv("AZURE_SEARCH_QUERY_REWRITING", "false").lower()
     # This defaults to the previous field name "embedding", for backwards compatibility
     AZURE_SEARCH_FIELD_NAME_EMBEDDING = os.getenv("AZURE_SEARCH_FIELD_NAME_EMBEDDING", "embedding")
+    validate_v4_runtime_contract(
+        release_id=V4_RELEASE_ID,
+        search_index=AZURE_SEARCH_INDEX,
+        embedding_model=OPENAI_EMB_MODEL,
+        embedding_dimensions=OPENAI_EMB_DIMENSIONS,
+        embedding_field=AZURE_SEARCH_FIELD_NAME_EMBEDDING,
+    )
 
     AZURE_SPEECH_SERVICE_ID = os.getenv("AZURE_SPEECH_SERVICE_ID")
     AZURE_SPEECH_SERVICE_LOCATION = os.getenv("AZURE_SPEECH_SERVICE_LOCATION")
@@ -498,12 +516,15 @@ async def setup_clients():
         os.getenv("USE_AGENTIC_KNOWLEDGEBASE", "").lower() == "true"
         or os.getenv("USE_AGENTIC_RETRIEVAL", "").lower() == "true"
     )
+    PROVENANCE_AGENTIC_MODE = "agentic" if USE_AGENTIC_KNOWLEDGEBASE else "standard"
     USE_WEB_SOURCE = os.getenv("USE_WEB_SOURCE", "").lower() == "true"
     USE_SHAREPOINT_SOURCE = os.getenv("USE_SHAREPOINT_SOURCE", "").lower() == "true"
     AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT = os.getenv(
         "AGENTIC_KNOWLEDGEBASE_REASONING_EFFORT",
-        os.getenv("AGENTIC_RETRIEVAL_REASONING_EFFORT",
-                   os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_RETRIEVAL_REASONING_EFFORT", "low"))
+        os.getenv(
+            "AGENTIC_RETRIEVAL_REASONING_EFFORT",
+            os.getenv("AZURE_SEARCH_KNOWLEDGEBASE_RETRIEVAL_REASONING_EFFORT", "low"),
+        ),
     )
     USE_VECTORS = os.getenv("USE_VECTORS", "").lower() != "false"
 
@@ -529,7 +550,8 @@ async def setup_clients():
             azure_credential = ManagedIdentityCredential()
     elif AZURE_TENANT_ID:
         current_app.logger.info(
-            "Setting up Azure credential using AzureDeveloperCliCredential with tenant_id %s (with AzureCliCredential fallback)", AZURE_TENANT_ID
+            "Setting up Azure credential using AzureDeveloperCliCredential with tenant_id %s (with AzureCliCredential fallback)",
+            AZURE_TENANT_ID,
         )
         # CUSTOM: Fall back to AzureCliCredential if azd token is expired (e.g. >90 day inactivity)
         azure_credential = ChainedTokenCredential(
@@ -556,6 +578,9 @@ async def setup_clients():
     knowledgebase_client = KnowledgeBaseRetrievalClient(
         endpoint=AZURE_SEARCH_ENDPOINT, knowledge_base_name=AZURE_SEARCH_KNOWLEDGEBASE_NAME, credential=azure_credential
     )
+    current_app.config["PROVENANCE_SEARCH_INDEX"] = AZURE_SEARCH_INDEX
+    current_app.config["PROVENANCE_KNOWLEDGE_BASE"] = AZURE_SEARCH_KNOWLEDGEBASE_NAME
+    current_app.config["PROVENANCE_AGENTIC_MODE"] = PROVENANCE_AGENTIC_MODE
     knowledgebase_client_with_web = None
     knowledgebase_client_with_sharepoint = None
     knowledgebase_client_with_web_and_sharepoint = None
@@ -706,6 +731,8 @@ async def setup_clients():
 
     current_app.config[CONFIG_OPENAI_CLIENT] = openai_client
     current_app.config[CONFIG_SEARCH_CLIENT] = search_client
+    current_app.config["PROVENANCE_SEARCH_INDEX"] = AZURE_SEARCH_INDEX
+    current_app.config["PROVENANCE_KNOWLEDGE_BASE"] = AZURE_SEARCH_KNOWLEDGEBASE_NAME
     current_app.config[CONFIG_KNOWLEDGEBASE_CLIENT] = knowledgebase_client
     current_app.config[CONFIG_KNOWLEDGEBASE_CLIENT_WITH_WEB] = knowledgebase_client_with_web
     current_app.config[CONFIG_KNOWLEDGEBASE_CLIENT_WITH_SHAREPOINT] = knowledgebase_client_with_sharepoint
@@ -802,6 +829,7 @@ def create_app():
     app.register_blueprint(chat_history_cosmosdb_bp)
     app.register_blueprint(categories_bp)
     app.register_blueprint(feedback_bp)
+    app.register_blueprint(provenance_bp)
     app.register_blueprint(proxy_source_bp)
 
     if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
