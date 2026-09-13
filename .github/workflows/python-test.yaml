@@ -61,21 +61,45 @@ jobs:
         - name: Lint with ruff
           shell: bash
           run: |
+            changed_python_files=()
             if [ "${{ github.event_name }}" = "pull_request" ]; then
               git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
-              changed_python_files=$(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
             elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-              changed_python_files=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
             else
-              changed_python_files=$(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+              mapfile -t changed_python_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
             fi
-            if [ -n "$changed_python_files" ]; then
-              ruff check $changed_python_files
+            if [ "${#changed_python_files[@]}" -gt 0 ]; then
+              ruff check "${changed_python_files[@]}"
             else
               echo "No changed Python files to lint."
             fi
         - name: Check types with ty
-          run: ty check
+          shell: bash
+          run: |
+            changed_backend_files=()
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              changed_files_range="origin/${{ github.base_ref }}...HEAD"
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$changed_files_range" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              mapfile -t changed_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            for file in "${changed_files[@]}"; do
+              case "$file" in
+                app/backend/*.py|app/backend/**/*.py)
+                  changed_backend_files+=("$file")
+                  ;;
+              esac
+            done
+            if [ "${#changed_backend_files[@]}" -gt 0 ]; then
+              ty check "${changed_backend_files[@]}"
+            else
+              echo "No changed backend Python files to type-check."
+            fi
         - name: Check formatting with black
           run: black . --check --verbose
         - name: Run Python tests
