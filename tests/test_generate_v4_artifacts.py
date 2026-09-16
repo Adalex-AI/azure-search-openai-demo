@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from scripts import update_cpr_index_v3 as updater
 from scripts.audit_source_documents import CanonicalSource
 from scripts.generate_v4_artifacts import (
     GUIDE_FILES,
@@ -10,6 +11,7 @@ from scripts.generate_v4_artifacts import (
     enrich_retrieval_metadata,
     expand_oversized_embedding_windows,
     snapshot_hash,
+    split_content_for_embedding_budget,
     validate_source_snapshot,
 )
 
@@ -49,6 +51,47 @@ def test_oversized_embedding_windows_preserve_canonical_content():
     assert all(child["content"] == document["content"] for child in children)
     assert all(child["parent_id"] == "part-31" for child in children)
     assert [child["child_window"] for child in children] == list(range(1, len(children) + 1))
+
+
+def test_oversized_single_sentence_uses_lossless_embedding_fallback():
+    document = {
+        "id": "Practice_Direction_49E___Alternative_Procedure_For_Claims_chunk_000",
+        "content": "Alternative procedure " * 300,
+        "sourcefile": "Practice Direction 49E",
+        "sourcepage": "Alternative Procedure For Claims",
+        "category": "Civil Procedure Rules and Practice Directions",
+        "subsection_id": "49E.1",
+    }
+    enrich_retrieval_metadata(document)
+
+    chunker = updater.LegalDocumentChunker()
+    windows = split_content_for_embedding_budget(document, document["content"], 100, chunker)
+    children = expand_oversized_embedding_windows([document], max_embedding_tokens=100)
+
+    assert "".join(windows) == document["content"]
+    assert len(children) > 1
+    assert all(child["content"] == document["content"] for child in children)
+    assert all(chunker.count_tokens(child["embedding_text"]) <= 100 for child in children)
+    assert all(child["sourcefile"] == document["sourcefile"] for child in children)
+    assert all(child["category"] == document["category"] for child in children)
+    assert [child["id"] for child in children] == [
+        f"{document['id']}__window_{index}" for index in range(1, len(children) + 1)
+    ]
+    assert [child["child_window_count"] for child in children] == [len(children)] * len(children)
+
+
+def test_oversized_embedding_fails_when_metadata_cannot_fit():
+    document = {
+        "id": "metadata-only",
+        "content": "content " * 100,
+        "sourcefile": "Extremely verbose source title " * 30,
+        "sourcepage": "Page",
+        "category": "Category",
+    }
+    enrich_retrieval_metadata(document)
+
+    with pytest.raises(ValueError, match="Embedding metadata exceeds 10 tokens"):
+        expand_oversized_embedding_windows([document], max_embedding_tokens=10)
 
 
 COURT_GUIDES_DIR = ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
