@@ -4,9 +4,9 @@ Integration tests for custom API routes.
 Tests /api/categories endpoint and feedback endpoint with real request/response cycles.
 """
 
-import pytest
-import json
 from unittest import mock
+
+import pytest
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ class TestCategoriesEndpoint:
             original = client.app.config.get("search_client")
             client.app.config["search_client"] = mock_search_client
             try:
-                response = await client.get("/api/categories")
+                await client.get("/api/categories")
 
                 # Verify search was called with facets
                 mock_search_client.search.assert_called_once()
@@ -222,7 +222,7 @@ class TestFeedbackEndpoint:
                     "environment": "production",
                 }
 
-                response = await client.post(
+                await client.post(
                     "/api/feedback",
                     json=feedback_data,
                 )
@@ -249,9 +249,7 @@ class TestFeedbackDataStorage:
             from customizations.routes.feedback import feedback_bp
 
             # Blueprint should have feedback route
-            assert any(
-                rule.rule == "/api/feedback" for rule in feedback_bp.deferred_functions
-            )
+            assert any(rule.rule == "/api/feedback" for rule in feedback_bp.deferred_functions)
         except (ImportError, AttributeError):
             pytest.skip("Feedback route structure not yet inspected")
 
@@ -269,12 +267,10 @@ class TestRouteBlueprints:
 
     def test_categories_blueprint_has_route(self):
         """Test that categories blueprint has the /categories route."""
-        from customizations.routes.categories import categories_bp
+        from app import create_app
 
-        # Blueprint should have the route registered
-        assert any(
-            "/categories" in str(rule) for rule in getattr(categories_bp, "deferred_functions", [])
-        )
+        app = create_app()
+        assert "/api/categories" in {rule.rule for rule in app.url_map.iter_rules()}
 
 
 @pytest.mark.asyncio

@@ -89,6 +89,38 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     return document
 
 
+def split_content_for_embedding_budget(
+    document: dict[str, Any], content: str, max_embedding_tokens: int, chunker: Any
+) -> list[str]:
+    """Losslessly split content when no legal boundary can fit the embedding budget."""
+    if chunker.count_tokens(_build_embedding_text(document, "")) > max_embedding_tokens:
+        raise ValueError(f"Embedding metadata exceeds {max_embedding_tokens} tokens: {document.get('id', '')}")
+
+    legal_boundaries = [position for position, _, _ in chunker.find_legal_boundaries(content)]
+    windows: list[str] = []
+    start = 0
+    while start < len(content):
+        # Start from the usual upper character estimate, then measure the complete
+        # embedding input and reduce the span until it meets the hard token bound.
+        metadata_tokens = chunker.count_tokens(_build_embedding_text(document, ""))
+        available_tokens = max_embedding_tokens - metadata_tokens
+        end = min(len(content), start + max(1, available_tokens * 4))
+        while end > start and chunker.count_tokens(_build_embedding_text(document, content[start:end])) > max_embedding_tokens:
+            end -= 1
+
+        preferred_end = max((position for position in legal_boundaries if start < position <= end), default=0)
+        if preferred_end:
+            end = preferred_end
+
+        window = content[start:end]
+        if not window:
+            raise ValueError(f"Unable to losslessly split oversized embedding input: {document.get('id', '')}")
+        windows.append(window)
+        start = end
+
+    return windows
+
+
 def expand_oversized_embedding_windows(
     documents: list[dict[str, Any]], max_embedding_tokens: int = 8100
 ) -> list[dict[str, Any]]:
@@ -107,14 +139,23 @@ def expand_oversized_embedding_windows(
             original_id,
             str(document.get("section_title") or document.get("sourcefile") or original_id),
         )
+        window_texts = [str(chunk["text"]) for chunk in chunks]
+        content = str(document.get("content") or "")
+        if len(window_texts) < 2 or "".join(window_texts) != content or any(
+            chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
+            for window_text in window_texts
+        ):
+            window_texts = split_content_for_embedding_budget(
+                document, content, max_embedding_tokens, chunker
+            )
         children: list[dict[str, Any]] = []
-        for index, chunk in enumerate(chunks, start=1):
+        for index, window_text in enumerate(window_texts, start=1):
             child = dict(document)
             child["id"] = f"{original_id}__window_{index}"
             child["parent_id"] = original_id
             child["child_window"] = index
-            child["child_window_count"] = len(chunks)
-            child["embedding_text"] = _build_embedding_text(child, str(chunk["text"]))
+            child["child_window_count"] = len(window_texts)
+            child["embedding_text"] = _build_embedding_text(child, window_text)
             if chunker.count_tokens(child["embedding_text"]) > max_embedding_tokens:
                 raise ValueError(f"Child embedding window exceeds {max_embedding_tokens} tokens: {child['id']}")
             children.append(child)

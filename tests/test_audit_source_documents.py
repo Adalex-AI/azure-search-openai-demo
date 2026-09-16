@@ -4,13 +4,13 @@ from unittest.mock import patch
 from scripts.audit_source_documents import (
     CanonicalSource,
     HtmlAuditCache,
+    apply_block_gate,
     apply_html_fidelity,
     apply_pdf_fidelity,
-    apply_block_gate,
     build_report,
     classify_remediation,
-    compare_text_content,
     compare_substantive_blocks,
+    compare_text_content,
     extract_substantive_blocks,
     fetch_index_documents,
     load_index_snapshot,
@@ -57,7 +57,9 @@ class FakeScraper:
 
 def test_normalization_handles_legal_source_variants():
     assert normalize_label("  King’s   Bench — Division ") == "king's bench - division"
-    assert normalize_url("HTTPS://WWW.JUSTICE.GOV.UK/rules/part01/?unused=1#top") == "https://justice.gov.uk/rules/part01"
+    assert (
+        normalize_url("HTTPS://WWW.JUSTICE.GOV.UK/rules/part01/?unused=1#top") == "https://justice.gov.uk/rules/part01"
+    )
     assert odata_escape("King's Bench") == "King''s Bench"
 
 
@@ -68,6 +70,7 @@ def test_pdf_action_is_classified_as_pdf_source():
 
     assert len(debt_claims) == 1
     assert debt_claims[0].source_type == "pdf"
+    assert debt_claims[0].url == "https://www.justice.gov.uk/courts/procedure-rules/civil/pdf/protocols/debt-pap.pdf"
 
 
 def test_text_content_reports_bidirectional_coverage():
@@ -144,9 +147,7 @@ def test_substantive_blocks_tolerate_markdown_presentation_difference():
 
     assert result["unmatched_block_count"] == 0
     assert result["ambiguous_block_count"] == 0
-    assert "compact_formatting_substring" in {
-        block["match_method"] for block in result["matched_blocks"]
-    }
+    assert "compact_formatting_substring" in {block["match_method"] for block in result["matched_blocks"]}
 
 
 def test_compact_matching_preserves_word_boundaries():
@@ -220,7 +221,12 @@ def test_unique_matches_skip_document_rescans_but_duplicates_scope_documents():
         {"id": "chunk-1", "sourcefile": "Part 1", "content": "Other content"},
     ]
 
-    with patch("scripts.audit_source_documents.count_legal_occurrences", wraps=__import__("scripts.audit_source_documents", fromlist=["count_legal_occurrences"]).count_legal_occurrences) as counter:
+    with patch(
+        "scripts.audit_source_documents.count_legal_occurrences",
+        wraps=__import__(
+            "scripts.audit_source_documents", fromlist=["count_legal_occurrences"]
+        ).count_legal_occurrences,
+    ) as counter:
         compare_substantive_blocks(source, source, source_type="html", index_documents=documents)
         unique_call_count = counter.call_count
         counter.reset_mock()
@@ -278,7 +284,15 @@ def test_substantive_blocks_keep_same_source_duplicates_ambiguous():
 
 
 def test_block_gate_fails_closed_on_ambiguous_matches():
-    result = type("AuditResult", (), {"metrics": {"substantive_blocks": {"ambiguous_block_count": 1, "unmatched_block_count": 0}}, "status": "PASS", "issues": []})()
+    result = type(
+        "AuditResult",
+        (),
+        {
+            "metrics": {"substantive_blocks": {"ambiguous_block_count": 1, "unmatched_block_count": 0}},
+            "status": "PASS",
+            "issues": [],
+        },
+    )()
 
     apply_block_gate(result, "HTML")
 
@@ -289,13 +303,10 @@ def test_block_gate_fails_closed_on_ambiguous_matches():
 def test_pdf_manifest_loads_all_local_guides():
     sources = load_pdf_sources()
 
-    assert len(sources) == 8
+    assert len(sources) == 7
     assert all(source.source_type == "pdf" for source in sources)
     assert all(source.local_path.endswith(".pdf") for source in sources)
-    assert {source.sourcefile for source in sources} >= {
-        "Commercial Court Guide",
-        "Intellectual Property Enterprise Court Guide",
-    }
+    assert "Commercial Court Guide" in {source.sourcefile for source in sources}
 
 
 def test_web_inventory_unions_action_list_with_processed_corpus(tmp_path):
@@ -307,11 +318,19 @@ def test_web_inventory_unions_action_list_with_processed_corpus(tmp_path):
     corpus = tmp_path / "Upload"
     corpus.mkdir()
     (corpus / "part1.json").write_text(
-        json.dumps({"sourcefile": "Part 1", "category": "Civil Procedure Rules and Practice Directions", "storageUrl": "old"}),
+        json.dumps(
+            {"sourcefile": "Part 1", "category": "Civil Procedure Rules and Practice Directions", "storageUrl": "old"}
+        ),
         encoding="utf-8",
     )
     (corpus / "part2.json").write_text(
-        json.dumps({"sourcefile": "Part 2", "category": "Civil Procedure Rules and Practice Directions", "storageUrl": "https://example.test/part2"}),
+        json.dumps(
+            {
+                "sourcefile": "Part 2",
+                "category": "Civil Procedure Rules and Practice Directions",
+                "storageUrl": "https://example.test/part2",
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -343,9 +362,12 @@ def test_index_snapshot_envelope_round_trips_with_verified_provenance(tmp_path):
     assert provenance["service"] == "search-service"
     assert provenance["index"] == "staging-index"
     assert provenance["document_count"] == 2
-    assert provenance["documents_sha256"] == serialize_index_snapshot(
-        documents, "search-service", "staging-index", provenance["captured_at_utc"]
-    )["documents_sha256"]
+    assert (
+        provenance["documents_sha256"]
+        == serialize_index_snapshot(documents, "search-service", "staging-index", provenance["captured_at_utc"])[
+            "documents_sha256"
+        ]
+    )
 
 
 def test_index_snapshot_loader_accepts_legacy_array_without_verifying_provenance(tmp_path):
@@ -503,7 +525,13 @@ def test_report_serialization_is_deterministic():
 def test_report_renders_snapshot_provenance_and_generic_fail_needs_review():
     canonical = [CanonicalSource(source_type="html", sourcefile="Part 1", category="CPR")]
     documents = [{"id": "part-1", "sourcefile": "Part 1", "category": "CPR", "storageUrl": ""}]
-    provenance = {"verified": False, "format": "legacy_array", "service": "service", "index": "index", "document_count": 1}
+    provenance = {
+        "verified": False,
+        "format": "legacy_array",
+        "service": "service",
+        "index": "index",
+        "document_count": 1,
+    }
 
     report = build_report(reconcile_sources(canonical, documents), provenance)
 

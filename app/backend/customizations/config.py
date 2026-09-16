@@ -6,31 +6,22 @@ import os
 CUSTOM_FEATURES = {
     # Category filtering feature - adds /api/categories endpoint and UI dropdown
     "category_filter": True,
-    
     # Custom citation formatting in prompts
     "legal_domain_prompts": True,
-    
     # Frontend citation sanitization
     "citation_sanitizer": True,
-    
     # Custom evaluation scripts
     "custom_evals": True,
-    
     # Enhanced feedback with deployment metadata and thought filtering
     "enhanced_feedback": True,
-
     # Force agentic retrieval to always query sources when initial attempt returns no references
     "agentic_force_query_on_empty": True,
-
     # Fallback to direct search using agentic query plan when references are missing
     "agentic_fallback_search": True,
-
     # Retry retrieval when initial results do not match the user's apparent section intent
     "adaptive_search_retry": True,
-
     # Allow agentic retrieval to fall back to direct search when references are weak, not just empty
     "agentic_retry_on_weak_matches": True,
-
     # Supplemental search for related sub-concepts identified by query rewrite
     "related_aspects_search": True,
 }
@@ -50,6 +41,37 @@ def is_feature_enabled(feature_name: str) -> bool:
 def is_deployed_ui_compat_enabled() -> bool:
     """Enable deployed UI-compatible responses without disabling newer upstream features."""
     return os.getenv("DEPLOYED_UI_COMPAT", "false").lower() == "true"
+
+
+V4_EMBEDDING_MODEL = "text-embedding-3-large"
+V4_EMBEDDING_DIMENSIONS = 3072
+V4_EMBEDDING_FIELD = "embedding3"
+
+
+def validate_v4_runtime_contract(
+    *,
+    release_id: str | None,
+    search_index: str,
+    embedding_model: str,
+    embedding_dimensions: int,
+    embedding_field: str,
+) -> None:
+    """Reject runtime settings that cannot serve a V4 release safely."""
+    is_v4_index = search_index.startswith("v4-") or "-v4-" in search_index
+    if not release_id and not is_v4_index:
+        return
+
+    mismatches = []
+    if is_v4_index and not release_id:
+        mismatches.append("release_id must be set for a V4 search index")
+    if embedding_model != V4_EMBEDDING_MODEL:
+        mismatches.append(f"embedding model must be {V4_EMBEDDING_MODEL}")
+    if embedding_dimensions != V4_EMBEDDING_DIMENSIONS:
+        mismatches.append(f"embedding dimensions must be {V4_EMBEDDING_DIMENSIONS}")
+    if embedding_field != V4_EMBEDDING_FIELD:
+        mismatches.append(f"embedding field must be {V4_EMBEDDING_FIELD}")
+    if mismatches:
+        raise ValueError("Invalid V4 runtime contract: " + "; ".join(mismatches))
 
 
 # CUSTOM: Display name mapping shared between categories route and prompt source list
@@ -100,13 +122,13 @@ async def fetch_available_sources(search_client) -> list[str]:
 def get_deployment_metadata() -> dict[str, str]:
     """
     Get deployment and version metadata for feedback tracking.
-    
+
     Includes deployment ID, app version, and Git commit hash if available.
     This information is stored with feedback to enable version-specific debugging.
-    
+
     Returns:
         Dictionary containing deployment metadata
-        
+
     Example:
         {
             "deployment_id": "1767305857",

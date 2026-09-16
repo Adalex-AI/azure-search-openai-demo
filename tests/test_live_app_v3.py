@@ -6,10 +6,15 @@ Uses curl subprocess to avoid urllib chunked-encoding issues with streaming.
 Usage:
     python tests/test_live_app_v3.py
 """
+
 import json
+import re
 import subprocess
 import sys
-import re
+
+import pytest
+
+pytestmark = pytest.mark.live
 
 BASE_URL = "http://localhost:50505"
 passed = 0
@@ -21,7 +26,9 @@ def curl_get(path):
     """GET request via curl."""
     r = subprocess.run(
         ["curl", "-s", f"{BASE_URL}{path}"],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     return json.loads(r.stdout)
 
@@ -29,14 +36,24 @@ def curl_get(path):
 def curl_post(path, body):
     """POST JSON via curl."""
     r = subprocess.run(
-        ["curl", "-s", "-X", "POST", f"{BASE_URL}{path}",
-         "-H", "Content-Type: application/json",
-         "-d", json.dumps(body)],
-        capture_output=True, text=True, timeout=120,
+        [
+            "curl",
+            "-s",
+            "-X",
+            "POST",
+            f"{BASE_URL}{path}",
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps(body),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
     raw = r.stdout.strip()
     # Handle streaming (newline-delimited JSON): take last complete object
-    lines = [l for l in raw.split("\n") if l.strip()]
+    lines = [line for line in raw.split("\n") if line.strip()]
     if not lines:
         raise RuntimeError(f"Empty response from {path}")
     return json.loads(lines[-1])
@@ -55,6 +72,7 @@ def run_test(name, fn):
 
 
 # --- Tests ---
+
 
 def test_config():
     config = curl_get("/config")
@@ -80,11 +98,14 @@ def test_categories():
 
 
 def test_chat_cpr_overriding_objective():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What is the overriding objective of the Civil Procedure Rules?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What is the overriding objective of the Civil Procedure Rules?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
     assert len(content) > 100, f"Answer too short: {len(content)}"
     assert "overriding objective" in content.lower(), "Missing 'overriding objective'"
@@ -92,111 +113,138 @@ def test_chat_cpr_overriding_objective():
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     assert len(texts) > 0, "No sources returned"
     has_part1 = any("Part 1" in str(t) for t in texts)
-    assert has_part1, f"Part 1 not in sources"
+    assert has_part1, "Part 1 not in sources"
     print(f"    Answer: {len(content)} chars, {len(texts)} sources, Part 1: yes")
 
 
 def test_chat_cpr_costs():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What are the rules about costs?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What are the rules about costs?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 100, f"Answer too short"
+    assert len(content) > 100, "Answer too short"
     assert "cost" in content.lower(), "Missing 'cost' in answer"
     print(f"    Answer: {len(content)} chars")
 
 
 def test_chat_commercial_court():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "How does the Commercial Court handle case management conferences?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [
+                {"role": "user", "content": "How does the Commercial Court handle case management conferences?"}
+            ],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 100, f"Answer too short"
+    assert len(content) > 100, "Answer too short"
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     # Check answer or sources for Commercial Court references
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_commercial = "Commercial Court" in full_text or "case management" in full_text.lower()
-    assert has_commercial, f"No Commercial Court or case management references found"
+    assert has_commercial, "No Commercial Court or case management references found"
     print(f"    Answer: {len(content)} chars, Commercial/CMC references: yes")
 
 
 def test_chat_chancery_guide():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What are the requirements for Part 8 claims in Chancery?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What are the requirements for Part 8 claims in Chancery?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     has_chancery = any("Chancery" in str(t) for t in texts)
-    assert has_chancery, f"No Chancery sources found"
+    assert has_chancery, "No Chancery sources found"
     print(f"    Answer: {len(content)} chars, Chancery sources: yes")
 
 
 def test_chat_patents_court():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What is the Patents Court Guide process for patent litigation?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What is the Patents Court Guide process for patent litigation?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     assert "patent" in content.lower(), "Missing 'patent' in answer"
     print(f"    Answer: {len(content)} chars")
 
 
 def test_chat_tcc():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What are the TCC procedures for adjudication enforcement?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What are the TCC procedures for adjudication enforcement?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     # Check answer or sources for TCC references
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_tcc = "Technology and Construction" in full_text or "TCC" in full_text or "adjudication" in full_text.lower()
-    assert has_tcc, f"No TCC/adjudication references in answer or sources"
+    assert has_tcc, "No TCC/adjudication references in answer or sources"
     print(f"    Answer: {len(content)} chars, TCC/adjudication: yes")
 
 
 def test_chat_kings_bench():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What does the Kings Bench Division Guide say about the Senior Master?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [
+                {"role": "user", "content": "What does the Kings Bench Division Guide say about the Senior Master?"}
+            ],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     # Check answer or sources for KBD references
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_kbd = "King" in full_text or "Senior Master" in full_text or "KBD" in full_text
-    assert has_kbd, f"No KBD/Senior Master references in answer or sources"
+    assert has_kbd, "No KBD/Senior Master references in answer or sources"
     print(f"    Answer: {len(content)} chars, KBD/Senior Master: yes")
 
 
 def test_chat_category_filter():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What are the requirements for expert evidence?"}],
-        "context": {"overrides": {
-            "retrieval_mode": "hybrid",
-            "semantic_ranker": True,
-            "top": 5,
-            "include_category": "Commercial Court",
-        }},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What are the requirements for expert evidence?"}],
+            "context": {
+                "overrides": {
+                    "retrieval_mode": "hybrid",
+                    "semantic_ranker": True,
+                    "top": 5,
+                    "include_category": "Commercial Court",
+                }
+            },
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
     assert len(content) > 20, "Filtered chat returned empty response"
     dp = result.get("context", {}).get("data_points", {})
@@ -211,14 +259,17 @@ def test_chat_category_filter():
 
 
 def test_citations_present():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "What is the small claims track limit under the CPR?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "What is the small claims track limit under the CPR?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     content = result.get("message", {}).get("content", "")
     # Citations can be [1], [doc_name], etc.
-    citations = re.findall(r'\[(\d+|[^\[\]]+?)\]', content)
+    citations = re.findall(r"\[(\d+|[^\[\]]+?)\]", content)
     citation_map = result.get("context", {}).get("citation_map", {})
     # Either inline citations or a citation_map should be present
     assert len(citations) > 0 or len(citation_map) > 0, "No citations in response (neither inline nor citation_map)"
@@ -226,10 +277,13 @@ def test_citations_present():
 
 
 def test_ask_endpoint():
-    result = curl_post("/ask", {
-        "messages": [{"role": "user", "content": "What pre-action protocols apply before litigation?"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-    })
+    result = curl_post(
+        "/ask",
+        {
+            "messages": [{"role": "user", "content": "What pre-action protocols apply before litigation?"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+        },
+    )
     # Ask endpoint may return error if backend approach config differs
     if "error" in result:
         print(f"    SKIP (expected): Ask endpoint returned error: {str(result['error'])[:80]}")
@@ -242,16 +296,28 @@ def test_ask_endpoint():
 
 def test_streaming_chat():
     r = subprocess.run(
-        ["curl", "-s", "-X", "POST", f"{BASE_URL}/chat/stream",
-         "-H", "Content-Type: application/json",
-         "-d", json.dumps({
-             "messages": [{"role": "user", "content": "What is a freezing injunction?"}],
-             "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 3}},
-             "stream": True,
-         })],
-        capture_output=True, text=True, timeout=120,
+        [
+            "curl",
+            "-s",
+            "-X",
+            "POST",
+            f"{BASE_URL}/chat/stream",
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            json.dumps(
+                {
+                    "messages": [{"role": "user", "content": "What is a freezing injunction?"}],
+                    "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 3}},
+                    "stream": True,
+                }
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
     )
-    lines = [l for l in r.stdout.strip().split("\n") if l.strip()]
+    lines = [line for line in r.stdout.strip().split("\n") if line.strip()]
     assert len(lines) > 1, f"Expected multiple streaming chunks, got {len(lines)}"
     # Concatenate delta.content from all chunks
     full_content = ""
@@ -272,16 +338,19 @@ def test_streaming_chat():
 
 
 def test_no_breadcrumbs_in_response():
-    result = curl_post("/chat", {
-        "messages": [{"role": "user", "content": "Explain the disclosure rules under the CPR"}],
-        "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
-        "stream": False,
-    })
+    result = curl_post(
+        "/chat",
+        {
+            "messages": [{"role": "user", "content": "Explain the disclosure rules under the CPR"}],
+            "context": {"overrides": {"retrieval_mode": "hybrid", "semantic_ranker": True, "top": 5}},
+            "stream": False,
+        },
+    )
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     for t in texts:
         content = t.get("content", "") if isinstance(t, dict) else str(t)
-        if re.search(r'\[(?:Part|Practice Direction)\s+\d.*>.*\]', content):
+        if re.search(r"\[(?:Part|Practice Direction)\s+\d.*>.*\]", content):
             raise AssertionError(f"Breadcrumb found in source: {content[:100]}...")
     print(f"    Checked {len(texts)} sources: zero breadcrumbs")
 

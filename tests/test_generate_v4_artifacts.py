@@ -3,15 +3,17 @@ from pathlib import Path
 
 import pytest
 
+from scripts import update_cpr_index_v3 as updater
 from scripts.audit_source_documents import CanonicalSource
 from scripts.generate_v4_artifacts import (
     GUIDE_FILES,
     ROOT,
     deduplicate_sources_by_url,
     enrich_retrieval_metadata,
-    snapshot_hash,
-    validate_source_snapshot,
     expand_oversized_embedding_windows,
+    snapshot_hash,
+    split_content_for_embedding_budget,
+    validate_source_snapshot,
 )
 
 
@@ -50,6 +52,34 @@ def test_oversized_embedding_windows_preserve_canonical_content():
     assert all(child["content"] == document["content"] for child in children)
     assert all(child["parent_id"] == "part-31" for child in children)
     assert [child["child_window"] for child in children] == list(range(1, len(children) + 1))
+
+
+def test_oversized_no_boundary_sentence_is_losslessly_split_within_embedding_budget():
+    document = {
+        "id": "Practice_Direction_49E___Alternative_Procedure_For_Claims_chunk_000",
+        "content": "AlternativeProcedure" * 12000,
+        "sourcefile": "Practice Direction 49E",
+        "sourcepage": "Alternative Procedure For Claims",
+        "category": "Civil Procedure Rules and Practice Directions",
+        "subsection_id": "49E.1",
+        "subsections": ["49E.1"],
+    }
+    enrich_retrieval_metadata(document)
+
+    chunker = updater.LegalDocumentChunker()
+    windows = split_content_for_embedding_budget(document, document["content"], 8100, chunker)
+    children = expand_oversized_embedding_windows([document])
+
+    assert "".join(windows) == document["content"]
+    assert len(children) > 1
+    assert all(child["content"] == document["content"] for child in children)
+    assert all(chunker.count_tokens(child["embedding_text"]) <= 8100 for child in children)
+    assert all(child["sourcefile"] == document["sourcefile"] for child in children)
+    assert all(child["category"] == document["category"] for child in children)
+    assert all(child["subsections"] == document["subsections"] for child in children)
+    assert [child["id"] for child in children] == [
+        f"{document['id']}__window_{index}" for index in range(1, len(children) + 1)
+    ]
 
 
 COURT_GUIDES_DIR = ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"

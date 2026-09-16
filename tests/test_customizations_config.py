@@ -5,8 +5,9 @@ Tests feature flag management and deployment metadata functions.
 """
 
 import os
-import pytest
 from unittest import mock
+
+import pytest
 
 
 class TestFeatureFlags:
@@ -31,7 +32,7 @@ class TestFeatureFlags:
 
     def test_is_feature_enabled_returns_false_for_explicitly_disabled_feature(self):
         """Test that is_feature_enabled respects disabled features."""
-        from customizations.config import is_feature_enabled, CUSTOM_FEATURES
+        from customizations.config import CUSTOM_FEATURES, is_feature_enabled
 
         # Temporarily disable a feature
         original_value = CUSTOM_FEATURES.get("category_filter")
@@ -217,3 +218,30 @@ class TestSecurityConfiguration:
 
         uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         assert re.match(uuid_pattern, CIVIL_PROCEDURE_COPILOT_SECURITY_GROUP_ID.lower())
+
+
+class TestV4RuntimeContract:
+    """Tests for V4 runtime safety validation."""
+
+    def test_valid_v4_runtime_contract_passes(self):
+        from customizations.config import validate_v4_runtime_contract
+
+        validate_v4_runtime_contract(
+            release_id="20260913-recovery-001",
+            search_index="legal-court-rag-v4-staging-20260913-recovery-001",
+            embedding_model="text-embedding-3-large",
+            embedding_dimensions=3072,
+            embedding_field="embedding3",
+        )
+
+    def test_invalid_v4_embedding_contract_fails_closed(self):
+        from customizations.config import validate_v4_runtime_contract
+
+        with pytest.raises(ValueError, match="embedding dimensions must be 3072"):
+            validate_v4_runtime_contract(
+                release_id="20260913-recovery-001",
+                search_index="legal-court-rag-v4-staging-20260913-recovery-001",
+                embedding_model="text-embedding-3-large",
+                embedding_dimensions=1536,
+                embedding_field="embedding3",
+            )
