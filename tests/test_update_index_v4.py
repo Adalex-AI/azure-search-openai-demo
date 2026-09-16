@@ -87,6 +87,7 @@ def test_html_oracle_failure_preserves_diagnostics_for_always_upload():
     capture = capture[: capture.index("- name: Recapture canonical PDF oracle")]
     assert "rm -rf reports/html_oracle_snapshots" in capture
     assert "mkdir -p reports/html_oracle_snapshots" in capture
+    assert "--retries 4 --retry-delay 2" in capture
     assert "name: Summarize HTML oracle diagnostics" in capture
     assert "if: always()" in capture
     assert '"${GITHUB_STEP_SUMMARY}"' in capture

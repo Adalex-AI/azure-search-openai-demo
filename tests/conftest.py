@@ -404,7 +404,7 @@ auth_envs = [
         "AZURE_SERVER_APP_ID": "SERVER_APP",
         "AZURE_SERVER_APP_SECRET": "SECRET",
         "AZURE_CLIENT_APP_ID": "CLIENT_APP",
-        "AZURE_TENANT_ID": "TENANT_ID",
+        "AZURE_TENANT_ID": "00000000-0000-0000-0000-000000000001",
         "USE_MULTIMODAL": "true",
         "AZURE_VISION_ENDPOINT": "https://testvision.cognitiveservices.azure.com/",
     },
@@ -427,7 +427,7 @@ auth_public_envs = [
         "AZURE_SERVER_APP_ID": "SERVER_APP",
         "AZURE_SERVER_APP_SECRET": "SECRET",
         "AZURE_CLIENT_APP_ID": "CLIENT_APP",
-        "AZURE_TENANT_ID": "TENANT_ID",
+        "AZURE_TENANT_ID": "00000000-0000-0000-0000-000000000001",
     },
 ]
 
@@ -499,7 +499,7 @@ knowledgebase_auth_envs = [
         "AZURE_SERVER_APP_ID": "SERVER_APP",
         "AZURE_SERVER_APP_SECRET": "SECRET",
         "AZURE_CLIENT_APP_ID": "CLIENT_APP",
-        "AZURE_TENANT_ID": "TENANT_ID",
+        "AZURE_TENANT_ID": "00000000-0000-0000-0000-000000000001",
     }
 ]
 

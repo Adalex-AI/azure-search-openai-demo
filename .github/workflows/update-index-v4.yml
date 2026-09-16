@@ -211,7 +211,7 @@ jobs:
           rm -rf reports/html_oracle_snapshots
           mkdir -p reports/html_oracle_snapshots
           python scripts/capture_html_oracle.py \
-            --output-dir reports/html_oracle_snapshots --refresh
+            --output-dir reports/html_oracle_snapshots --refresh --retries 4 --retry-delay 2
       - name: Summarize HTML oracle diagnostics
         if: always()
         run: |

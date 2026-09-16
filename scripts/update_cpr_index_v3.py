@@ -23,23 +23,23 @@ Usage:
     python scripts/update_cpr_index_v3.py --dry-run --verbose
 """
 
-import os
-import sys
-import json
-import re
-import io
-import time
-import logging
 import argparse
 import hashlib
+import io
+import json
+import logging
+import os
+import re
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
-import requests
-import pypdf
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+import pypdf
+import requests
+from bs4 import BeautifulSoup
 
 # ---------------------------------------------------------------------------
 # Path setup
@@ -51,9 +51,10 @@ SCRAPER_DIR = SCRIPT_DIR / "legal-scraper"
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SCRAPER_DIR))
 
-from load_azd_env import load_azd_env
-from customizations.subsection_extractor import SubsectionExtractor
-from token_chunker import LegalDocumentChunker
+from token_chunker import LegalDocumentChunker  # noqa: E402
+
+from customizations.subsection_extractor import SubsectionExtractor  # noqa: E402
+from load_azd_env import load_azd_env  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -335,7 +336,7 @@ ACTION_LIST = [
     {
         "sourcefile": "Pre-Action Protocol for Debt Claims",
         "azure_id": None,
-        "url": "DISCOVER_FROM_PROTOCOL_PAGE",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/pdf/protocols/debt-pap.pdf",
         "section": "DEBT",
     },
 ]
@@ -448,11 +449,9 @@ def scrape_page(
     url = action_entry["url"] if isinstance(action_entry, dict) else action_entry
 
     if prefetched_result is not None:
-        soup, final_url, redirect_count = prefetched_result
+        soup, _, _ = prefetched_result
     else:
         soup = fetch_soup(session, url)
-        final_url = url
-        redirect_count = 0
     if not soup:
         return None
 
@@ -879,8 +878,13 @@ def generate_embeddings(docs: list[dict], dry_run: bool) -> list[dict]:
     if dry_run or not docs:
         return docs
 
-    from openai import RateLimitError, APIConnectionError, APIError
-    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+    from openai import APIConnectionError, APIError, RateLimitError
+    from tenacity import (
+        retry,
+        retry_if_exception_type,
+        stop_after_attempt,
+        wait_exponential,
+    )
 
     client = get_openai_client()
     deployment = os.environ.get("AZURE_OPENAI_EMB_DEPLOYMENT", "text-embedding-3-large")

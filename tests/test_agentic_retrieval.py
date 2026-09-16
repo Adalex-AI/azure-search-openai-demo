@@ -346,6 +346,7 @@ async def test_agentic_retrieval_retries_when_matches_are_weak(chat_approach, mo
         messages=[{"role": "user", "content": "What does the Patents Court Guide say about urgent applications?"}],
         knowledgebase_client=knowledgebase_client,
         search_index_name="test-index",
+        should_rewrite_query=False,
     )
 
     assert search_calls == [

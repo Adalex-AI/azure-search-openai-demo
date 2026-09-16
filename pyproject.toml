@@ -14,6 +14,9 @@ line-length = 120
 addopts = "-ra"
 pythonpath = ["app/backend", "scripts", "app/functions"]
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+	"live: tests that require running application services or Azure connectivity",
+]
 
 [tool.coverage.paths]
 source = ["scripts", "app"]

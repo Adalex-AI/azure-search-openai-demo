@@ -65,14 +65,8 @@ def test_all_configured_court_guides_have_processed_artifacts():
         assert all(document.get("category") == guide["category"] for document in documents)
 
 
-def test_ipec_processed_artifact_is_release_ready():
-    guide = GUIDE_FILES["Intellectual Property Enterprise Court"]
-    path = COURT_GUIDES_DIR / guide["file"]
-    documents = json.loads(path.read_text(encoding="utf-8"))
-
-    assert len(documents) == 73
-    assert all(document.get("content") for document in documents)
-    assert all(document.get("storageUrl") for document in documents)
+def test_unreviewed_ipec_artifact_is_not_part_of_release_manifest():
+    assert "Intellectual Property Enterprise Court" not in GUIDE_FILES
 
 
 def test_source_snapshot_hash_is_deterministic():

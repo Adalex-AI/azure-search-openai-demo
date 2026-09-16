@@ -22,10 +22,10 @@ categories_bp = Blueprint("categories", __name__, url_prefix="/api")
 async def get_categories():
     """
     Fetch available sources from Azure Search index using faceted search.
-    
+
     Returns a list of sources with their document counts, useful for
     building source filter dropdowns in the frontend.
-    
+
     Response format:
     {
         "categories": [
@@ -38,10 +38,10 @@ async def get_categories():
     # Check if feature is enabled
     if not is_feature_enabled("category_filter"):
         return jsonify({"error": "Category filter feature is disabled"}), 404
-    
+
     try:
         search_client = current_app.config.get(CONFIG_SEARCH_CLIENT)
-        
+
         if not search_client:
             return jsonify({"error": "Search client not configured"}), 500
 
@@ -50,7 +50,7 @@ async def get_categories():
             search_text="*",
             facets=["category,count:1000"],
             top=0,  # Don't return documents, only facets
-            select=["id"]  # Minimal field selection
+            select=["id"],  # Minimal field selection
         )
 
         use_deployed_ui_labels = is_deployed_ui_compat_enabled()
@@ -62,22 +62,18 @@ async def get_categories():
             for facet in facets["category"]:
                 if facet.get("value"):
                     category_key = facet["value"]
-                    display_name = category_key if use_deployed_ui_labels else SOURCE_DISPLAY_NAMES.get(category_key, category_key)
-                    categories.append({
-                        "key": category_key,
-                        "text": display_name,
-                        "count": facet.get("count")
-                    })
+                    display_name = (
+                        category_key if use_deployed_ui_labels else SOURCE_DISPLAY_NAMES.get(category_key, category_key)
+                    )
+                    categories.append({"key": category_key, "text": display_name, "count": facet.get("count")})
 
         # Sort alphabetically by display name
         categories.sort(key=lambda x: x["text"])
 
         # Add first option at the beginning
-        categories.insert(0, {
-            "key": "",
-            "text": "All Categories" if use_deployed_ui_labels else "All Sources",
-            "count": None
-        })
+        categories.insert(
+            0, {"key": "", "text": "All Categories" if use_deployed_ui_labels else "All Sources", "count": None}
+        )
 
         return jsonify({"categories": categories}), 200
 
