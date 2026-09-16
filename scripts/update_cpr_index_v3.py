@@ -482,7 +482,9 @@ def scrape_page(
     context_rule = ""
     paragraphs = []
 
-    elements = content_div.find_all(["h1", "h2", "h3", "h4", "p", "div", "li", "table"])
+    elements = content_div.find_all(
+        ["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "li", "table"]
+    )
     for elem in elements:
         if not elem.parent:
             continue
@@ -522,18 +524,18 @@ def scrape_page(
             text,
             re.IGNORECASE,
         )
-        if (
-            (elem.name in ["h2", "h3", "h4"])
-            or (
-                elem.name == "p"
-                and (re.match(r"^(Rule|Para\.?|Paragraph)\s*\d+|^\d+(\.\d+)?", text, re.IGNORECASE) or is_generic)
-            )
-        ) and len(text) < 100:
+        if (elem.name in ["h2", "h3", "h4", "h5", "h6"]) or (
+            elem.name == "p"
+            and (re.match(r"^(Rule|Para\.?|Paragraph)\s*\d+|^\d+(\.\d+)?", text, re.IGNORECASE) or is_generic)
+            and len(text) < 100
+        ):
             context_rule = text
             paragraphs.append(f"## {text}")
             continue
 
-        if elem.name in ["p", "li"] and not elem.find_all(["p", "li"]):
+        if elem.name in ["p", "li"]:
+            if elem.name == "p" and elem.find_all(["p", "li"]):
+                continue
             bc = ""
             if context_part or context_rule:
                 parts = [c for c in [context_part, context_rule] if c]
@@ -648,20 +650,9 @@ def build_index_docs(action_entry: dict, scraped: dict) -> list[dict]:
     fallback_id = sanitize_id(sourcefile)
     doc_id = generate_id_from_content(title, content, fallback_id)
 
-    # Extract sourcefile from title (Part number)
+    # The action list owns the canonical sourcefile used for filtering and citations.
+    # The page title can vary in casing and wording, and is preserved in sourcepage.
     sf = sourcefile
-    if "–" in title:
-        sf_candidate = title.split("–")[0].strip()
-        if sf_candidate:
-            sf = sf_candidate
-    elif "-" in title:
-        sf_candidate = title.split("-")[0].strip()
-        if sf_candidate:
-            sf = sf_candidate
-
-    # For PAPs, keep the full sourcefile
-    if "pre-action" in sourcefile.lower() or "protocol" in sourcefile.lower():
-        sf = sourcefile
 
     # Chunk if needed
     chunker = LegalDocumentChunker(max_tokens=8000, overlap_tokens=200)

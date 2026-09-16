@@ -1362,6 +1362,22 @@ class TestTokenChunker:
         assert count > 0
         assert isinstance(count, int)
 
+    def test_fallback_splits_single_oversized_sentence_within_budget(self):
+        text = "word " * 500
+
+        chunks = self.chunker.chunk_legal_document(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(self.chunker.count_tokens(chunk["text"]) <= self.chunker.max_tokens for chunk in chunks)
+
+    def test_legal_boundary_chunking_enforces_token_budget(self):
+        text = "\n## Rule 1\n\n" + "word " * 500
+
+        chunks = self.chunker.chunk_legal_document(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(self.chunker.count_tokens(chunk["text"]) <= self.chunker.max_tokens for chunk in chunks)
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # pytest configuration

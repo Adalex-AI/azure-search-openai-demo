@@ -240,11 +240,25 @@ class LegalDocumentChunker:
                     last_safe_boundary = current_start # Reset safe boundary
                     # Do not increment i. Re-eval rest of the section.
 
+        bounded_chunks = []
+        for chunk_data in chunks:
+            if chunk_data['token_count'] <= self.max_tokens:
+                bounded_chunks.append(chunk_data)
+                continue
+            for chunk_text in self._split_oversized_sentence(chunk_data['text']):
+                bounded_chunks.append({
+                    'text': chunk_text,
+                    'token_count': self.count_tokens(chunk_text),
+                    'section_context': chunk_data.get('section_context', ''),
+                    'start_pos': chunk_data['start_pos'],
+                    'end_pos': chunk_data['end_pos'],
+                })
+
         # Format chunks
         formatted_chunks = []
-        total_chunks = len(chunks)
+        total_chunks = len(bounded_chunks)
         
-        for i, chunk_data in enumerate(chunks):
+        for i, chunk_data in enumerate(bounded_chunks):
             formatted_text = self.create_chunk_with_context(
                 chunk_data['text'], 0, len(chunk_data['text']),
                 i, total_chunks, rule_title, chunk_data.get('section_context', '')
@@ -332,6 +346,12 @@ class LegalDocumentChunker:
         current_chunk = ""
         
         for sentence in sentences:
+            if self.count_tokens(sentence) > self.max_tokens:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = ""
+                chunks.extend(self._split_oversized_sentence(sentence))
+                continue
             potential_chunk = current_chunk + " " + sentence if current_chunk else sentence
             if self.count_tokens(potential_chunk) > self.max_tokens:
                 if current_chunk:
@@ -361,3 +381,14 @@ class LegalDocumentChunker:
             })
         
         return formatted_chunks
+
+    def _split_oversized_sentence(self, sentence: str) -> List[str]:
+        """Split a sentence that alone exceeds the embedding chunk budget."""
+        context_budget = 64
+        token_budget = max(1, self.max_tokens - context_budget)
+        tokens = self.encoding.encode(sentence)
+        return [
+            self.encoding.decode(tokens[start : start + token_budget]).strip()
+            for start in range(0, len(tokens), token_budget)
+            if tokens[start : start + token_budget]
+        ]
