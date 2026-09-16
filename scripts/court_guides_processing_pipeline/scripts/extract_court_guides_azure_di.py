@@ -69,8 +69,8 @@ GUIDE_METADATA = {
     "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf": {
         "category": "King's Bench Division",
         "sourcefile": "King's Bench Division Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2025/01/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf",
-        "updated": "2025-01-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/09/Kings-Bench-Division-Guide-1.pdf",
+        "updated": "2026-04-01T00:00:00Z",
         "split_level": 2,
         "sourcepage_style": "numbered",
         "annex_as_single": True,
@@ -101,8 +101,8 @@ GUIDE_METADATA = {
     "The-Technology-and-Construction-Court-Guide.pdf": {
         "category": "Technology and Construction Court",
         "sourcefile": "Technology and Construction Court Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/12/TCC-Guide-Amended.pdf",
-        "updated": "2022-10-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2026/06/46.20_JO_Technology_and_Construction_Court_Guide_2026_WEB.pdf",
+        "updated": "2026-06-01T00:00:00Z",
         "split_level": 4,
         "sourcepage_style": "section_dot",
         "annex_as_single": False,
@@ -711,8 +711,13 @@ def capture_canonical_sources(sources_dir: Path, manifest_path: Path) -> dict:
 
     for filename, metadata in GUIDE_METADATA.items():
         request = Request(metadata["storageUrl"], headers={"User-Agent": "court-guide-capture/1.0"})
-        with urlopen(request, timeout=30) as response:
-            content = response.read()
+        try:
+            with urlopen(request, timeout=30) as response:
+                content = response.read()
+        except OSError as error:
+            raise RuntimeError(
+                f"Failed to capture canonical source {filename} from {metadata['storageUrl']}"
+            ) from error
         if not content.startswith(b"%PDF-"):
             raise ValueError(f"Canonical source is not a PDF: {filename}")
 

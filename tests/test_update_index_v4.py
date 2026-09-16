@@ -302,6 +302,18 @@ def test_canonical_capture_rejects_non_pdf_response(monkeypatch, tmp_path):
         extractor.capture_canonical_sources(tmp_path / "sources", tmp_path / "manifest.json")
 
 
+def test_canonical_capture_identifies_unreachable_registered_source(monkeypatch, tmp_path):
+    def unavailable(request, timeout):
+        raise OSError("unavailable")
+
+    monkeypatch.setattr(extractor, "urlopen", unavailable)
+
+    with pytest.raises(RuntimeError, match="14.341_JO_Commercial_Court_Guide_FINAL.pdf") as error:
+        extractor.capture_canonical_sources(tmp_path / "sources", tmp_path / "manifest.json")
+
+    assert extractor.GUIDE_METADATA["14.341_JO_Commercial_Court_Guide_FINAL.pdf"]["storageUrl"] in str(error.value)
+
+
 def test_processed_guide_manifest_records_artifact_hash(monkeypatch, tmp_path):
     manifest_path = tmp_path / "manifest.json"
     manifest_path.write_text(
