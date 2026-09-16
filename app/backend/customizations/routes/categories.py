@@ -13,7 +13,11 @@ from quart import Blueprint, current_app, jsonify
 
 from config import CONFIG_SEARCH_CLIENT
 
-from ..config import SOURCE_DISPLAY_NAMES, is_deployed_ui_compat_enabled, is_feature_enabled
+from ..config import (
+    SOURCE_DISPLAY_NAMES,
+    is_deployed_ui_compat_enabled,
+    is_feature_enabled,
+)
 
 categories_bp = Blueprint("categories", __name__, url_prefix="/api")
 

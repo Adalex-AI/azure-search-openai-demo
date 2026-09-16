@@ -5,11 +5,11 @@ from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from azure.search.documents.knowledgebases.models import (
     KnowledgeBaseMessage,
+    KnowledgeBaseModelQueryPlanningActivityRecord,
     KnowledgeBaseRetrievalResponse,
     KnowledgeBaseSearchIndexActivityArguments,
     KnowledgeBaseSearchIndexActivityRecord,
     KnowledgeBaseSearchIndexReference,
-    KnowledgeBaseModelQueryPlanningActivityRecord,
 )
 from openai.types.chat import ChatCompletion
 

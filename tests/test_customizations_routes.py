@@ -4,9 +4,9 @@ Integration tests for custom API routes.
 Tests /api/categories endpoint and feedback endpoint with real request/response cycles.
 """
 
-import pytest
-import json
 from unittest import mock
+
+import pytest
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ class TestCategoriesEndpoint:
             original = client.app.config.get("search_client")
             client.app.config["search_client"] = mock_search_client
             try:
-                response = await client.get("/api/categories")
+                await client.get("/api/categories")
 
                 # Verify search was called with facets
                 mock_search_client.search.assert_called_once()
@@ -222,7 +222,7 @@ class TestFeedbackEndpoint:
                     "environment": "production",
                 }
 
-                response = await client.post(
+                await client.post(
                     "/api/feedback",
                     json=feedback_data,
                 )

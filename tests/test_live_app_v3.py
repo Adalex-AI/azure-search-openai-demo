@@ -8,9 +8,9 @@ Usage:
 """
 
 import json
+import re
 import subprocess
 import sys
-import re
 
 import pytest
 
@@ -53,7 +53,7 @@ def curl_post(path, body):
     )
     raw = r.stdout.strip()
     # Handle streaming (newline-delimited JSON): take last complete object
-    lines = [l for l in raw.split("\n") if l.strip()]
+    lines = [line for line in raw.split("\n") if line.strip()]
     if not lines:
         raise RuntimeError(f"Empty response from {path}")
     return json.loads(lines[-1])
@@ -113,7 +113,7 @@ def test_chat_cpr_overriding_objective():
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     assert len(texts) > 0, "No sources returned"
     has_part1 = any("Part 1" in str(t) for t in texts)
-    assert has_part1, f"Part 1 not in sources"
+    assert has_part1, "Part 1 not in sources"
     print(f"    Answer: {len(content)} chars, {len(texts)} sources, Part 1: yes")
 
 
@@ -127,7 +127,7 @@ def test_chat_cpr_costs():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 100, f"Answer too short"
+    assert len(content) > 100, "Answer too short"
     assert "cost" in content.lower(), "Missing 'cost' in answer"
     print(f"    Answer: {len(content)} chars")
 
@@ -144,13 +144,13 @@ def test_chat_commercial_court():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 100, f"Answer too short"
+    assert len(content) > 100, "Answer too short"
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     # Check answer or sources for Commercial Court references
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_commercial = "Commercial Court" in full_text or "case management" in full_text.lower()
-    assert has_commercial, f"No Commercial Court or case management references found"
+    assert has_commercial, "No Commercial Court or case management references found"
     print(f"    Answer: {len(content)} chars, Commercial/CMC references: yes")
 
 
@@ -164,11 +164,11 @@ def test_chat_chancery_guide():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     has_chancery = any("Chancery" in str(t) for t in texts)
-    assert has_chancery, f"No Chancery sources found"
+    assert has_chancery, "No Chancery sources found"
     print(f"    Answer: {len(content)} chars, Chancery sources: yes")
 
 
@@ -182,7 +182,7 @@ def test_chat_patents_court():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     assert "patent" in content.lower(), "Missing 'patent' in answer"
     print(f"    Answer: {len(content)} chars")
 
@@ -197,13 +197,13 @@ def test_chat_tcc():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     # Check answer or sources for TCC references
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_tcc = "Technology and Construction" in full_text or "TCC" in full_text or "adjudication" in full_text.lower()
-    assert has_tcc, f"No TCC/adjudication references in answer or sources"
+    assert has_tcc, "No TCC/adjudication references in answer or sources"
     print(f"    Answer: {len(content)} chars, TCC/adjudication: yes")
 
 
@@ -219,13 +219,13 @@ def test_chat_kings_bench():
         },
     )
     content = result.get("message", {}).get("content", "")
-    assert len(content) > 50, f"Answer too short"
+    assert len(content) > 50, "Answer too short"
     # Check answer or sources for KBD references
     dp = result.get("context", {}).get("data_points", {})
     texts = dp.get("text", []) if isinstance(dp, dict) else dp
     full_text = content + " " + " ".join(str(t) for t in texts)
     has_kbd = "King" in full_text or "Senior Master" in full_text or "KBD" in full_text
-    assert has_kbd, f"No KBD/Senior Master references in answer or sources"
+    assert has_kbd, "No KBD/Senior Master references in answer or sources"
     print(f"    Answer: {len(content)} chars, KBD/Senior Master: yes")
 
 
@@ -317,7 +317,7 @@ def test_streaming_chat():
         text=True,
         timeout=120,
     )
-    lines = [l for l in r.stdout.strip().split("\n") if l.strip()]
+    lines = [line for line in r.stdout.strip().split("\n") if line.strip()]
     assert len(lines) > 1, f"Expected multiple streaming chunks, got {len(lines)}"
     # Concatenate delta.content from all chunks
     full_content = ""

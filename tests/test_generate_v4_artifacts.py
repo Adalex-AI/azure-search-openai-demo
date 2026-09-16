@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 import pytest
 
@@ -9,9 +8,9 @@ from scripts.generate_v4_artifacts import (
     ROOT,
     deduplicate_sources_by_url,
     enrich_retrieval_metadata,
+    expand_oversized_embedding_windows,
     snapshot_hash,
     validate_source_snapshot,
-    expand_oversized_embedding_windows,
 )
 
 

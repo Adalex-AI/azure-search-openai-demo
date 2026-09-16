@@ -29,15 +29,12 @@ Usage:
     pytest tests/test_index_v3.py -v -m "live"
 """
 
-import os
+import json
 import re
 import sys
-import json
-import pytest
-import hashlib
 from pathlib import Path
-from typing import Optional
-from unittest.mock import MagicMock
+
+import pytest
 
 # ── Path setup ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -50,10 +47,9 @@ sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SCRAPER_DIR))
 
 # ── Import project modules ──────────────────────────────────────────────────
-from customizations.subsection_extractor import SubsectionExtractor
-
 # Lazy-import scraper modules to avoid Config side-effects in unit tests
-import importlib.util
+
+from customizations.subsection_extractor import SubsectionExtractor  # noqa: E402
 
 
 def _load_scraper_module(name: str, filename: str):
@@ -212,8 +208,6 @@ class TestDocumentCompleteness:
 
     def test_total_document_count(self):
         """v3 should have ~1784 documents (314 CPR + ~1470 Court Guides)."""
-        results = list(self.client.search(search_text="*", select=["id"], top=0, include_total_count=True))
-        # Access total count via the search results
         count_results = self.client.search(search_text="*", select=["id"], top=1, include_total_count=True)
         count = count_results.get_count()
         assert count is not None
@@ -222,15 +216,6 @@ class TestDocumentCompleteness:
 
     def test_cpr_documents_present(self):
         """CPR documents must be present with correct category."""
-        results = list(
-            self.client.search(
-                search_text="*",
-                filter="category eq 'Civil Procedure Rules and Practice Directions'",
-                select=["id"],
-                top=1,
-                include_total_count=True,
-            )
-        )
         count = self.client.search(
             search_text="*",
             filter="category eq 'Civil Procedure Rules and Practice Directions'",
