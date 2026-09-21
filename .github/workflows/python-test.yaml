@@ -119,15 +119,16 @@ jobs:
             fi
         - name: Run Python tests
           if: runner.os != 'Windows'
-          run: pytest tests --ignore=tests/adhoc -m "not live" -s -vv --cov --cov-report=xml
+          run: |
+            coverage run --omit=tests/test_live_app_v3.py -m pytest tests --ignore=tests/adhoc -m "not live" -s -vv
+            coverage xml
         - name: Check diff coverage
           if: runner.os != 'Windows'
           run: |
             BASE_REF="${{ github.base_ref }}"
             if [ -z "$BASE_REF" ]; then BASE_REF="main"; fi
             git fetch origin "$BASE_REF:refs/remotes/origin/$BASE_REF"
-            # The non-live suite intentionally excludes this integration module.
-            diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --exclude "tests/test_live_app_v3.py" --fail-under=90
+            diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --fail-under=90
         - name: Run E2E tests with Playwright
           id: e2e
           if: runner.os != 'Windows'
