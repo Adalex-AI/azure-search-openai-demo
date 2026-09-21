@@ -245,3 +245,38 @@ class TestV4RuntimeContract:
                 embedding_dimensions=1536,
                 embedding_field="embedding3",
             )
+
+    def test_non_v4_runtime_does_not_require_v4_settings(self):
+        from customizations.config import validate_v4_runtime_contract
+
+        validate_v4_runtime_contract(
+            release_id=None,
+            search_index="legal-court-rag-index",
+            embedding_model="text-embedding-ada-002",
+            embedding_dimensions=1536,
+            embedding_field="embedding",
+        )
+
+    @pytest.mark.parametrize(
+        "settings, message",
+        [
+            ({"release_id": None, "search_index": "v4-release-1"}, "release_id"),
+            ({"embedding_model": "other"}, "embedding model"),
+            ({"embedding_dimensions": 1536}, "embedding dimensions"),
+            ({"embedding_field": "embedding"}, "embedding field"),
+        ],
+    )
+    def test_v4_runtime_contract_rejects_incompatible_settings(self, settings, message):
+        from customizations.config import validate_v4_runtime_contract
+
+        configured = {
+            "release_id": "release-1",
+            "search_index": "legal-court-rag-v4-release-1",
+            "embedding_model": "text-embedding-3-large",
+            "embedding_dimensions": 3072,
+            "embedding_field": "embedding3",
+        }
+        configured.update(settings)
+
+        with pytest.raises(ValueError, match=message):
+            validate_v4_runtime_contract(**configured)

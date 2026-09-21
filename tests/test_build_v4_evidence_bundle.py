@@ -6,9 +6,12 @@ import pytest
 from scripts.build_v4_evidence_bundle import (
     EvidenceError,
     application_gate_gate,
+    artifact_search_gate,
+    candidate_validation_gate,
     candidate_validation_matches_snapshot,
     extraction_manifest_gate,
     fidelity_gate,
+    transition_gate,
 )
 
 PROVENANCE = {
@@ -82,6 +85,24 @@ def test_application_gate_rejects_unexpected_deployment_provenance():
         )
 
 
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        (lambda report: report.update(schema_version=2), "passing version 1"),
+        (lambda report: report.update(status="FAIL"), "passing version 1"),
+        (lambda report: report.update(provenance={}), "provenance is missing"),
+        (lambda report: report["gates"].pop("acl"), "all required gates"),
+        (lambda report: report["gates"]["citation"].update(status="FAIL"), "non-passing gate"),
+    ],
+)
+def test_application_gate_rejects_incomplete_contract(mutation, message):
+    report = application_report({"status": "PASS", "browser_evidence": producer_browser_evidence()})
+    mutation(report)
+
+    with pytest.raises(EvidenceError, match=message):
+        application_gate_gate(report, "index-1", "kb-1", "artifact-1", "snapshot-1")
+
+
 def test_candidate_validation_accepts_snapshot_envelope_metadata():
     snapshot = {
         "schema_version": 1,
@@ -101,6 +122,14 @@ def test_candidate_validation_accepts_snapshot_envelope_metadata():
     }
 
     candidate_validation_matches_snapshot(report, snapshot)
+
+
+def test_candidate_validation_rejects_missing_pass_or_snapshot_provenance():
+    with pytest.raises(EvidenceError, match="not clean"):
+        candidate_validation_gate({"candidate": {"status": "FAIL"}})
+
+    with pytest.raises(EvidenceError, match="missing provenance"):
+        candidate_validation_matches_snapshot({}, {"schema_version": 1})
 
 
 def fidelity_report(snapshot, source_count=1, source_identity_digest="sources-1"):
@@ -162,6 +191,70 @@ def test_fidelity_gate_rejects_missing_source_identity_digest():
         fidelity_gate(
             report, expected_snapshot=snapshot, expected_source_count=1, expected_source_identity_digest="sources-1"
         )
+
+
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        (lambda report: report.update(schema_version=1), "schema version 2"),
+        (lambda report: report.update(complete=False), "incomplete"),
+        (lambda report: report["summary"].update(source_count=0), "completion counts"),
+        (lambda report: report.update(remediation={}), "remediation counts"),
+    ],
+)
+def test_fidelity_gate_rejects_incomplete_or_inconsistent_contract(mutation, message):
+    snapshot = {"schema_version": 1, "service": "search-1", "index": "index-1", "documents_sha256": "docs-1"}
+    report = fidelity_report(snapshot)
+    mutation(report)
+
+    with pytest.raises(EvidenceError, match=message):
+        fidelity_gate(report, expected_snapshot=snapshot, expected_source_identity_digest="sources-1")
+
+
+@pytest.mark.parametrize(
+    "report, message",
+    [
+        ({}, "not clean"),
+        ({"snapshot_count": 0}, "not clean"),
+        ({"snapshot_count": 1, "failed_count": 1}, "not clean"),
+        ({"snapshot_count": 1, "blocked_count": 1}, "not clean"),
+    ],
+)
+def test_transition_gate_requires_clean_nonempty_snapshot_set(report, message):
+    with pytest.raises(EvidenceError, match=message):
+        transition_gate(report)
+
+
+def test_artifact_search_gate_accepts_exact_projected_document_set(tmp_path):
+    artifact_manifest = tmp_path / "manifest.json"
+    artifact_document = {
+        "id": "doc-1",
+        "content": "content",
+        "category": "CPR",
+        "sourcepage": "Part 1",
+        "sourcefile": "Part 1",
+        "storageUrl": "https://example.test/part-1",
+        "updated": "2026-09-11",
+        "parent_id": "parent-1",
+        "subsection_id": "1.1",
+        "subsections": ["1.1"],
+        "extra": "ignored",
+    }
+    (tmp_path / "documents_with_embeddings.jsonl").write_text(json.dumps(artifact_document) + "\n")
+
+    result = artifact_search_gate(artifact_manifest, {"documents": [artifact_document]})
+
+    assert result["missing_count"] == result["extra_count"] == result["mismatched_count"] == 0
+
+
+def test_artifact_search_gate_rejects_missing_extra_or_duplicate_documents(tmp_path):
+    artifact_manifest = tmp_path / "manifest.json"
+    documents_path = tmp_path / "documents_with_embeddings.jsonl"
+    document = {"id": "doc-1", "content": "artifact"}
+    documents_path.write_text(json.dumps(document) + "\n" + json.dumps(document) + "\n")
+
+    with pytest.raises(EvidenceError, match="not clean"):
+        artifact_search_gate(artifact_manifest, {"documents": [{"id": "doc-2", "content": "search"}]})
 
 
 def test_extraction_manifest_binds_packaged_processed_guides(tmp_path):

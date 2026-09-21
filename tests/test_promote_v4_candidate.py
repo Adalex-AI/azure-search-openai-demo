@@ -222,6 +222,91 @@ def test_promotion_rejects_mutable_application_image():
         validate_evidence_bundle(bundle)
 
 
+@pytest.mark.parametrize(
+    "field",
+    [
+        "candidate_index",
+        "candidate_knowledgebase",
+        "artifact_sha256",
+        "search_snapshot_sha256",
+        "rollback_index",
+        "rollback_knowledgebase",
+        "release_id",
+    ],
+)
+def test_promotion_requires_all_release_identity_strings(field):
+    bundle = {**VALID_BUNDLE, field: ""}
+
+    with pytest.raises(PromotionError, match=f"missing {field}"):
+        validate_evidence_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    "mutation, message",
+    [
+        (lambda bundle: bundle.update(candidate_index="legal-court-rag-production"), "must contain v4"),
+        (lambda bundle: bundle["artifact_search"].update(extra_count=1), "equality gate"),
+        (lambda bundle: bundle["candidate_validation"].update(status="FAIL"), "validation gate"),
+        (lambda bundle: bundle["application_gates"]["gates"]["citation"].update(gate="wrong"), "passing citation"),
+        (
+            lambda bundle: bundle["application_gates"]["gates"]["highlight"].update(case_count=0),
+            "highlight evidence is empty",
+        ),
+    ],
+)
+def test_promotion_rejects_inconsistent_candidate_gate_contract(mutation, message):
+    bundle = json.loads(json.dumps(VALID_BUNDLE))
+    mutation(bundle)
+
+    with pytest.raises(PromotionError, match=message):
+        validate_evidence_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    "field, value, message",
+    [
+        ("image_digest", "registry.example.test/legal-rag:latest", "Rollback application image"),
+        ("revision_name", "", "missing revision_name"),
+        ("release_id", "20260713-r3", "valid release_id"),
+        ("search_index", "other-index", "match rollback_index"),
+        ("knowledge_base", "other-kb", "match rollback_knowledgebase"),
+    ],
+)
+def test_promotion_rejects_incomplete_rollback_application_identity(field, value, message):
+    bundle = json.loads(json.dumps(VALID_BUNDLE))
+    bundle["rollback_application"][field] = value
+
+    with pytest.raises(PromotionError, match=message):
+        validate_evidence_bundle(bundle)
+
+
+def test_promotion_rejects_invalid_rollback_pair_shape():
+    bundle = {**VALID_BUNDLE, "rollback_knowledgebase": "legal-court-rag-index-v4-agent"}
+    bundle["rollback_application"] = {
+        **VALID_BUNDLE["rollback_application"],
+        "knowledge_base": bundle["rollback_knowledgebase"],
+    }
+
+    with pytest.raises(PromotionError, match="v3 production pair"):
+        validate_evidence_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    "manifest, message",
+    [
+        ([], "manifest is empty"),
+        ([{"name": "artifact", "path": "../artifact", "sha256": "hash"}], "unsafe relative path"),
+        ([{"name": "artifact", "path": "artifact"}], "invalid entry"),
+    ],
+)
+def test_promotion_rejects_invalid_portable_evidence_manifest(tmp_path, manifest, message):
+    evidence = tmp_path / "evidence.json"
+    evidence.write_text(json.dumps({**VALID_BUNDLE, "evidence_manifest": manifest}))
+
+    with pytest.raises(PromotionError, match=message):
+        load_and_validate(evidence)
+
+
 def test_evidence_builder_requires_clean_fidelity(tmp_path):
     artifact = tmp_path / "manifest.json"
     snapshot = tmp_path / "search.json"

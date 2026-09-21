@@ -1,8 +1,14 @@
 import json
 
+import httpx
 import pytest
 
-from scripts.run_v4_application_gates import ApplicationGatesError, load_gate_reports
+from scripts import run_v4_application_gates
+from scripts.run_v4_application_gates import (
+    ApplicationGatesError,
+    fetch_provenance,
+    load_gate_reports,
+)
 
 PROVENANCE = {
     "release_id": "release-1",
@@ -143,3 +149,67 @@ def test_load_gate_reports_rejects_stale_provenance(tmp_path):
 
     with pytest.raises(ApplicationGatesError, match="retrieval provenance mismatch: search_index"):
         load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.parametrize(
+    "report_name, message",
+    [
+        ("unknown", "Unknown application gate"),
+        ("retrieval", "Duplicate application gate"),
+    ],
+)
+def test_load_gate_reports_rejects_unknown_or_duplicate_gate(tmp_path, report_name, message):
+    items = [
+        write_report(tmp_path, name)
+        for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+    ]
+    if report_name == "unknown":
+        items[-1] = write_report(tmp_path, report_name)
+    else:
+        items.append(write_report(tmp_path, report_name))
+
+    with pytest.raises(ApplicationGatesError, match=message):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.parametrize("field, value", [("case_count", 0), ("source_count", 0)])
+def test_load_gate_reports_rejects_highlight_with_no_oracle_cases(tmp_path, field, value):
+    items = [
+        write_report(tmp_path, name)
+        for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+    ]
+    highlight_path = tmp_path / "highlight.json"
+    payload = json.loads(highlight_path.read_text())
+    payload[field] = value
+    highlight_path.write_text(json.dumps(payload))
+
+    with pytest.raises(ApplicationGatesError, match="missing oracle evidence"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status, payload, message",
+    [
+        (503, {}, "HTTP 503"),
+        (200, ["not-an-object"], "JSON object"),
+    ],
+)
+async def test_fetch_provenance_rejects_non_success_or_invalid_shape(monkeypatch, status, payload, message):
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def get(self, url, headers):
+            return httpx.Response(status, json=payload, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(run_v4_application_gates.httpx, "AsyncClient", FakeClient)
+
+    with pytest.raises(ApplicationGatesError, match=message):
+        await fetch_provenance("https://candidate.example.test", "proof-token")

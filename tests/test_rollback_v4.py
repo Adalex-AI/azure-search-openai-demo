@@ -1,8 +1,14 @@
 import json
 import subprocess
+import sys
 
+import pytest
+
+from scripts import rollback_v4
 from scripts.rollback_v4 import (
     CONFIRMATION,
+    RollbackError,
+    _containerapp_revision_suffix,
     build_rollback_plan,
     execute_plan,
 )
@@ -159,3 +165,80 @@ def test_rollback_execution_is_only_the_explicit_command(monkeypatch, tmp_path):
 def test_rollback_confirmation_token_is_explicit():
     assert CONFIRMATION == "ROLLBACK-PREVIOUS"
     assert subprocess.list2cmdline(["--execute", "--confirm-rollback", CONFIRMATION]).endswith(CONFIRMATION)
+
+
+@pytest.mark.parametrize("revision", ["", "app--bad_suffix!", "x" * 64])
+def test_containerapp_revision_suffix_rejects_invalid_values(revision):
+    with pytest.raises(RollbackError, match="valid Container Apps suffix"):
+        _containerapp_revision_suffix(revision, "app")
+
+
+def test_rollback_plan_rejects_blank_target_or_ineligible_evidence(monkeypatch, tmp_path):
+    evidence_path = write_evidence(tmp_path)
+
+    with pytest.raises(RollbackError, match="resource group and application name"):
+        build_rollback_plan(evidence_path, " ", "app")
+
+    def reject_evidence(*args, **kwargs):
+        raise rollback_v4.PromotionError("approval missing")
+
+    monkeypatch.setattr(rollback_v4, "load_and_validate", reject_evidence)
+    with pytest.raises(RollbackError, match="not eligible"):
+        build_rollback_plan(evidence_path, "rg", "app")
+
+
+def test_rollback_plan_rejects_unknown_platform(monkeypatch, tmp_path):
+    targets = {
+        "rollback_image_digest": "registry.example/legal-rag@sha256:" + "b" * 64,
+        "rollback_revision_name": "app--previous",
+        "rollback_release_id": "release-0",
+        "rollback_platform": "vm",
+        "rollback_index": "index-v3",
+        "rollback_knowledgebase": "kb-v3",
+    }
+    monkeypatch.setattr(rollback_v4, "load_and_validate", lambda *args, **kwargs: targets)
+
+    with pytest.raises(RollbackError, match="platform"):
+        build_rollback_plan(tmp_path / "evidence.json", "rg", "app")
+
+
+def test_rollback_main_is_dry_run_without_execute(monkeypatch, tmp_path, capsys):
+    plan = {"action": "rollback", "command": [["az", "containerapp", "update"]]}
+    monkeypatch.setattr(rollback_v4, "build_rollback_plan", lambda *args: dict(plan))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "rollback_v4.py",
+            "--evidence",
+            str(tmp_path / "evidence.json"),
+            "--resource-group",
+            "rg",
+            "--application-name",
+            "app",
+        ],
+    )
+
+    assert rollback_v4.main() == 0
+    assert json.loads(capsys.readouterr().out)["executed"] is False
+
+
+def test_rollback_main_refuses_execute_without_exact_confirmation(monkeypatch, tmp_path):
+    monkeypatch.setattr(rollback_v4, "build_rollback_plan", lambda *args: {"command": []})
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "rollback_v4.py",
+            "--evidence",
+            str(tmp_path / "evidence.json"),
+            "--resource-group",
+            "rg",
+            "--application-name",
+            "app",
+            "--execute",
+        ],
+    )
+
+    with pytest.raises(SystemExit, match="confirm-rollback"):
+        rollback_v4.main()

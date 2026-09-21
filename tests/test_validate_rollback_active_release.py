@@ -1,5 +1,8 @@
+import json
+
 import pytest
 
+from scripts import validate_rollback_active_release
 from scripts.validate_rollback_active_release import (
     RollbackValidationError,
     validate_active_rollback,
@@ -89,3 +92,76 @@ def test_rejects_partial_container_app_traffic():
     app["properties"]["configuration"]["ingress"]["traffic"][0]["weight"] = 50
     with pytest.raises(RollbackValidationError, match="100% traffic"):
         validate_active_rollback(app, plan(), "containerapps")
+
+
+@pytest.mark.parametrize(
+    "change, message",
+    [
+        ({"image_digest": "registry.example/legal-rag:latest"}, "not immutable"),
+        ({"release_id": ""}, "missing a required identity field"),
+        ({"platform": "appservice"}, "platform does not match"),
+    ],
+)
+def test_rejects_invalid_rollback_plan_identity(change, message):
+    rollback = plan()
+    rollback.update(change)
+
+    with pytest.raises(RollbackValidationError, match=message):
+        validate_active_rollback(container_app(), rollback, "containerapps")
+
+
+@pytest.mark.parametrize("app", [None, {}, {"properties": {"template": {"containers": []}}}])
+def test_rejects_invalid_container_app_response(app):
+    with pytest.raises(RollbackValidationError, match="Container App"):
+        validate_active_rollback(app, plan(), "containerapps")
+
+
+def test_rejects_appservice_response_that_is_not_settings_array():
+    with pytest.raises(RollbackValidationError, match="settings response"):
+        validate_active_rollback({}, plan("appservice"), "appservice")
+
+
+def test_rollback_active_release_main_prints_restored_release(monkeypatch, tmp_path, capsys):
+    app_path = tmp_path / "app.json"
+    plan_path = tmp_path / "rollback.json"
+    app_path.write_text(json.dumps(container_app()))
+    plan_path.write_text(json.dumps(plan()))
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "validate_rollback_active_release.py",
+            "--app-json",
+            str(app_path),
+            "--rollback-json",
+            str(plan_path),
+            "--platform",
+            "containerapps",
+        ],
+    )
+
+    assert validate_rollback_active_release.main() == 0
+    assert capsys.readouterr().out.strip() == "release-0"
+
+
+def test_rollback_active_release_main_rejects_non_object_plan(monkeypatch, tmp_path):
+    app_path = tmp_path / "app.json"
+    plan_path = tmp_path / "rollback.json"
+    app_path.write_text(json.dumps(container_app()))
+    plan_path.write_text("[]")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "validate_rollback_active_release.py",
+            "--app-json",
+            str(app_path),
+            "--rollback-json",
+            str(plan_path),
+            "--platform",
+            "containerapps",
+        ],
+    )
+
+    with pytest.raises(SystemExit) as error:
+        validate_rollback_active_release.main()
+
+    assert error.value.code == 2

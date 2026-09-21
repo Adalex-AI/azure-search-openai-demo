@@ -2,11 +2,13 @@ import json
 
 import pytest
 
+from scripts import generate_v4_artifacts as artifacts
 from scripts import update_cpr_index_v3 as updater
 from scripts.audit_source_documents import CanonicalSource
 from scripts.generate_v4_artifacts import (
     GUIDE_FILES,
     ROOT,
+    content_hash,
     deduplicate_sources_by_url,
     enrich_retrieval_metadata,
     expand_oversized_embedding_windows,
@@ -111,6 +113,52 @@ def test_source_snapshot_hash_is_deterministic():
     assert snapshot_hash(first) == snapshot_hash(second)
 
 
+def test_content_hash_is_stable_for_list_or_string_content():
+    document = {
+        "id": "doc-1",
+        "sourcefile": "Part 31",
+        "sourcepage": "31.16",
+        "category": "CPR",
+        "storageUrl": "https://example.test/part-31",
+        "updated": "2026-09-20",
+        "content": ["first", "second"],
+        "embedding_text": "metadata",
+    }
+
+    list_hash = content_hash(document)
+    document["content"] = "first\nsecond"
+
+    assert content_hash(document) == list_hash
+
+
+def test_no_boundary_document_within_budget_is_not_expanded():
+    document = {
+        "id": "small-doc",
+        "content": "unbroken legal prose",
+        "sourcefile": "Guide",
+        "sourcepage": "Section",
+        "category": "Court Guide",
+    }
+    enrich_retrieval_metadata(document)
+
+    assert expand_oversized_embedding_windows([document], max_embedding_tokens=8100) == [document]
+
+
+def test_embedding_metadata_cannot_consume_the_full_budget():
+    document = {
+        "id": "metadata-overflow",
+        "content": "content",
+        "sourcefile": "Guide",
+        "sourcepage": "Section",
+        "category": "Court Guide",
+        "hierarchy_path": "very long metadata " * 100,
+    }
+    chunker = updater.LegalDocumentChunker()
+
+    with pytest.raises(ValueError, match="Embedding metadata exceeds"):
+        split_content_for_embedding_budget(document, document["content"], 1, chunker)
+
+
 def test_duplicate_url_sources_prefer_descriptive_identity():
     short = CanonicalSource(
         source_type="html",
@@ -149,6 +197,25 @@ def test_pdf_source_snapshot_requires_verified_provenance(tmp_path):
     validate_source_snapshot(snapshot, source, tmp_path / "debt.json")
 
 
+@pytest.mark.parametrize(
+    "snapshot, message",
+    [
+        ({"status": "failed", "source_type": "html", "html": "<p>x</p>"}, "not ok"),
+        ({"status": "ok", "source_type": "pdf", "html": "<p>x</p>"}, "type mismatch"),
+        ({"status": "ok", "source_type": "html"}, "no transformed HTML"),
+    ],
+)
+def test_source_snapshot_rejects_invalid_common_contract(tmp_path, snapshot, message):
+    source = CanonicalSource(
+        source_type="html",
+        sourcefile="Part 31",
+        category="Civil Procedure Rules and Practice Directions",
+    )
+
+    with pytest.raises(ValueError, match=message):
+        validate_source_snapshot(snapshot, source, tmp_path / "snapshot.json")
+
+
 @pytest.mark.parametrize("missing", ["source_sha256", "extracted_text", "html"])
 def test_pdf_source_snapshot_rejects_missing_provenance(tmp_path, missing):
     source = CanonicalSource(
@@ -168,3 +235,102 @@ def test_pdf_source_snapshot_rejects_missing_provenance(tmp_path, missing):
 
     with pytest.raises(ValueError, match="PDF snapshot|Source snapshot"):
         validate_source_snapshot(snapshot, source, tmp_path / "debt.json")
+
+
+def test_generate_builds_release_bound_artifact_from_local_oracles(monkeypatch, tmp_path):
+    source = CanonicalSource(
+        source_type="html",
+        sourcefile="Test Part",
+        category="Civil Procedure Rules and Practice Directions",
+        url="https://example.test/test-part",
+    )
+    snapshot_dir = tmp_path / "snapshots"
+    guides_dir = tmp_path / "guides"
+    snapshot_dir.mkdir()
+    guides_dir.mkdir()
+    snapshot = {
+        "status": "ok",
+        "identity": source.identity,
+        "source_type": "html",
+        "sourcefile": source.sourcefile,
+        "requested_url": source.url,
+        "final_url": source.url,
+        "html": "<p>Test Part 1.1 body</p>",
+    }
+    (snapshot_dir / "test-part.json").write_text(json.dumps(snapshot))
+
+    guide = {
+        "file": "test-guide.json",
+        "sourcefile": "Test Court Guide",
+        "category": "Court Guide",
+    }
+    guide_path = guides_dir / guide["file"]
+    raw_guide_document = {"sourcefile": guide["sourcefile"], "content": "Guide body"}
+    guide_path.write_text(json.dumps([raw_guide_document]))
+    extraction_manifest = {
+        "schema_version": 1,
+        "guides": {
+            "test": {
+                "processed_json": guide["file"],
+                "processed_json_sha256": __import__("hashlib").sha256(guide_path.read_bytes()).hexdigest(),
+            }
+        },
+    }
+    (guides_dir / "court_guides_extraction_manifest.json").write_text(json.dumps(extraction_manifest))
+    monkeypatch.setattr(artifacts, "load_web_sources", lambda: [source])
+    monkeypatch.setattr(artifacts, "GUIDE_FILES", {"Test Guide": guide})
+    monkeypatch.setattr(artifacts.updater, "ACTION_LIST", [])
+    monkeypatch.setattr(artifacts.updater, "scrape_page", lambda *args, **kwargs: {"body": "source"})
+    monkeypatch.setattr(
+        artifacts.updater,
+        "build_index_docs",
+        lambda action, scraped: [
+            {
+                "id": "source-doc",
+                "parent_id": "source-doc",
+                "content": "Test Part 1.1 body",
+                "sourcefile": action["sourcefile"],
+                "sourcepage": "1.1",
+                "category": source.category,
+                "storageUrl": action["url"],
+                "subsection_id": "1.1",
+                "subsections": ["1.1"],
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        artifacts,
+        "map_doc",
+        lambda raw, id_prefix: {
+            "id": f"{id_prefix}-doc",
+            "content": raw["content"],
+            "sourcefile": raw["sourcefile"],
+            "sourcepage": "Guide section",
+            "category": guide["category"],
+            "storageUrl": "https://example.test/guide",
+        },
+    )
+
+    documents, manifest = artifacts.generate(snapshot_dir, guides_dir, "release-1")
+
+    assert [document["id"] for document in documents] == ["source-doc", "Test_Guide-doc"]
+    assert manifest["release_id"] == "release-1"
+    assert manifest["snapshot_count"] == 2
+    assert manifest["source_counts"] == {"Test Part": 1, "Test Court Guide": 1}
+    assert all(document["artifact_content_sha256"] for document in documents)
+
+
+def test_generate_requires_snapshot_for_every_canonical_source(monkeypatch, tmp_path):
+    source = CanonicalSource(
+        source_type="html",
+        sourcefile="Missing Part",
+        category="Civil Procedure Rules and Practice Directions",
+        url="https://example.test/missing-part",
+    )
+    snapshot_dir = tmp_path / "snapshots"
+    snapshot_dir.mkdir()
+    monkeypatch.setattr(artifacts, "load_web_sources", lambda: [source])
+    monkeypatch.setattr(artifacts, "GUIDE_FILES", {})
+
+    with pytest.raises(ValueError, match="Missing canonical source snapshots"):
+        artifacts.generate(snapshot_dir, tmp_path / "guides", "release-1")
