@@ -292,7 +292,7 @@ jobs:
             --input "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents.jsonl" \
             --output "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl"
         env:
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_ENDPOINT: https://${{ secrets.AZURE_OPENAI_SERVICE }}.openai.azure.com
           AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       - name: Validate candidate documents
