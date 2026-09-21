@@ -1,7 +1,7 @@
-import re
-import tiktoken
-from typing import List, Dict, Tuple
 import logging
+import re
+
+import tiktoken
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class LegalDocumentChunker:
         """Count tokens in text using the embedding model's tokenizer."""
         return len(self.encoding.encode(text))
     
-    def find_legal_boundaries(self, text: str) -> List[Tuple[int, str, str]]:
+    def find_legal_boundaries(self, text: str) -> list[tuple[int, str, str]]:
         """
         Find logical boundaries in legal text for chunking.
         
@@ -102,7 +102,7 @@ class LegalDocumentChunker:
         return chunk_text
     
     def chunk_legal_document(self, text: str, document_id: str, 
-                           rule_title: str) -> List[Dict]:
+                           rule_title: str) -> list[dict]:
         """
         Chunk a legal document intelligently, respecting legal boundaries.
         Prioritizes keeping sections intact. Only splits internally if a single section exceeds max_tokens.
@@ -306,7 +306,7 @@ class LegalDocumentChunker:
         # Fallback to hard limit
         return min(end, start + self.max_tokens * 4)  # Rough character estimate
     
-    def _split_large_text(self, text: str, section_context: str) -> List[Dict]:
+    def _split_large_text(self, text: str, section_context: str) -> list[dict]:
         """Split text that's still too large after boundary detection."""
         chunks = []
         current_pos = 0
@@ -336,7 +336,7 @@ class LegalDocumentChunker:
         return chunks
     
     def _fallback_sentence_chunking(self, text: str, document_id: str, 
-                                   rule_title: str) -> List[Dict]:
+                                   rule_title: str) -> list[dict]:
         """Fallback chunking method when no legal boundaries are found."""
         logger.warning(f"No legal boundaries found for {document_id}, using sentence chunking")
         
@@ -382,7 +382,7 @@ class LegalDocumentChunker:
         
         return formatted_chunks
 
-    def _split_oversized_sentence(self, sentence: str) -> List[str]:
+    def _split_oversized_sentence(self, sentence: str) -> list[str]:
         """Split a sentence that alone exceeds the embedding chunk budget."""
         context_budget = 64
         token_budget = max(1, self.max_tokens - context_budget)

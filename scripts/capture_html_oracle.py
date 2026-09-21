@@ -39,7 +39,7 @@ def source_matches(source: Any, source_filter: str | None) -> bool:
 
 
 def is_retryable_error(error: Exception) -> bool:
-    if isinstance(error, (requests.Timeout, requests.ConnectionError, TimeoutError, ConnectionError)):
+    if isinstance(error, requests.Timeout | requests.ConnectionError | TimeoutError | ConnectionError):
         return True
     if isinstance(error, requests.HTTPError):
         status_code = getattr(error.response, "status_code", None)

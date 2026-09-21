@@ -1,6 +1,11 @@
 from types import SimpleNamespace
 
-from scripts.audit_html_transition import _block_match, _comparison_text, _snapshot_action, audit_snapshot
+from scripts.audit_html_transition import (
+    _block_match,
+    _comparison_text,
+    _snapshot_action,
+    audit_snapshot,
+)
 from scripts.html_schema_oracle import extract_legal_blocks
 from scripts.update_cpr_index_v3 import verify_scrape_target
 
