@@ -405,6 +405,15 @@ jobs:
               USE_AGENTIC_KNOWLEDGEBASE=true \
               USE_AGENTIC_RETRIEVAL=true \
               RUNNING_IN_PRODUCTION=false >/dev/null
+          revision=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" \
+              --query "properties.latestRevisionName" --output tsv)
+          : "${revision:?Candidate app has no latest revision name after update}"
+          az containerapp ingress traffic set \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --revision-weight "${revision}=100" >/dev/null
           serving_json=$(az containerapp show \
               --resource-group "${AZURE_RESOURCE_GROUP}" \
               --name "${V4_CANDIDATE_APP}" -o json)
@@ -515,6 +524,15 @@ jobs:
               V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" \
               V4_IMAGE_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" \
               V4_RELEASE_ID="${V4_RELEASE_ID}" >/dev/null
+          revision=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" \
+              --query "properties.latestRevisionName" --output tsv)
+          : "${revision:?Candidate app has no latest revision name after gate configuration}"
+          az containerapp ingress traffic set \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --revision-weight "${revision}=100" >/dev/null
           serving_json=$(az containerapp show \
               --resource-group "${AZURE_RESOURCE_GROUP}" \
               --name "${V4_CANDIDATE_APP}" -o json)
