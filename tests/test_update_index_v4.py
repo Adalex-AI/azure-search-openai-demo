@@ -70,6 +70,8 @@ def test_candidate_gate_verifies_immutable_serving_image_identity():
     assert "expected_image_digest=expected" in workflow
     assert "expected_revision_name=revision" in workflow
     assert '--revision-name "${V4_REVISION_NAME}"' in workflow
+    assert "az containerapp revision set-mode" in workflow
+    assert "--mode multiple" in workflow
     assert "az containerapp ingress traffic set" in workflow
     assert '--query "properties.latestRevisionName" --output tsv' in workflow
     assert '--revision-weight "${revision}=100"' in workflow

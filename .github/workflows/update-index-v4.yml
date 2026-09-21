@@ -388,6 +388,10 @@ jobs:
           print(f"AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={deployment}")
           print(f"AZURE_OPENAI_KNOWLEDGEBASE_MODEL={model}")
           PY
+          az containerapp revision set-mode \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --mode multiple >/dev/null
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
