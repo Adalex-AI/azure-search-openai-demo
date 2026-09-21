@@ -126,7 +126,8 @@ jobs:
             BASE_REF="${{ github.base_ref }}"
             if [ -z "$BASE_REF" ]; then BASE_REF="main"; fi
             git fetch origin "$BASE_REF:refs/remotes/origin/$BASE_REF"
-            diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --fail-under=90
+            # The non-live suite intentionally excludes this integration module.
+            diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --exclude "tests/test_live_app_v3.py" --fail-under=90
         - name: Run E2E tests with Playwright
           id: e2e
           if: runner.os != 'Windows'
