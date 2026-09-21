@@ -88,6 +88,7 @@ def test_candidate_workflow_binds_required_environment_and_uploads_transition_au
     assert "AZURE_OPENAI_KNOWLEDGEBASE_MODEL={model}" in workflow
     assert "USE_AGENTIC_KNOWLEDGEBASE=true" in workflow
     assert "USE_AGENTIC_RETRIEVAL=true" in workflow
+    assert "AZURE_SEARCH_FIELD_NAME_EMBEDDING=embedding3" in workflow
     assert "V4_RESTRICTED_AUTH_TOKEN" not in workflow
     assert "V4_RESTRICTED_AUTH_COOKIE" not in workflow
     assert "            reports/html_transition_audit.json" in workflow
@@ -122,6 +123,8 @@ def test_candidate_image_build_includes_frontend_assets():
 
 def test_candidate_provenance_poll_binds_all_release_fields():
     workflow = WORKFLOW.read_text()
+
+    assert "--connect-timeout 10 --max-time 20" in workflow
 
     for field in (
         '"release_id": os.environ["V4_RELEASE_ID"]',

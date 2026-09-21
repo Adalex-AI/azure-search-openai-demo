@@ -400,6 +400,7 @@ jobs:
             --set-env-vars \
               AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
               AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" \
+              AZURE_SEARCH_FIELD_NAME_EMBEDDING=embedding3 \
               V4_RELEASE_ID="${V4_RELEASE_ID}" \
               DEPLOYMENT_ID="${GITHUB_RUN_ID}" \
               GIT_SHA="${GITHUB_SHA}" \
@@ -567,7 +568,7 @@ jobs:
         run: |
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
           for attempt in $(seq 1 60); do
-            response=$(curl --silent --show-error --location --write-out '\n%{http_code}' "${V4_CANDIDATE_URL%/}/api/provenance" || true)
+            response=$(curl --silent --show-error --location --connect-timeout 10 --max-time 20 --write-out '\n%{http_code}' "${V4_CANDIDATE_URL%/}/api/provenance" || true)
             http_code=$(printf '%s\n' "$response" | tail -n 1)
             body=$(printf '%s\n' "$response" | sed '$d')
             if [[ "$http_code" == "200" ]] && printf '%s' "$body" | python -c 'import json, sys, os; payload = json.load(sys.stdin); expected = {"release_id": os.environ["V4_RELEASE_ID"], "git_sha": os.environ["GITHUB_SHA"], "deployment_id": os.environ["GITHUB_RUN_ID"], "artifact_sha256": os.environ["ARTIFACT_SHA256"], "search_snapshot_sha256": os.environ["snapshot_sha256"], "search_service": os.environ["AZURE_SEARCH_SERVICE"], "search_index": os.environ["SEARCH_INDEX"], "knowledge_base": os.environ["SEARCH_KNOWLEDGEBASE"], "image_digest": os.environ["V4_CANDIDATE_IMAGE_DIGEST"], "revision_name": os.environ["V4_REVISION_NAME"], "agentic_mode": os.environ["V4_AGENTIC_MODE"]}; raise SystemExit(0 if payload.get("schema_version") == 1 and payload["image_digest"] == os.environ["V4_CANDIDATE_IMAGE_DIGEST"] and all(str(payload.get(field) or "").strip() == value.strip() for field, value in expected.items()) else 1)'; then
