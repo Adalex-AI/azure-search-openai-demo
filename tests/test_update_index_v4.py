@@ -125,6 +125,7 @@ def test_candidate_provenance_poll_binds_all_release_fields():
     workflow = WORKFLOW.read_text()
 
     assert "--connect-timeout 10 --max-time 20" in workflow
+    assert 'V4_REVISION_NAME="${V4_CANDIDATE_APP}--v4-${V4_RELEASE_ID}-gates"' in workflow
 
     for field in (
         '"release_id": os.environ["V4_RELEASE_ID"]',

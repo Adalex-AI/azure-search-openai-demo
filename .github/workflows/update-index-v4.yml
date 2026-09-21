@@ -528,7 +528,8 @@ jobs:
             --set-env-vars \
               V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" \
               V4_IMAGE_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" \
-              V4_RELEASE_ID="${V4_RELEASE_ID}" >/dev/null
+              V4_RELEASE_ID="${V4_RELEASE_ID}" \
+              V4_REVISION_NAME="${V4_CANDIDATE_APP}--v4-${V4_RELEASE_ID}-gates" >/dev/null
           revision=$(az containerapp show \
               --resource-group "${AZURE_RESOURCE_GROUP}" \
               --name "${V4_CANDIDATE_APP}" \
