@@ -3,7 +3,7 @@ import pytest
 import scripts.create_knowledgebase as create_knowledgebase_module
 
 
-def test_create_credential_forwards_tenant(monkeypatch):
+def test_create_credential_uses_supported_default_credential_options(monkeypatch):
     calls = []
     credential = object()
 
@@ -13,21 +13,7 @@ def test_create_credential_forwards_tenant(monkeypatch):
 
     monkeypatch.setattr(create_knowledgebase_module, "DefaultAzureCredential", credential_factory)
 
-    assert create_knowledgebase_module.create_credential("tenant-1") is credential
-    assert calls == [{"process_timeout": 60, "tenant_id": "tenant-1"}]
-
-
-def test_create_credential_without_tenant_uses_default_credential(monkeypatch):
-    calls = []
-
-    def credential_factory(**kwargs):
-        calls.append(kwargs)
-        return object()
-
-    monkeypatch.setattr(create_knowledgebase_module, "DefaultAzureCredential", credential_factory)
-
-    create_knowledgebase_module.create_credential("")
-
+    assert create_knowledgebase_module.create_credential() is credential
     assert calls == [{"process_timeout": 60}]
 
 
@@ -54,7 +40,7 @@ async def test_create_knowledgebase_creates_source_then_knowledgebase(monkeypatc
             calls.append(("knowledgebase", knowledge_base))
 
     credential_instance = credential
-    monkeypatch.setattr(create_knowledgebase_module, "create_credential", lambda tenant_id: credential)
+    monkeypatch.setattr(create_knowledgebase_module, "create_credential", lambda: credential)
     monkeypatch.setattr(create_knowledgebase_module, "SearchIndexClient", FakeClient)
     monkeypatch.setattr(create_knowledgebase_module, "load_azd_env", lambda: {})
     for key, value in {
@@ -64,7 +50,6 @@ async def test_create_knowledgebase_creates_source_then_knowledgebase(monkeypatc
         "AZURE_OPENAI_SERVICE": "openai",
         "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT": "deployment",
         "AZURE_OPENAI_KNOWLEDGEBASE_MODEL": "model",
-        "AZURE_TENANT_ID": "tenant-1",
     }.items():
         monkeypatch.setenv(key, value)
 

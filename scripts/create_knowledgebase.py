@@ -63,12 +63,9 @@ def load_azd_env() -> dict[str, str]:
     return {}
 
 
-def create_credential(tenant_id: str):
+def create_credential():
     """Create the credential used by local azd and azure/login environments."""
-    credential_options = {"process_timeout": 60}
-    if tenant_id:
-        credential_options["tenant_id"] = tenant_id
-    return DefaultAzureCredential(**credential_options)
+    return DefaultAzureCredential(process_timeout=60)
 
 
 async def create_knowledgebase():
@@ -84,8 +81,6 @@ async def create_knowledgebase():
     openai_service = env("AZURE_OPENAI_SERVICE")
     kb_deployment = env("AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT")
     kb_model = env("AZURE_OPENAI_KNOWLEDGEBASE_MODEL")
-    tenant_id = env("AZURE_TENANT_ID")
-
     if not all([search_service, search_index, kb_name, openai_service, kb_deployment, kb_model]):
         print("Missing required env vars. Need:")
         print(f"  AZURE_SEARCH_SERVICE={search_service or '(missing)'}")
@@ -107,7 +102,7 @@ async def create_knowledgebase():
     print(f"KB model:        {kb_model}")
     print()
 
-    credential = create_credential(tenant_id)
+    credential = create_credential()
 
     async with SearchIndexClient(endpoint=search_endpoint, credential=credential) as client:
         # Step 1: Create the knowledge source pointing at the existing index
