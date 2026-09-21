@@ -107,17 +107,35 @@ def split_content_for_embedding_budget(
     legal_boundaries = [position for position, _, _ in chunker.find_legal_boundaries(content)]
     windows: list[str] = []
     start = 0
+    metadata_tokens = chunker.count_tokens(_build_embedding_text(document, ""))
+    available_tokens = max_embedding_tokens - metadata_tokens
+    if not legal_boundaries:
+        character_budget = min(2048, max(1, available_tokens * 2))
+        content_start = 0
+        while content_start < len(content):
+            end = min(len(content), content_start + character_budget)
+            while (
+                chunker.count_tokens(_build_embedding_text(document, content[content_start:end])) > max_embedding_tokens
+            ):
+                end = content_start + max(1, (end - content_start) // 2)
+            window = content[content_start:end]
+            windows.append(window)
+            content_start = end
+        return windows
+
     while start < len(content):
-        # Start from the usual upper character estimate, then measure the complete
-        # embedding input and reduce the span until it meets the hard token bound.
-        metadata_tokens = chunker.count_tokens(_build_embedding_text(document, ""))
-        available_tokens = max_embedding_tokens - metadata_tokens
-        end = min(len(content), start + max(1, available_tokens * 4))
-        while (
-            end > start
-            and chunker.count_tokens(_build_embedding_text(document, content[start:end])) > max_embedding_tokens
-        ):
-            end -= 1
+        upper_bound = min(len(content), start + max(1, available_tokens * 4))
+        low = start + 1
+        high = upper_bound
+        end = start
+        while low <= high:
+            candidate_end = (low + high) // 2
+            token_count = chunker.count_tokens(_build_embedding_text(document, content[start:candidate_end]))
+            if token_count <= max_embedding_tokens:
+                end = candidate_end
+                low = candidate_end + 1
+            else:
+                high = candidate_end - 1
 
         preferred_end = max((position for position in legal_boundaries if start < position <= end), default=0)
         if preferred_end:
@@ -140,27 +158,36 @@ def expand_oversized_embedding_windows(
     chunker = updater.LegalDocumentChunker(max_tokens=6500, overlap_tokens=200)
 
     for document in documents:
-        if chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens:
-            expanded.append(document)
-            continue
-
         original_id = str(document.get("id") or "")
-        chunks = chunker.chunk_legal_document(
-            str(document.get("content") or ""),
-            original_id,
-            str(document.get("section_title") or document.get("sourcefile") or original_id),
-        )
-        window_texts = [str(chunk["text"]) for chunk in chunks]
         content = str(document.get("content") or "")
-        if (
-            len(window_texts) < 2
-            or "".join(window_texts) != content
-            or any(
-                chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
-                for window_text in window_texts
-            )
-        ):
+        legal_boundaries = chunker.find_legal_boundaries(content)
+        if not legal_boundaries:
+            if (
+                len(content) <= max_embedding_tokens
+                and chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens
+            ):
+                expanded.append(document)
+                continue
             window_texts = split_content_for_embedding_budget(document, content, max_embedding_tokens, chunker)
+        else:
+            if chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens:
+                expanded.append(document)
+                continue
+            chunks = chunker.chunk_legal_document(
+                content,
+                original_id,
+                str(document.get("section_title") or document.get("sourcefile") or original_id),
+            )
+            window_texts = [str(chunk["text"]) for chunk in chunks]
+            if (
+                len(window_texts) < 2
+                or "".join(window_texts) != content
+                or any(
+                    chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
+                    for window_text in window_texts
+                )
+            ):
+                window_texts = split_content_for_embedding_budget(document, content, max_embedding_tokens, chunker)
         children: list[dict[str, Any]] = []
         for index, window_text in enumerate(window_texts, start=1):
             child = dict(document)

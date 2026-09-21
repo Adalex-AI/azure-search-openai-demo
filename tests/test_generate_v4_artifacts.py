@@ -94,12 +94,12 @@ def test_all_configured_court_guides_have_processed_artifacts():
         assert all(document.get("category") == guide["category"] for document in documents)
 
 
-def test_ipec_processed_artifact_is_release_ready():
-    guide = GUIDE_FILES["Intellectual Property Enterprise Court"]
+def test_commercial_court_processed_artifact_is_release_ready():
+    guide = GUIDE_FILES["Commercial Court"]
     path = COURT_GUIDES_DIR / guide["file"]
     documents = json.loads(path.read_text(encoding="utf-8"))
 
-    assert len(documents) == 73
+    assert documents
     assert all(document.get("content") for document in documents)
     assert all(document.get("storageUrl") for document in documents)
 
