@@ -368,6 +368,26 @@ jobs:
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
           : "${V4_CANDIDATE_IMAGE_DIGEST:?Build job did not produce an immutable image reference}"
+          candidate_settings=$(az containerapp show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --query 'properties.template.containers[0].env' -o json)
+          CANDIDATE_SETTINGS="${candidate_settings}" python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+
+          settings = {
+              item.get("name"): item.get("value", "")
+              for item in json.loads(os.environ["CANDIDATE_SETTINGS"])
+              if item.get("name")
+          }
+          deployment = settings.get("AZURE_OPENAI_CHATGPT_DEPLOYMENT", "").strip()
+          model = settings.get("AZURE_OPENAI_CHATGPT_MODEL", "").strip()
+          if not deployment or not model:
+              raise SystemExit("Candidate app must define AZURE_OPENAI_CHATGPT_DEPLOYMENT and AZURE_OPENAI_CHATGPT_MODEL")
+          print(f"AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={deployment}")
+          print(f"AZURE_OPENAI_KNOWLEDGEBASE_MODEL={model}")
+          PY
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
@@ -382,6 +402,8 @@ jobs:
               V4_IMAGE_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" \
               V4_ARTIFACT_SHA256="${ARTIFACT_SHA256}" \
               V4_SEARCH_SNAPSHOT_SHA256="pending" \
+              USE_AGENTIC_KNOWLEDGEBASE=true \
+              USE_AGENTIC_RETRIEVAL=true \
               RUNNING_IN_PRODUCTION=false >/dev/null
           serving_json=$(az containerapp show \
               --resource-group "${AZURE_RESOURCE_GROUP}" \
@@ -442,8 +464,6 @@ jobs:
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
-          AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT }}
-          AZURE_OPENAI_KNOWLEDGEBASE_MODEL: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_MODEL }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       - name: Upload candidate documents
         run: |
@@ -591,16 +611,12 @@ jobs:
           python scripts/gate_acl.py \
             --candidate-url "${V4_CANDIDATE_URL}" \
             --provenance reports/candidate_provenance.json \
-            --auth-token "${V4_RESTRICTED_AUTH_TOKEN}" \
-            --auth-cookie "${V4_RESTRICTED_AUTH_COOKIE}" \
             --output reports/acl_gate.json
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           V4_SEARCH_CREDENTIAL: azure-cli
-          V4_RESTRICTED_AUTH_TOKEN: ${{ secrets.V4_RESTRICTED_AUTH_TOKEN }}
-          V4_RESTRICTED_AUTH_COOKIE: ${{ secrets.V4_RESTRICTED_AUTH_COOKIE }}
       - name: Generate provenance-bound behavioral gates
         run: |
           python scripts/gate_retrieval.py \

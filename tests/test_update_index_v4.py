@@ -77,6 +77,12 @@ def test_candidate_workflow_binds_required_environment_and_uploads_transition_au
 
     assert "V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}" in workflow
     assert "EXPECTED_RELEASE_ID: ${{ inputs.release_id || github.run_number }}" in workflow
+    assert "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={deployment}" in workflow
+    assert "AZURE_OPENAI_KNOWLEDGEBASE_MODEL={model}" in workflow
+    assert "USE_AGENTIC_KNOWLEDGEBASE=true" in workflow
+    assert "USE_AGENTIC_RETRIEVAL=true" in workflow
+    assert "V4_RESTRICTED_AUTH_TOKEN" not in workflow
+    assert "V4_RESTRICTED_AUTH_COOKIE" not in workflow
     assert "            reports/html_transition_audit.json" in workflow
 
 
