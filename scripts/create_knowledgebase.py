@@ -74,6 +74,7 @@ def create_credential(tenant_id: str):
 async def create_knowledgebase():
     # Merge azd env with actual env (actual env wins)
     azd_env = load_azd_env()
+
     def env(key: str, default: str = "") -> str:
         return os.getenv(key) or azd_env.get(key, default)
 
