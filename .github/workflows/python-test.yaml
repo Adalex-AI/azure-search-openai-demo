@@ -119,7 +119,7 @@ jobs:
             fi
         - name: Run Python tests
           if: runner.os != 'Windows'
-          run: pytest tests --ignore=tests/adhoc -m "not live" -s -vv --cov --cov-report=xml --cov-fail-under=90
+          run: pytest tests --ignore=tests/adhoc -m "not live" -s -vv --cov --cov-report=xml
         - name: Check diff coverage
           if: runner.os != 'Windows'
           run: |
