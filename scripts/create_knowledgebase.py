@@ -27,7 +27,7 @@ from pathlib import Path
 # Allow importing from app/backend
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "backend"))
 
-from azure.identity.aio import AzureDeveloperCliCredential
+from azure.identity.aio import DefaultAzureCredential
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import (
     AzureOpenAIVectorizerParameters,
@@ -61,6 +61,14 @@ def load_azd_env() -> dict[str, str]:
                     result[k.strip()] = v
             return result
     return {}
+
+
+def create_credential(tenant_id: str):
+    """Create the credential used by local azd and azure/login environments."""
+    credential_options = {"process_timeout": 60}
+    if tenant_id:
+        credential_options["tenant_id"] = tenant_id
+    return DefaultAzureCredential(**credential_options)
 
 
 async def create_knowledgebase():
@@ -98,7 +106,7 @@ async def create_knowledgebase():
     print(f"KB model:        {kb_model}")
     print()
 
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60) if tenant_id else AzureDeveloperCliCredential(process_timeout=60)
+    credential = create_credential(tenant_id)
 
     async with SearchIndexClient(endpoint=search_endpoint, credential=credential) as client:
         # Step 1: Create the knowledge source pointing at the existing index

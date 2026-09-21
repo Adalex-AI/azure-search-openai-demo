@@ -80,6 +80,8 @@ def test_candidate_gate_verifies_immutable_serving_image_identity():
 def test_candidate_workflow_binds_required_environment_and_uploads_transition_audit():
     workflow = WORKFLOW.read_text()
 
+    assert "python scripts/create_v4_staging_knowledgebase.py" in workflow
+    assert "- uses: azure/login@v2" in workflow
     assert "V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}" in workflow
     assert "EXPECTED_RELEASE_ID: ${{ inputs.release_id || github.run_number }}" in workflow
     assert "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={deployment}" in workflow
