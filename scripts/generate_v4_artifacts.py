@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -20,9 +21,12 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from audit_source_documents import CanonicalSource, load_web_sources, normalize_url  # noqa: E402
-import audit_html_transition as transition  # noqa: E402
 import update_cpr_index_v3 as updater  # noqa: E402
+from audit_source_documents import (  # noqa: E402
+    CanonicalSource,
+    load_web_sources,
+    normalize_url,
+)
 from upload_court_guides_v3 import GUIDE_FILES, map_doc  # noqa: E402
 
 
@@ -68,7 +72,6 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     content = str(document.get("content") or "")
     sourcepage = str(document.get("sourcepage") or "")
     sourcefile = str(document.get("sourcefile") or "")
-    category = str(document.get("category") or "")
     subsection_id = str(document.get("subsection_id") or "")
     section_title = subsection_id or sourcepage or sourcefile
     hierarchy_parts = [part for part in (sourcefile, sourcepage, subsection_id) if part]
