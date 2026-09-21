@@ -176,9 +176,7 @@ def test_transition_comparison_strips_oracle_section_locator():
 
 
 def test_transition_comparison_preserves_standalone_bracketed_placeholders():
-    assert _comparison_text("[If the claimant is legally represented]") == (
-        "[if the claimant is legally represented]"
-    )
+    assert _comparison_text("[If the claimant is legally represented]") == ("[if the claimant is legally represented]")
 
 
 def test_transition_comparison_normalizes_inline_footnote_marker_order():

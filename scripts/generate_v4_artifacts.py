@@ -34,10 +34,13 @@ def content_hash(document: dict[str, Any]) -> str:
     content = document.get("content", "")
     if isinstance(content, list):
         content = "\n".join(content)
-    value = "|".join(
-        str(document.get(field, "") or "")
-        for field in ("id", "sourcefile", "sourcepage", "category", "storageUrl", "updated")
-    ) + f"|{content}|{document.get('embedding_text', '')}"
+    value = (
+        "|".join(
+            str(document.get(field, "") or "")
+            for field in ("id", "sourcefile", "sourcepage", "category", "storageUrl", "updated")
+        )
+        + f"|{content}|{document.get('embedding_text', '')}"
+    )
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
@@ -88,7 +91,9 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     document["section_title"] = section_title
     document["hierarchy_path"] = hierarchy_path
     document["legal_references"] = legal_references
-    document["embedding_text"] = _build_embedding_text(document, content_override if content_override is not None else content)
+    document["embedding_text"] = _build_embedding_text(
+        document, content_override if content_override is not None else content
+    )
     return document
 
 
@@ -108,7 +113,10 @@ def split_content_for_embedding_budget(
         metadata_tokens = chunker.count_tokens(_build_embedding_text(document, ""))
         available_tokens = max_embedding_tokens - metadata_tokens
         end = min(len(content), start + max(1, available_tokens * 4))
-        while end > start and chunker.count_tokens(_build_embedding_text(document, content[start:end])) > max_embedding_tokens:
+        while (
+            end > start
+            and chunker.count_tokens(_build_embedding_text(document, content[start:end])) > max_embedding_tokens
+        ):
             end -= 1
 
         preferred_end = max((position for position in legal_boundaries if start < position <= end), default=0)
@@ -144,13 +152,15 @@ def expand_oversized_embedding_windows(
         )
         window_texts = [str(chunk["text"]) for chunk in chunks]
         content = str(document.get("content") or "")
-        if len(window_texts) < 2 or "".join(window_texts) != content or any(
-            chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
-            for window_text in window_texts
-        ):
-            window_texts = split_content_for_embedding_budget(
-                document, content, max_embedding_tokens, chunker
+        if (
+            len(window_texts) < 2
+            or "".join(window_texts) != content
+            or any(
+                chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
+                for window_text in window_texts
             )
+        ):
+            window_texts = split_content_for_embedding_budget(document, content, max_embedding_tokens, chunker)
         children: list[dict[str, Any]] = []
         for index, window_text in enumerate(window_texts, start=1):
             child = dict(document)
@@ -179,7 +189,8 @@ def deduplicate_sources_by_url(sources: list[CanonicalSource]) -> dict[str, Cano
             continue
         current = selected.get(normalized_url)
         if current is None or (len(source.sourcefile), source.sourcefile) > (
-            len(current.sourcefile), current.sourcefile
+            len(current.sourcefile),
+            current.sourcefile,
         ):
             selected[normalized_url] = source
     return {source.identity: source for source in selected.values()}
@@ -275,9 +286,7 @@ def generate(
 
     missing_snapshot_identities = sorted(set(sources) - set(source_snapshot_hashes))
     if missing_snapshot_identities:
-        raise ValueError(
-            "Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities)
-        )
+        raise ValueError("Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities))
 
     court_guides_dir = court_guides_dir or ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
     extraction_manifest_path = court_guides_dir / "court_guides_extraction_manifest.json"
@@ -299,7 +308,10 @@ def generate(
             ),
             None,
         )
-        if not extraction_entry or extraction_entry.get("processed_json_sha256") != hashlib.sha256(guide_path.read_bytes()).hexdigest():
+        if (
+            not extraction_entry
+            or extraction_entry.get("processed_json_sha256") != hashlib.sha256(guide_path.read_bytes()).hexdigest()
+        ):
             raise ValueError(f"Court-guide artifact provenance does not match extraction manifest: {guide_path}")
         if not isinstance(raw_documents, list) or not raw_documents:
             raise ValueError(f"Fresh court-guide artifact is empty: {guide_path}")
@@ -332,7 +344,11 @@ def generate(
         document["artifact_content_sha256"] = content_hash(document)
 
     if duplicate_ids or missing_fields or oversized:
-        raise ValueError(json.dumps({"duplicate_ids": duplicate_ids, "missing_fields": missing_fields, "oversized": oversized}, indent=2))
+        raise ValueError(
+            json.dumps(
+                {"duplicate_ids": duplicate_ids, "missing_fields": missing_fields, "oversized": oversized}, indent=2
+            )
+        )
 
     manifest = {
         "release_id": release_id,
@@ -372,7 +388,9 @@ def main() -> int:
         "".join(json.dumps(document, ensure_ascii=False, sort_keys=True) + "\n" for document in documents),
         encoding="utf-8",
     )
-    (args.output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (args.output_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(manifest, indent=2, sort_keys=True))
     return 0
 

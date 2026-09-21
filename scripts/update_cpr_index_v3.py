@@ -482,9 +482,7 @@ def scrape_page(
     context_rule = ""
     paragraphs = []
 
-    elements = content_div.find_all(
-        ["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "li", "table"]
-    )
+    elements = content_div.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "li", "table"])
     for elem in elements:
         if not elem.parent:
             continue
