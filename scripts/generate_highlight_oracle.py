@@ -14,7 +14,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SECTION_RE = re.compile(
     r"^(?P<id>(?:rule\s+\d+(?:\.\d+)*|para\s+\d+(?:\.\d+)*|"
@@ -43,7 +42,7 @@ def body_evidence(blocks: list[dict[str, Any]], heading: dict[str, Any], next_he
 
 
 def case_id(identity: str, locator: str) -> str:
-    return hashlib.sha256(f"{identity}|{locator}".encode("utf-8")).hexdigest()[:20]
+    return hashlib.sha256(f"{identity}|{locator}".encode()).hexdigest()[:20]
 
 
 def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
