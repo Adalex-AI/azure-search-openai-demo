@@ -9,17 +9,25 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scripts.upload_v4_staging import EMBEDDING_DIMENSIONS, PRODUCTION_INDEX, validate_staging_target
+from scripts.upload_v4_staging import (
+    EMBEDDING_DIMENSIONS,
+    EMBEDDING_FIELD,
+    PRODUCTION_INDEX,
+    validate_index_schema,
+    validate_staging_target,
+)
 
 
 def build_index(index_name: str):
     from azure.search.documents.indexes.models import (
         HnswAlgorithmConfiguration,
         HnswParameters,
+        PermissionFilter,
+        SearchableField,
         SearchField,
         SearchFieldDataType,
         SearchIndex,
-        SearchableField,
+        SearchIndexPermissionFilterOption,
         SemanticConfiguration,
         SemanticField,
         SemanticPrioritizedFields,
@@ -33,21 +41,33 @@ def build_index(index_name: str):
         SimpleField(name="id", type=SearchFieldDataType.String, key=True, filterable=True),
         SearchableField(name="content", type=SearchFieldDataType.String, analyzer_name="standard.lucene"),
         SearchField(
-            name="embedding",
+            name=EMBEDDING_FIELD,
             type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
             searchable=True,
             vector_search_dimensions=EMBEDDING_DIMENSIONS,
-            vector_search_profile_name="embedding-profile",
+            vector_search_profile_name=f"{EMBEDDING_FIELD}-profile",
         ),
         SimpleField(name="category", type=SearchFieldDataType.String, filterable=True, facetable=True),
         SimpleField(name="sourcepage", type=SearchFieldDataType.String, filterable=True, facetable=True),
         SimpleField(name="sourcefile", type=SearchFieldDataType.String, filterable=True, facetable=True),
         SimpleField(name="storageUrl", type=SearchFieldDataType.String, filterable=True),
-        SimpleField(name="oids", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
-        SimpleField(name="groups", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SearchField(
+            name="oids",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+            filterable=True,
+            permission_filter=PermissionFilter.USER_IDS,
+        ),
+        SearchField(
+            name="groups",
+            type=SearchFieldDataType.Collection(SearchFieldDataType.String),
+            filterable=True,
+            permission_filter=PermissionFilter.GROUP_IDS,
+        ),
         SimpleField(name="parent_id", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="subsection_id", type=SearchFieldDataType.String, filterable=True, facetable=True),
-        SimpleField(name="subsections", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True),
+        SimpleField(
+            name="subsections", type=SearchFieldDataType.Collection(SearchFieldDataType.String), filterable=True
+        ),
         SimpleField(name="child_window", type=SearchFieldDataType.Int32, filterable=True),
         SimpleField(name="child_window_count", type=SearchFieldDataType.Int32, filterable=True),
         SearchableField(name="section_title", type=SearchFieldDataType.String, analyzer_name="standard.lucene"),
@@ -62,7 +82,7 @@ def build_index(index_name: str):
         SimpleField(name="updated", type=SearchFieldDataType.String, filterable=True, sortable=True),
     ]
     vector_search = VectorSearch(
-        profiles=[VectorSearchProfile(name="embedding-profile", algorithm_configuration_name="hnsw-config")],
+        profiles=[VectorSearchProfile(name=f"{EMBEDDING_FIELD}-profile", algorithm_configuration_name="hnsw-config")],
         algorithms=[HnswAlgorithmConfiguration(name="hnsw-config", parameters=HnswParameters(metric="cosine"))],
     )
     semantic_search = SemanticSearch(
@@ -71,12 +91,21 @@ def build_index(index_name: str):
                 name="default",
                 prioritized_fields=SemanticPrioritizedFields(
                     title_field=SemanticField(field_name="section_title"),
-                    content_fields=[SemanticField(field_name="hierarchy_path"), SemanticField(field_name="embedding_text")],
+                    content_fields=[
+                        SemanticField(field_name="hierarchy_path"),
+                        SemanticField(field_name="embedding_text"),
+                    ],
                 ),
             )
         ]
     )
-    return SearchIndex(name=index_name, fields=fields, vector_search=vector_search, semantic_search=semantic_search)
+    return SearchIndex(
+        name=index_name,
+        fields=fields,
+        vector_search=vector_search,
+        semantic_search=semantic_search,
+        permission_filter_option=SearchIndexPermissionFilterOption.ENABLED,
+    )
 
 
 def provision(index_name: str, service: str) -> None:
@@ -86,6 +115,8 @@ def provision(index_name: str, service: str) -> None:
     endpoint = service if service.startswith("https://") else f"https://{service}.search.windows.net"
     client = SearchIndexClient(endpoint=endpoint, credential=DefaultAzureCredential())
     result = client.create_index(build_index(index_name))
+    validate_index_schema(result)
+    validate_index_schema(client.get_index(index_name))
     print(json.dumps({"index": result.name, "status": "created"}))
 
 
