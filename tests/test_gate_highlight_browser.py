@@ -46,9 +46,15 @@ def test_choose_case_prefers_cpr_part_24_sourcefile():
         "subsection_id": "24.1",
         "body_text": "longer canonical body",
     }
+    document_heading = {
+        "case_id": "document-heading",
+        "sourcefile": "Part 24",
+        "subsection_id": "PART 24",
+        "body_text": "document-level canonical body",
+    }
     fallback = {"case_id": "fallback", "subsection_id": "1", "sourcepage": "Other", "body_text": "short"}
 
-    assert choose_case({"cases": [fallback, preferred]}) is preferred
+    assert choose_case({"cases": [fallback, document_heading, preferred]}) is preferred
     assert choose_case({"cases": [fallback]}) is fallback
 
 
