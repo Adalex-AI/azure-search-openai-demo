@@ -158,6 +158,7 @@ app/functions/*/prepdocslib/
 app/functions/*/requirements.txt
 
 data/**/*.md5
+data/legal-scraper/processed/html_cache/
 
 .DS_Store
 evals/results/
