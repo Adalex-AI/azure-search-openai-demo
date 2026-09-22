@@ -104,11 +104,12 @@ def audit_snapshot(snapshot: dict[str, Any], source: Any, action_entry: dict[str
     html = str(snapshot.get("html") or "")
     raw_blocks = extract_legal_blocks(html)
     soup = BeautifulSoup(html, "html.parser")
-    scraped = updater.scrape_page(
-        updater.requests.Session(),
-        action_entry,
-        prefetched_result=(soup, snapshot.get("final_url", action_entry["url"]), snapshot.get("redirect_count", 0)),
-    )
+    original_fetch_soup = updater.fetch_soup
+    updater.fetch_soup = lambda session, url: soup
+    try:
+        scraped = updater.scrape_page(updater.requests.Session(), action_entry["url"])
+    finally:
+        updater.fetch_soup = original_fetch_soup
     result: dict[str, Any] = {
         "identity": source.identity,
         "sourcefile": source.sourcefile,
