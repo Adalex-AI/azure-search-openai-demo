@@ -15,6 +15,7 @@ import pypdf
 import requests
 
 from audit_source_documents import load_web_sources
+from capture_html_oracle import resolve_protocol_page_url
 from html_schema_oracle import write_html_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,12 +27,12 @@ def snapshot_filename(identity: str) -> str:
     return f"{digest}.json"
 
 
-def capture_pdf_snapshot(session: requests.Session, source: object, timeout: int = 30) -> dict:
-    response = session.get(source.url, timeout=timeout, allow_redirects=True)
+def capture_pdf_snapshot(session: requests.Session, source: object, url: str, timeout: int = 30) -> dict:
+    response = session.get(url, timeout=timeout, allow_redirects=True)
     response.raise_for_status()
     body = bytes(response.content)
     content_type = str(response.headers.get("Content-Type", ""))
-    if "application/pdf" not in content_type.casefold() and not source.url.casefold().split("?", 1)[0].endswith(".pdf"):
+    if "application/pdf" not in content_type.casefold() and not url.casefold().split("?", 1)[0].endswith(".pdf"):
         raise ValueError(f"Expected PDF response, got {content_type or 'unknown content type'}")
 
     reader = pypdf.PdfReader(io.BytesIO(body))
@@ -53,6 +54,7 @@ def capture_pdf_snapshot(session: requests.Session, source: object, timeout: int
         "category": source.category,
         "manifest_key": source.manifest_key,
         "requested_url": source.url,
+        "resolved_url": url,
         "final_url": str(response.url),
         "redirect_count": len(getattr(response, "history", [])),
         "status_code": int(response.status_code),
@@ -69,7 +71,7 @@ def capture_pdf_snapshot(session: requests.Session, source: object, timeout: int
 def run(output_dir: Path, source_filter: str | None, timeout: int) -> dict:
     sources = [
         source for source in load_web_sources()
-        if source.source_type == "pdf"
+        if (source.source_type == "pdf" or source.url == "DISCOVER_FROM_PROTOCOL_PAGE")
         and (not source_filter or source_filter.casefold() in source.identity.casefold() or source_filter.casefold() in source.sourcefile.casefold())
     ]
     if not sources:
@@ -79,7 +81,10 @@ def run(output_dir: Path, source_filter: str | None, timeout: int) -> dict:
     session.headers.update({"User-Agent": "legal-rag-pdf-oracle/1.0"})
     results = []
     for source in sources:
-        snapshot = capture_pdf_snapshot(session, source, timeout)
+        resolved_url = resolve_protocol_page_url(session, source.url, timeout)
+        if not resolved_url:
+            raise ValueError(f"Could not resolve canonical PDF source URL for {source.identity}")
+        snapshot = capture_pdf_snapshot(session, source, resolved_url, timeout)
         path = output_dir / snapshot_filename(source.identity)
         write_html_snapshot(snapshot, path)
         results.append({"identity": source.identity, "status": "ok", "path": str(path)})
