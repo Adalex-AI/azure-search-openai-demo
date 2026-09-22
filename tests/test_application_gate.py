@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from scripts import gate_acl
 from scripts.application_gate import (
     ApplicationGateError,
     validate_candidate_url,
@@ -300,3 +301,24 @@ def test_run_gate_writes_success_report_for_verified_candidate(monkeypatch, tmp_
         == 0
     )
     assert json.loads(output.read_text(encoding="utf-8"))["status"] == "PASS"
+
+
+@pytest.mark.asyncio
+async def test_acl_gate_accepts_shared_runner_headers(monkeypatch):
+    monkeypatch.setenv("AZURE_SEARCH_SERVICE", "search-service")
+    monkeypatch.setenv("AZURE_SEARCH_INDEX", "legal-index")
+    monkeypatch.setenv("AZURE_TENANT_ID", "tenant-id")
+
+    async def search_counts(*_args):
+        return {
+            "authorized_count": 1,
+            "authorized_total": 1,
+            "elevated_count": 1,
+            "elevated_total": 1,
+        }
+
+    monkeypatch.setattr(gate_acl, "search_counts", search_counts)
+
+    report = await gate_acl.run("https://candidate.example.test", EXPECTED, {"Authorization": "Bearer token"})
+
+    assert report["status"] == "PASS"

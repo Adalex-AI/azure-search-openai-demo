@@ -48,8 +48,8 @@ async def search_counts(search_service: str, index_name: str, tenant_id: str) ->
     }
 
 
-async def run(candidate: str, provenance: dict[str, str]) -> dict[str, Any]:
-    del candidate
+async def run(candidate: str, provenance: dict[str, str], headers: dict[str, str]) -> dict[str, Any]:
+    del candidate, headers
     search_service = os.environ.get("AZURE_SEARCH_SERVICE", "").strip()
     index_name = os.environ.get("AZURE_SEARCH_INDEX", "").strip()
     tenant_id = os.environ.get("AZURE_TENANT_ID", "").strip()
