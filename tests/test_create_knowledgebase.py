@@ -48,6 +48,7 @@ async def test_create_knowledgebase_creates_source_then_knowledgebase(monkeypatc
         "AZURE_SEARCH_INDEX": "index-v4-staging-test",
         "AZURE_SEARCH_KNOWLEDGEBASE_NAME": "kb-v4-staging-test",
         "AZURE_OPENAI_SERVICE": "openai",
+        "AZURE_OPENAI_ENDPOINT": "https://canonical.openai.azure.com",
         "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT": "deployment",
         "AZURE_OPENAI_KNOWLEDGEBASE_MODEL": "model",
     }.items():
@@ -63,3 +64,43 @@ async def test_create_knowledgebase_creates_source_then_knowledgebase(monkeypatc
     assert knowledgebase.knowledge_sources[0].name == source.name
     assert knowledgebase.models[0].azure_open_ai_parameters.deployment_name == "deployment"
     assert knowledgebase.models[0].azure_open_ai_parameters.model_name == "model"
+    assert knowledgebase.models[0].azure_open_ai_parameters.resource_url == "https://canonical.openai.azure.com/"
+
+
+@pytest.mark.asyncio
+async def test_create_knowledgebase_accepts_a_verified_endpoint_without_service(monkeypatch):
+    credential = object()
+
+    class FakeClient:
+        def __init__(self, *, endpoint, credential):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return None
+
+        async def create_or_update_knowledge_source(self, *, knowledge_source):
+            pass
+
+        async def create_or_update_knowledge_base(self, *, knowledge_base):
+            assert (
+                knowledge_base.models[0].azure_open_ai_parameters.resource_url == "https://canonical.openai.azure.com/"
+            )
+
+    monkeypatch.setattr(create_knowledgebase_module, "create_credential", lambda: credential)
+    monkeypatch.setattr(create_knowledgebase_module, "SearchIndexClient", FakeClient)
+    monkeypatch.setattr(create_knowledgebase_module, "load_azd_env", lambda: {})
+    monkeypatch.delenv("AZURE_OPENAI_SERVICE", raising=False)
+    for key, value in {
+        "AZURE_SEARCH_SERVICE": "search",
+        "AZURE_SEARCH_INDEX": "index-v4-staging-test",
+        "AZURE_SEARCH_KNOWLEDGEBASE_NAME": "kb-v4-staging-test",
+        "AZURE_OPENAI_ENDPOINT": "https://canonical.openai.azure.com",
+        "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT": "deployment",
+        "AZURE_OPENAI_KNOWLEDGEBASE_MODEL": "model",
+    }.items():
+        monkeypatch.setenv(key, value)
+
+    await create_knowledgebase_module.create_knowledgebase()

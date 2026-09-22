@@ -467,17 +467,38 @@ jobs:
           EXPECTED_GIT_SHA: ${{ github.sha }}
       - name: Provision paired staging knowledge base
         run: |
+          candidate_openai_service=$(az containerapp show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --query "properties.template.containers[0].env[?name=='AZURE_OPENAI_SERVICE'].value | [0]" \
+            --output tsv)
+          : "${candidate_openai_service:?Candidate app must define AZURE_OPENAI_SERVICE}"
+          candidate_openai_endpoint=$(az cognitiveservices account show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${candidate_openai_service}" \
+            --query "properties.endpoint" \
+            --output tsv)
+          : "${candidate_openai_endpoint:?Candidate Azure OpenAI account has no endpoint}"
+          candidate_openai_deployment=$(az cognitiveservices account deployment show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${candidate_openai_service}" \
+            --deployment-name "${AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT}" \
+            --query "name" \
+            --output tsv)
+          : "${candidate_openai_deployment:?Candidate Azure OpenAI account lacks the knowledge-base deployment}"
           python scripts/create_v4_staging_knowledgebase.py \
             --index "${SEARCH_INDEX}" \
             --knowledgebase "${SEARCH_KNOWLEDGEBASE}" \
             --service "${AZURE_SEARCH_SERVICE}" \
-            --openai-service "${AZURE_OPENAI_SERVICE}" \
+            --openai-service "${candidate_openai_service}" \
+            --openai-endpoint "${candidate_openai_endpoint}" \
             --deployment "${AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT}" \
             --model "${AZURE_OPENAI_KNOWLEDGEBASE_MODEL}" \
             --execute
         env:
+          AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
+          V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
-          AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       - name: Upload candidate documents
         run: |

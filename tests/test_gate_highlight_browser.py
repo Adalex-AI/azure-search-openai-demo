@@ -6,6 +6,7 @@ from scripts.gate_highlight_browser import (
     BrowserGateError,
     choose_case,
     normalize,
+    question_for_case,
     validate_browser_evidence,
 )
 
@@ -38,8 +39,13 @@ def test_validate_browser_evidence_rejects_incomplete_shapes(payload):
         validate_browser_evidence(payload)
 
 
-def test_choose_case_prefers_cpr_part_24_subsection_24_2():
-    preferred = {"case_id": "preferred", "subsection_id": "24.2", "sourcepage": "CPR Part 24", "body_text": "long"}
+def test_choose_case_prefers_cpr_part_24_sourcefile():
+    preferred = {
+        "case_id": "preferred",
+        "sourcefile": "Part 24",
+        "subsection_id": "PART 24",
+        "body_text": "longer canonical body",
+    }
     fallback = {"case_id": "fallback", "subsection_id": "1", "sourcepage": "Other", "body_text": "short"}
 
     assert choose_case({"cases": [fallback, preferred]}) is preferred
@@ -52,6 +58,28 @@ def test_choose_case_rejects_empty_oracle_and_normalizes_text():
     assert normalize("  CPR\n Part 24  ") == "cpr part 24"
 
 
+def test_question_for_case_targets_the_selected_canonical_document_and_subsection():
+    case = {
+        "sourcefile": "Devolution Issues and Crown Office Applications in Wales (Welsh)",
+        "subsection_id": "7.6",
+        "body_text": "7.6 The court may set a longer date in exceptional circumstances.",
+    }
+
+    assert question_for_case(case) == (
+        "In Devolution Issues and Crown Office Applications in Wales (Welsh), what does section 7.6 say about: "
+        "7.6 the court may set a longer date in exceptional circumstances?"
+    )
+
+
+@pytest.mark.parametrize(
+    "case",
+    [{}, {"sourcefile": "Part 24"}, {"subsection_id": "24.2"}, {"body_text": "A rule"}],
+)
+def test_question_for_case_rejects_incomplete_case(case):
+    with pytest.raises(BrowserGateError, match="cannot produce"):
+        question_for_case(case)
+
+
 def test_citation_discovery_timeout_leaves_time_to_write_failure_evidence():
     assert CITATION_DISCOVERY_TIMEOUT_MS == 60_000
 
@@ -60,6 +88,7 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
     from scripts import gate_highlight_browser
 
     timeouts = []
+    clicked = []
 
     class Locator:
         first = None
@@ -81,6 +110,7 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
             return None
 
         def click(self):
+            clicked.append(self)
             return None
 
     class Page:
@@ -96,6 +126,9 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
             return Locator()
 
         def get_by_role(self, *args, **kwargs):
+            return Locator()
+
+        def get_by_text(self, *args, **kwargs):
             return Locator()
 
     class Browser:
@@ -135,3 +168,4 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
         )
 
     assert timeouts == [CITATION_DISCOVERY_TIMEOUT_MS]
+    assert len(clicked) == 2

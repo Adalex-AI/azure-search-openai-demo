@@ -79,20 +79,26 @@ async def create_knowledgebase():
     search_index = env("AZURE_SEARCH_INDEX")
     kb_name = env("AZURE_SEARCH_KNOWLEDGEBASE_NAME")
     openai_service = env("AZURE_OPENAI_SERVICE")
+    openai_endpoint = env("AZURE_OPENAI_ENDPOINT")
     kb_deployment = env("AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT")
     kb_model = env("AZURE_OPENAI_KNOWLEDGEBASE_MODEL")
-    if not all([search_service, search_index, kb_name, openai_service, kb_deployment, kb_model]):
+    if not all([search_service, search_index, kb_name, kb_deployment, kb_model]) or not (
+        openai_service or openai_endpoint
+    ):
         print("Missing required env vars. Need:")
         print(f"  AZURE_SEARCH_SERVICE={search_service or '(missing)'}")
         print(f"  AZURE_SEARCH_INDEX={search_index or '(missing)'}")
         print(f"  AZURE_SEARCH_KNOWLEDGEBASE_NAME={kb_name or '(missing)'}")
-        print(f"  AZURE_OPENAI_SERVICE={openai_service or '(missing)'}")
+        print(f"  AZURE_OPENAI_ENDPOINT={openai_endpoint or '(missing)'}")
+        print(f"  AZURE_OPENAI_SERVICE={openai_service or '(missing fallback)'}")
         print(f"  AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={kb_deployment or '(missing)'}")
         print(f"  AZURE_OPENAI_KNOWLEDGEBASE_MODEL={kb_model or '(missing)'}")
         sys.exit(1)
 
     search_endpoint = f"https://{search_service}.search.windows.net"
-    openai_endpoint = f"https://{openai_service}.openai.azure.com/"
+    openai_endpoint = (
+        openai_endpoint.rstrip("/") + "/" if openai_endpoint else f"https://{openai_service}.openai.azure.com/"
+    )
 
     print(f"Search endpoint: {search_endpoint}")
     print(f"Search index:    {search_index}")
