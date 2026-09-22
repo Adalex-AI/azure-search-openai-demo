@@ -33,7 +33,9 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-def body_evidence(blocks: list[dict[str, Any]], heading: dict[str, Any], next_heading: dict[str, Any] | None) -> tuple[str, str]:
+def body_evidence(
+    blocks: list[dict[str, Any]], heading: dict[str, Any], next_heading: dict[str, Any] | None
+) -> tuple[str, str]:
     """Fingerprint the complete canonical span from heading through its body."""
     start = blocks.index(heading)
     end = blocks.index(next_heading) if next_heading is not None else len(blocks)
@@ -56,9 +58,7 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
         if snapshot.get("status") != "ok":
             continue
         identity = str(snapshot.get("identity") or "").strip()
-        content_hash = str(
-            snapshot.get("content_sha256") or snapshot.get("source_sha256") or ""
-        ).strip()
+        content_hash = str(snapshot.get("content_sha256") or snapshot.get("source_sha256") or "").strip()
         blocks = snapshot.get("schema_census", {}).get("blocks", [])
         if not identity or not content_hash:
             raise ValueError(f"Incomplete canonical snapshot: {path}")
@@ -71,18 +71,22 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
             for line_number, line in enumerate(extracted_text.splitlines(), start=1):
                 text = normalize_text(line)
                 if text:
-                    blocks.append({
-                        "kind": "heading" if PDF_SECTION_RE.match(line) else "body",
-                        "locator": f"pdf-line[{line_number}]",
-                        "text": text,
-                    })
+                    blocks.append(
+                        {
+                            "kind": "heading" if PDF_SECTION_RE.match(line) else "body",
+                            "locator": f"pdf-line[{line_number}]",
+                            "text": text,
+                        }
+                    )
             if not blocks:
                 raise ValueError(f"PDF snapshot produced no section headings: {path}")
 
         headings = [
             block
             for block in blocks
-            if isinstance(block, dict) and block.get("kind") == "heading" and normalize_text(str(block.get("text") or ""))
+            if isinstance(block, dict)
+            and block.get("kind") == "heading"
+            and normalize_text(str(block.get("text") or ""))
         ]
         for index, heading in enumerate(headings):
             text = normalize_text(str(heading["text"]))

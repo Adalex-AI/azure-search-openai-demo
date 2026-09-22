@@ -40,9 +40,7 @@ def capture_pdf_snapshot(session: requests.Session, source: object, timeout: int
     if len(extracted_text.strip()) < 200:
         raise ValueError("PDF extraction quality guard failed: fewer than 200 characters")
     paragraphs = "".join(
-        f"<p>{escape(paragraph.strip())}</p>"
-        for paragraph in extracted_text.split("\n\n")
-        if paragraph.strip()
+        f"<p>{escape(paragraph.strip())}</p>" for paragraph in extracted_text.split("\n\n") if paragraph.strip()
     )
     title = escape(source.sourcefile)
     html = f"<html><body><article><h1>{title}</h1><div>{paragraphs}</div></article></body></html>"
@@ -69,9 +67,14 @@ def capture_pdf_snapshot(session: requests.Session, source: object, timeout: int
 
 def run(output_dir: Path, source_filter: str | None, timeout: int) -> dict:
     sources = [
-        source for source in load_web_sources()
+        source
+        for source in load_web_sources()
         if source.source_type == "pdf"
-        and (not source_filter or source_filter.casefold() in source.identity.casefold() or source_filter.casefold() in source.sourcefile.casefold())
+        and (
+            not source_filter
+            or source_filter.casefold() in source.identity.casefold()
+            or source_filter.casefold() in source.sourcefile.casefold()
+        )
     ]
     if not sources:
         raise ValueError("No matching canonical PDF source")
