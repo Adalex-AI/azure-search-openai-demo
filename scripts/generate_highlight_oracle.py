@@ -131,11 +131,14 @@ def build_report(snapshot_dir: Path) -> dict[str, Any]:
     cases = load_snapshot_cases(snapshot_dir)
     identities = sorted({case["identity"] for case in cases})
     categories = sorted({case["category"] for case in cases})
+    oracle_versions = {str(case["oracle_version"] or "").strip() for case in cases}
+    if len(oracle_versions) != 1 or not next(iter(oracle_versions)):
+        raise ValueError("Canonical snapshots use inconsistent oracle versions")
     if len({case["case_id"] for case in cases}) != len(cases):
         raise ValueError("Oracle case IDs are not unique")
     return {
         "schema_version": 1,
-        "oracle_version": cases[0]["oracle_version"],
+        "oracle_version": next(iter(oracle_versions)),
         "snapshot_dir": str(snapshot_dir),
         "snapshot_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
         "case_count": len(cases),
