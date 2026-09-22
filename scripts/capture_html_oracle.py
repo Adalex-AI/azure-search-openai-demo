@@ -9,9 +9,10 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
+from bs4 import BeautifulSoup
 
 from audit_source_documents import load_web_sources
 from html_schema_oracle import ORACLE_VERSION, capture_html_snapshot, write_html_snapshot
@@ -19,6 +20,25 @@ from html_schema_oracle import ORACLE_VERSION, capture_html_snapshot, write_html
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "reports" / "html_oracle_snapshots"
+PROTOCOL_INDEX_URL = "https://www.justice.gov.uk/courts/procedure-rules/civil/protocol"
+
+
+def resolve_protocol_page_url(session: requests.Session, url: str, timeout: int) -> str | None:
+    if url != "DISCOVER_FROM_PROTOCOL_PAGE":
+        return url
+
+    try:
+        response = session.get(PROTOCOL_INDEX_URL, timeout=timeout, allow_redirects=True)
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    for link in soup.find_all("a", href=True):
+        text = link.get_text(strip=True).casefold()
+        if "debt" in text and ("claim" in text or "protocol" in text):
+            return urljoin(PROTOCOL_INDEX_URL, link["href"])
+    return None
 
 
 def snapshot_filename(identity: str) -> str:
@@ -52,15 +72,17 @@ def capture_source(
     retry_delay: float = 1.0,
 ) -> dict[str, Any]:
     output_path = output_dir / snapshot_filename(source.identity)
+    requested_url = source.url
+    capture_url = resolve_protocol_page_url(session, requested_url, timeout)
 
-    if source.source_type == "pdf" or source.url.casefold().split("?", 1)[0].endswith(".pdf"):
+    if source.source_type == "pdf" or capture_url and capture_url.casefold().split("?", 1)[0].endswith(".pdf"):
         not_applicable = {
             "identity": source.identity,
             "source_type": source.source_type,
             "sourcefile": source.sourcefile,
             "category": source.category,
             "manifest_key": source.manifest_key,
-            "requested_url": source.url,
+            "requested_url": requested_url,
             "status": "not_applicable",
             "reason": "PDF source is covered by PDF completeness verification, not the HTML DOM oracle",
         }
@@ -75,15 +97,15 @@ def capture_source(
         if existing.get("status") == "ok":
             return {"identity": source.identity, "status": "skipped", "path": str(output_path)}
 
-    parsed_url = urlparse(source.url)
-    if not source.url or parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+    parsed_url = urlparse(capture_url or "")
+    if not capture_url or parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
         failure = {
             "identity": source.identity,
             "source_type": source.source_type,
             "sourcefile": source.sourcefile,
             "category": source.category,
             "manifest_key": source.manifest_key,
-            "requested_url": source.url,
+            "requested_url": requested_url,
             "status": "unavailable",
             "error": "canonical source has no usable HTTP URL",
         }
@@ -93,7 +115,7 @@ def capture_source(
     attempts = max(1, retries + 1)
     for attempt in range(attempts):
         try:
-            snapshot = capture_html_snapshot(session, source.url, timeout=timeout)
+            snapshot = capture_html_snapshot(session, capture_url, timeout=timeout)
             break
         except (requests.RequestException, TimeoutError, ConnectionError) as error:
             if not is_retryable_error(error) or attempt + 1 == attempts:
@@ -103,7 +125,7 @@ def capture_source(
                     "sourcefile": source.sourcefile,
                     "category": source.category,
                     "manifest_key": source.manifest_key,
-                    "requested_url": source.url,
+                    "requested_url": requested_url,
                     "status": "unavailable",
                     "error_type": type(error).__name__,
                     "error": str(error),
@@ -123,6 +145,7 @@ def capture_source(
             "category": source.category,
             "manifest_key": source.manifest_key,
             "status": "ok",
+            "resolved_url": capture_url,
         }
     )
     write_html_snapshot(snapshot, output_path)

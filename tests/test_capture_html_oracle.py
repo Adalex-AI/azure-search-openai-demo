@@ -56,12 +56,28 @@ def test_capture_source_writes_explicit_failure_record(tmp_path):
     assert '"error_type": "TimeoutError"' in payload
 
 
-def test_capture_source_rejects_manifest_discovery_sentinel(tmp_path):
+def test_capture_source_resolves_manifest_discovery_sentinel(tmp_path, monkeypatch):
     source = Source()
     source.url = "DISCOVER_FROM_PROTOCOL_PAGE"
 
-    result = capture_source(object(), source, tmp_path, 10)
+    class Response:
+        content = b'<a href="debt-claims">Debt Claims Pre-Action Protocol</a>'
+
+        def raise_for_status(self):
+            return None
+
+    class Session:
+        def get(self, url, *, timeout, allow_redirects):
+            assert url == "https://www.justice.gov.uk/courts/procedure-rules/civil/protocol"
+            return Response()
+
+    monkeypatch.setattr(
+        "scripts.capture_html_oracle.capture_html_snapshot",
+        lambda session, url, timeout: {"content": "Debt Claims"},
+    )
+
+    result = capture_source(Session(), source, tmp_path, 10)
     payload = (tmp_path / snapshot_filename(Source.identity)).read_text(encoding="utf-8")
 
-    assert result["status"] == "unavailable"
-    assert '"error": "canonical source has no usable HTTP URL"' in payload
+    assert result["status"] == "ok"
+    assert '"resolved_url": "https://www.justice.gov.uk/courts/procedure-rules/civil/debt-claims"' in payload
