@@ -55,6 +55,7 @@ jobs:
           run: |
             uv pip install -r requirements-dev.txt
         - name: Find changed Python files
+          id: changed-files
           shell: bash
           run: |
             if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -66,6 +67,11 @@ jobs:
               fi
             fi
             git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${RUNNER_TEMP}/changed-python-files"
+            if git diff --quiet "${base}" HEAD -- app/frontend/; then
+              echo "frontend=false" >> "${GITHUB_OUTPUT}"
+            else
+              echo "frontend=true" >> "${GITHUB_OUTPUT}"
+            fi
         - name: Lint with ruff
           shell: bash
           run: xargs -0 -r ruff check < "${RUNNER_TEMP}/changed-python-files"
@@ -91,7 +97,7 @@ jobs:
             diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --fail-under=90
         - name: Run E2E tests with Playwright
           id: e2e
-          if: runner.os != 'Windows'
+          if: runner.os != 'Windows' && steps.changed-files.outputs.frontend == 'true'
           run: |
             playwright install chromium --with-deps
             pytest tests/e2e.py --tracing=retain-on-failure
