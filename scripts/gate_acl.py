@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from azure.identity.aio import AzureDeveloperCliCredential
+from azure.identity.aio import AzureCliCredential, AzureDeveloperCliCredential
 from azure.search.documents.aio import SearchClient
 
 try:
@@ -14,9 +14,18 @@ except ImportError:
     from gate_common import GateFailure, gate_parser, passing_report, run_gate
 
 
+def create_search_credential(tenant_id: str):
+    credential_kind = os.environ.get("V4_SEARCH_CREDENTIAL", "azd").strip().lower()
+    if credential_kind == "azure-cli":
+        return AzureCliCredential(tenant_id=tenant_id)
+    if credential_kind == "azd":
+        return AzureDeveloperCliCredential(tenant_id=tenant_id)
+    raise GateFailure("V4_SEARCH_CREDENTIAL must be azure-cli or azd")
+
+
 async def search_counts(search_service: str, index_name: str, tenant_id: str) -> dict[str, int]:
     endpoint = f"https://{search_service}.search.windows.net"
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id)
+    credential = create_search_credential(tenant_id)
     try:
         token = await credential.get_token("https://search.azure.com/.default")
         async with SearchClient(endpoint=endpoint, index_name=index_name, credential=credential) as client:
