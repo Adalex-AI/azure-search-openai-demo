@@ -23,6 +23,9 @@ class BrowserGateError(ValueError):
     """Raised when the live browser behavior is not proven."""
 
 
+CITATION_DISCOVERY_TIMEOUT_MS = 60_000
+
+
 def validate_browser_evidence(evidence: Any) -> dict[str, Any]:
     """Validate the evidence shape emitted by ``run_browser_gate``."""
     if not isinstance(evidence, dict):
@@ -84,7 +87,7 @@ def run_browser_gate(candidate_url: str, oracle: dict[str, Any], question: str) 
 
             subsection_selector = f".supContainer[data-subsection-id={json.dumps(str(target_case['subsection_id']))}]"
             citations = page.locator(subsection_selector)
-            citations.first.wait_for(state="visible", timeout=120_000)
+            citations.first.wait_for(state="visible", timeout=CITATION_DISCOVERY_TIMEOUT_MS)
             citation_count = citations.count()
             citations.first.click()
             page.get_by_text("Supporting content", exact=False).first.wait_for(state="visible", timeout=30_000)

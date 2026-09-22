@@ -630,6 +630,14 @@ jobs:
           V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
           V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
           V4_AGENTIC_MODE: agentic
+      - name: Upload browser highlight gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-highlight-gate-${{ inputs.release_id || github.run_number }}
+          path: reports/highlight_gate.json
+          if-no-files-found: warn
+          retention-days: 90
       - name: Generate provenance-bound ACL gate
         run: |
           python scripts/gate_acl.py \
