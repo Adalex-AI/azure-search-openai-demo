@@ -116,7 +116,10 @@ jobs:
         run: |
           rm -rf reports/html_oracle_snapshots
           python scripts/capture_html_oracle.py \
-            --output-dir reports/html_oracle_snapshots --refresh
+            --output-dir reports/html_oracle_snapshots \
+            --refresh \
+            --retries 8 \
+            --retry-delay 2
       - name: Recapture canonical PDF oracle
         run: |
           python scripts/capture_pdf_oracle.py \
