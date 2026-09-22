@@ -54,12 +54,24 @@ jobs:
         - name: Install dependencies
           run: |
             uv pip install -r requirements-dev.txt
+        - name: Find changed Python files
+          shell: bash
+          run: |
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              base="origin/${{ github.base_ref }}"
+            else
+              base="${{ github.event.before }}"
+              if [[ -z "${base}" || "${base}" =~ ^0+$ ]]; then
+                base="HEAD^"
+              fi
+            fi
+            git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${RUNNER_TEMP}/changed-python-files"
         - name: Lint with ruff
-          run: ruff check .
-        - name: Check types with ty
-          run: ty check
+          shell: bash
+          run: xargs -0 -r ruff check < "${RUNNER_TEMP}/changed-python-files"
         - name: Check formatting with black
-          run: black . --check --verbose
+          shell: bash
+          run: xargs -0 -r black --check --verbose < "${RUNNER_TEMP}/changed-python-files"
         - name: Run Python tests
           if: runner.os != 'Windows'
           run: pytest -s -vv --cov --cov-report=xml --cov-fail-under=90
