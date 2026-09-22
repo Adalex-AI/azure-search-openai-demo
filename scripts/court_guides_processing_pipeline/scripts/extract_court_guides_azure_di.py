@@ -16,6 +16,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -24,6 +25,7 @@ import time
 import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
@@ -67,8 +69,8 @@ GUIDE_METADATA = {
     "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf": {
         "category": "King's Bench Division",
         "sourcefile": "King's Bench Division Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2025/01/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf",
-        "updated": "2025-01-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/09/Kings-Bench-Division-Guide-1.pdf",
+        "updated": "2026-04-01T00:00:00Z",
         "split_level": 2,
         "sourcepage_style": "numbered",
         "annex_as_single": True,
@@ -99,8 +101,8 @@ GUIDE_METADATA = {
     "The-Technology-and-Construction-Court-Guide.pdf": {
         "category": "Technology and Construction Court",
         "sourcefile": "Technology and Construction Court Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/12/TCC-Guide-Amended.pdf",
-        "updated": "2022-10-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2026/06/46.20_JO_Technology_and_Construction_Court_Guide_2026_WEB.pdf",
+        "updated": "2026-06-01T00:00:00Z",
         "split_level": 4,
         "sourcepage_style": "section_dot",
         "annex_as_single": False,
@@ -222,7 +224,7 @@ def strip_ogl_tail(text: str) -> str:
     # Also match "@ Crown copyright" or "© Crown copyright" standalone
     m = re.search(r"\n\s*[@©☒]\s*Crown copyright", text)
     if m and m.start() > len(text) * 0.5:
-        return text[:m.start()].rstrip()
+        return text[: m.start()].rstrip()
     return text
 
 
@@ -262,20 +264,17 @@ def is_toc_section(heading: str, content: str) -> bool:
     We require evidence in the content: either ToC-style tables with page numbers,
     or a high density of numbered chapter/section references.
     """
-    lines = [l.strip() for l in content.split("\n") if l.strip()]
+    lines = [line.strip() for line in content.split("\n") if line.strip()]
     if not lines:
         return False
-    table_lines = sum(1 for l in lines if l.startswith(("<t", "</t")))
+    table_lines = sum(1 for line in lines if line.startswith(("<t", "</t")))
 
     # Heading is exactly "Contents" — only flag as ToC if content looks like one
     if heading.lower().strip() == "contents":
         if _tables_look_like_toc(content):
             return True
         # Also catch non-table ToC pages: many lines ending with page numbers
-        page_ref_lines = sum(
-            1 for l in lines
-            if re.search(r"\b\d{1,3}\s*$", l) and len(l) > 10
-        )
+        page_ref_lines = sum(1 for line in lines if re.search(r"\b\d{1,3}\s*$", line) and len(line) > 10)
         if page_ref_lines > 5:
             return True
         # Short content under a "Contents" heading with no ToC indicators → not a ToC
@@ -365,7 +364,9 @@ def parse_with_azure_di(pdf_path: str) -> str:
     return result.content
 
 
-def extract_sections(markdown: str, split_level: int, annex_as_single: bool, metadata: dict | None = None) -> list[Section]:
+def extract_sections(
+    markdown: str, split_level: int, annex_as_single: bool, metadata: dict | None = None
+) -> list[Section]:
     """Parse Azure DI markdown into sections.
 
     split_level: Create a new document at headings of this level or higher.
@@ -563,16 +564,18 @@ def chunk_large_document(doc: Document, max_content_length: int = 12000) -> list
         if current_len + para_len > max_content_length and current_chunk:
             chunk_content = "\n\n".join(current_chunk)
             chunk_num = len(chunks) + 1
-            chunks.append(Document(
-                id=f"{doc.id}_part_{chunk_num}",
-                sourcepage=f"{doc.sourcepage} [Part {chunk_num}]",
-                parent_id=doc.id,
-                category=doc.category,
-                sourcefile=doc.sourcefile,
-                storageUrl=doc.storageUrl,
-                updated=doc.updated,
-                content=chunk_content,
-            ))
+            chunks.append(
+                Document(
+                    id=f"{doc.id}_part_{chunk_num}",
+                    sourcepage=f"{doc.sourcepage} [Part {chunk_num}]",
+                    parent_id=doc.id,
+                    category=doc.category,
+                    sourcefile=doc.sourcefile,
+                    storageUrl=doc.storageUrl,
+                    updated=doc.updated,
+                    content=chunk_content,
+                )
+            )
             current_chunk = [para]
             current_len = para_len
         else:
@@ -584,16 +587,18 @@ def chunk_large_document(doc: Document, max_content_length: int = 12000) -> list
         chunk_content = "\n\n".join(current_chunk)
         if len(chunks) == 0:
             return [doc]
-        chunks.append(Document(
-            id=f"{doc.id}_part_{chunk_num}",
-            sourcepage=f"{doc.sourcepage} [Part {chunk_num}]",
-            parent_id=doc.id,
-            category=doc.category,
-            sourcefile=doc.sourcefile,
-            storageUrl=doc.storageUrl,
-            updated=doc.updated,
-            content=chunk_content,
-        ))
+        chunks.append(
+            Document(
+                id=f"{doc.id}_part_{chunk_num}",
+                sourcepage=f"{doc.sourcepage} [Part {chunk_num}]",
+                parent_id=doc.id,
+                category=doc.category,
+                sourcefile=doc.sourcefile,
+                storageUrl=doc.storageUrl,
+                updated=doc.updated,
+                content=chunk_content,
+            )
+        )
 
     logger.info("Chunked '%s' (%d chars) into %d parts", doc.id, len(doc.content), len(chunks))
     return chunks
@@ -611,7 +616,9 @@ def merge_short_sections(sections: list[Section], min_content_length: int = 80) 
         content_text = clean_content("\n".join(section.content_lines))
 
         if pending is not None:
-            merged_lines = pending.content_lines + ["", f"{'#' * section.level} {section.heading}", ""] + section.content_lines
+            merged_lines = (
+                pending.content_lines + ["", f"{'#' * section.level} {section.heading}", ""] + section.content_lines
+            )
             section = Section(
                 heading=pending.heading,
                 level=pending.level,
@@ -697,30 +704,79 @@ def sections_to_documents(
 # ── Main Pipeline ───────────────────────────────────────────────────────────────
 
 
+def capture_canonical_sources(sources_dir: Path, manifest_path: Path) -> dict:
+    """Download registered sources and record their immutable content hashes."""
+    sources_dir.mkdir(parents=True, exist_ok=True)
+    sources = []
+
+    for filename, metadata in GUIDE_METADATA.items():
+        request = Request(metadata["storageUrl"], headers={"User-Agent": "court-guide-capture/1.0"})
+        try:
+            with urlopen(request, timeout=30) as response:
+                content = response.read()
+        except OSError as error:
+            raise RuntimeError(
+                f"Failed to capture canonical source {filename} from {metadata['storageUrl']}"
+            ) from error
+        if not content.startswith(b"%PDF-"):
+            raise ValueError(f"Canonical source is not a PDF: {filename}")
+
+        (sources_dir / filename).write_bytes(content)
+        sources.append(
+            {
+                "filename": filename,
+                "sourcefile": metadata["sourcefile"],
+                "storageUrl": metadata["storageUrl"],
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        )
+
+    manifest = {"schema_version": 1, "source_count": len(sources), "sources": sources}
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    return manifest
+
+
+def update_extraction_manifest(manifest_path: Path, filename: str, document_count: int) -> dict:
+    """Record the processed artifact produced from a captured canonical source."""
+    manifest = json.loads(manifest_path.read_text())
+    source = next((source for source in manifest["sources"] if source["filename"] == filename), None)
+    if source is None:
+        raise ValueError(f"No captured source metadata for {filename}")
+
+    processed_json = f"{Path(filename).stem}_processed.json"
+    artifact_path = manifest_path.parent / processed_json
+    if not artifact_path.is_file():
+        raise FileNotFoundError(f"Processed artifact not found: {artifact_path}")
+
+    guides = manifest.setdefault("guides", {})
+    guides[source["sourcefile"]] = {
+        "processed_json": processed_json,
+        "processed_json_sha256": hashlib.sha256(artifact_path.read_bytes()).hexdigest(),
+        "document_count": document_count,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    return manifest
+
+
 def process_pdf(pdf_path: str, output_dir: str, dry_run: bool = False) -> list[dict]:
     """Full pipeline: PDF -> Azure DI -> sections -> documents -> JSON."""
     pdf_name = os.path.basename(pdf_path)
 
-    if pdf_name in GUIDE_METADATA:
-        metadata = GUIDE_METADATA[pdf_name]
-    else:
-        logger.warning("No metadata for %s — using defaults", pdf_name)
-        stem = Path(pdf_name).stem
-        metadata = {
-            "category": stem.replace("-", " ").replace("_", " "),
-            "sourcefile": stem,
-            "storageUrl": "",
-            "updated": time.strftime("%Y-%m-%dT00:00:00Z"),
-            "split_level": 2,
-            "sourcepage_style": "numbered",
-            "annex_as_single": True,
-        }
+    if pdf_name not in GUIDE_METADATA:
+        raise ValueError(f"No registered metadata for {pdf_name}")
+    metadata = GUIDE_METADATA[pdf_name]
 
     split_level = metadata.get("split_level", 2)
     annex_as_single = metadata.get("annex_as_single", True)
 
-    logger.info("Processing: %s (category=%s, split_level=%d, annex_as_single=%s)",
-                pdf_name, metadata["category"], split_level, annex_as_single)
+    logger.info(
+        "Processing: %s (category=%s, split_level=%d, annex_as_single=%s)",
+        pdf_name,
+        metadata["category"],
+        split_level,
+        annex_as_single,
+    )
 
     # Step 1: Parse with Azure DI (reuse cached markdown if available)
     md_path = os.path.join(output_dir, Path(pdf_name).stem + "_azure_di.md")
@@ -793,22 +849,26 @@ def main():
         help="Output directory for processed JSONs (default: ../outputs_azure_di/)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Parse and report only, no file output")
+    parser.add_argument("--capture-canonical", action="store_true", help="Download registered canonical PDF sources")
+    parser.add_argument("--manifest", help="Path to the canonical source manifest")
     args = parser.parse_args()
 
     output_dir = os.path.abspath(args.output_dir)
     if not args.dry_run:
         os.makedirs(output_dir, exist_ok=True)
 
+    sources_dir = os.path.abspath(args.sources_dir)
+    manifest_path = Path(args.manifest) if args.manifest else Path(output_dir) / "court_guides_extraction_manifest.json"
+    if args.capture_canonical:
+        capture_canonical_sources(Path(sources_dir), manifest_path)
+
     if args.pdf:
         pdfs = [os.path.abspath(args.pdf)]
     else:
-        sources_dir = os.path.abspath(args.sources_dir)
-        pdfs = sorted(
-            os.path.join(sources_dir, f)
-            for f in os.listdir(sources_dir)
-            if f.lower().endswith(".pdf")
-        )
+        pdfs = sorted(os.path.join(sources_dir, f) for f in os.listdir(sources_dir) if f.lower().endswith(".pdf"))
         logger.info("Found %d PDFs in %s", len(pdfs), sources_dir)
+        if not pdfs:
+            raise SystemExit("No PDF sources found")
 
     total_docs = 0
     results = {}
@@ -819,6 +879,8 @@ def main():
             docs = process_pdf(pdf_path, output_dir, dry_run=args.dry_run)
             total_docs += len(docs)
             results[pdf_name] = len(docs)
+            if args.capture_canonical and not args.dry_run:
+                update_extraction_manifest(manifest_path, pdf_name, len(docs))
         except Exception:
             logger.exception("Failed to process %s", pdf_name)
             results[pdf_name] = "ERROR"

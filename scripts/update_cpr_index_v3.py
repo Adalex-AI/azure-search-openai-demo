@@ -22,23 +22,24 @@ Usage:
     # Verbose diff output:
     python scripts/update_cpr_index_v3.py --dry-run --verbose
 """
-import os
-import sys
-import json
-import re
-import io
-import time
-import logging
+
 import argparse
 import hashlib
+import io
+import json
+import logging
+import os
+import re
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-
-import requests
-import pypdf
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+import pypdf
+import requests
+from bs4 import BeautifulSoup
 
 # ---------------------------------------------------------------------------
 # Path setup
@@ -50,9 +51,10 @@ SCRAPER_DIR = SCRIPT_DIR / "legal-scraper"
 sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SCRAPER_DIR))
 
-from load_azd_env import load_azd_env
-from customizations.subsection_extractor import SubsectionExtractor
-from token_chunker import LegalDocumentChunker
+from token_chunker import LegalDocumentChunker  # noqa: E402
+
+from customizations.subsection_extractor import SubsectionExtractor  # noqa: E402
+from load_azd_env import load_azd_env  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -75,67 +77,306 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 # ---------------------------------------------------------------------------
 ACTION_LIST = [
     # ── Section A: 14 docs with content drift ──
-    {"sourcefile": "Part 44", "azure_id": "Part_44___General_Rules_about_Costs", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-44-general-rules-about-costs", "section": "A"},
-    {"sourcefile": "Part 46", "azure_id": "Part_46___Costs_special_cases", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-46-costs-special-cases", "section": "A"},
-    {"sourcefile": "Part 5", "azure_id": "Part_5___Court_Documents", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part05", "section": "A"},
-    {"sourcefile": "Part 77", "azure_id": "Part_77___Provision_in_Support_of_Criminal_Justice", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part77", "section": "A"},
-    {"sourcefile": "Part 8", "azure_id": "Part_8___Alternative_Procedure_for_Claims", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part08", "section": "A"},
-    {"sourcefile": "Practice Direction 16", "azure_id": "Practice_Direction_16", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part16/pd_part16", "section": "A"},
-    {"sourcefile": "Practice Direction 27A", "azure_id": "Practice_Direction_27A___Small_Claims_Track", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part27/pd_part27", "section": "A"},
-    {"sourcefile": "Practice Direction 41A", "azure_id": "Practice_Direction_41A___Provisional_Damages", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part41/pd_part41a", "section": "A"},
-    {"sourcefile": "Practice Direction 51Z", "azure_id": "Practice_Direction_51ZG3___Pilot_scheme_for_certain_High_Court_qualified_one-way_costs_shifting__QOC", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/practice-direction-51zh-access-to-public-domain-documents", "section": "A"},
-    {"sourcefile": "Practice Direction 54D", "azure_id": "Practice_Direction_54D___Planning_Court_Claims", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part54/practice-direction-54e-planning-court-claims", "section": "A"},
-    {"sourcefile": "Practice Direction 57B", "azure_id": "Practice_Direction_57B___Proceedings_under_the_Presumption_of_Death_Act_2013", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part57/practice-direction-57b-proceedings-under-the-presumption-of-death-act-2013", "section": "A"},
-    {"sourcefile": "Practice Direction 62", "azure_id": "Practice_Direction_62", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part62/pd_part62", "section": "A"},
-    {"sourcefile": "Practice Direction 64B", "azure_id": "Practice_Direction_64B___Applications_to_the_Court_for_Directions_by_Trustees_in_Relation_to_the_Adm", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part64/pd_part64b", "section": "A"},
-    {"sourcefile": "Practice Direction 74A", "azure_id": "Practice_Direction_74A___Enforcement_of_Judgments_in_different_Jurisdictions", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part74/pd_part74a", "section": "A"},
+    {
+        "sourcefile": "Part 44",
+        "azure_id": "Part_44___General_Rules_about_Costs",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-44-general-rules-about-costs",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Part 46",
+        "azure_id": "Part_46___Costs_special_cases",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-46-costs-special-cases",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Part 5",
+        "azure_id": "Part_5___Court_Documents",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part05",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Part 77",
+        "azure_id": "Part_77___Provision_in_Support_of_Criminal_Justice",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part77",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Part 8",
+        "azure_id": "Part_8___Alternative_Procedure_for_Claims",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part08",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 16",
+        "azure_id": "Practice_Direction_16",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part16/pd_part16",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 27A",
+        "azure_id": "Practice_Direction_27A___Small_Claims_Track",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part27/pd_part27",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 41A",
+        "azure_id": "Practice_Direction_41A___Provisional_Damages",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part41/pd_part41a",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 51Z",
+        "azure_id": "Practice_Direction_51ZG3___Pilot_scheme_for_certain_High_Court_qualified_one-way_costs_shifting__QOC",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/practice-direction-51zh-access-to-public-domain-documents",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 54D",
+        "azure_id": "Practice_Direction_54D___Planning_Court_Claims",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part54/practice-direction-54e-planning-court-claims",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 57B",
+        "azure_id": "Practice_Direction_57B___Proceedings_under_the_Presumption_of_Death_Act_2013",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part57/practice-direction-57b-proceedings-under-the-presumption-of-death-act-2013",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 62",
+        "azure_id": "Practice_Direction_62",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part62/pd_part62",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 64B",
+        "azure_id": "Practice_Direction_64B___Applications_to_the_Court_for_Directions_by_Trustees_in_Relation_to_the_Adm",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part64/pd_part64b",
+        "section": "A",
+    },
+    {
+        "sourcefile": "Practice Direction 74A",
+        "azure_id": "Practice_Direction_74A___Enforcement_of_Judgments_in_different_Jurisdictions",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part74/pd_part74a",
+        "section": "A",
+    },
     # ── Section B: 1 scraper investigation ──
-    {"sourcefile": "Part 82", "azure_id": "Part_82___Closed_material_procedure_chunk_001", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-82-closed-material-procedure", "section": "B"},
+    {
+        "sourcefile": "Part 82",
+        "azure_id": "Part_82___Closed_material_procedure_chunk_001",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-82-closed-material-procedure",
+        "section": "B",
+    },
     # ── Section C: 25 docs needing manual review ──
-    {"sourcefile": "Part 2", "azure_id": "Part_2___Application_and_Interpretation_of_the_Rules", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part02", "section": "C"},
-    {"sourcefile": "Part 30", "azure_id": "Part_30___Transfer", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part30", "section": "C"},
-    {"sourcefile": "Part 52", "azure_id": "Part_52___Appeals_chunk_001", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52", "section": "C"},
-    {"sourcefile": "Part 53", "azure_id": "Part_53___Media_and_Communications_Claims", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part53", "section": "C"},
-    {"sourcefile": "Part 62", "azure_id": "Part_62___Arbitration_Claims", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part62", "section": "C"},
-    {"sourcefile": "Part 65", "azure_id": "Part_65___Proceedings_Relating_to_Anti-Social_Behaviour_and_Harassment_chunk_001", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part65", "section": "C"},
-    {"sourcefile": "Part 74", "azure_id": "Part_74___Enforcement_of_Judgments_in_Different_Jurisdictions", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part74", "section": "C"},
-    {"sourcefile": "Part 79", "azure_id": "Part_79___Proceedings_under_the_counter-terrorism_act_2008__part_1_of_the_terrorist_asset-freezing_e", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part79", "section": "C"},
-    {"sourcefile": "Part 80", "azure_id": "Part_80___Proceedings_under_the_Terrorism_Prevention_and_Investigation_Measures_Act_2011", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part80", "section": "C"},
-    {"sourcefile": "Practice Direction 30", "azure_id": "Practice_Direction_30", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part30/pd_part30", "section": "C"},
-    {"sourcefile": "Practice Direction 31A", "azure_id": "Practice_Direction_31A___Disclosure_and_Inspection", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/pd_part31a", "section": "C"},
-    {"sourcefile": "Practice Direction 31B", "azure_id": "Practice_Direction_31B___Disclosure_of_Electronic_Documents", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/pd_part31b", "section": "C"},
-    {"sourcefile": "Practice Direction 31C", "azure_id": "Practice_Direction_31C___Disclosure_and_inspection_in_relation_to_competition_claims", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/practice-direction-31c-disclosure-and-inspection-in-relation-to-competition-claims", "section": "C"},
-    {"sourcefile": "Practice Direction 34A", "azure_id": "Practice_Direction_34A___Depositions_and_Court_Attendance_by_Witnesses", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part34/pd_part34a", "section": "C"},
-    {"sourcefile": "Practice Direction 40B", "azure_id": "Practice_Direction_40B___Judgments___Orders", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part40/pd_part40b", "section": "C"},
-    {"sourcefile": "Practice Direction 46", "azure_id": "Practice_Direction_46___Costs_Special_Cases", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-46-costs-special-cases/practice-direction-46-costs-special-cases", "section": "C"},
-    {"sourcefile": "Practice Direction 51R", "azure_id": "Practice_Direction_51R___Online_Civil_Money_Claims_Pilot_chunk_001", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/practice-direction-51r-online-court-pilot", "section": "C"},
-    {"sourcefile": "Practice Direction 52C", "azure_id": "Practice_Direction_52C___Appeals_to_the_Court_of_Appeal", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52c-appeals-to-the-court-of-appeal", "section": "C"},
-    {"sourcefile": "Practice Direction 52D", "azure_id": "Practice_Direction_52D___Statutory_appeals_and_appeals_subject_to_special_provision_chunk_001", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52d-statutory-appeals-and-appeals-subject-to-special-provision", "section": "C"},
-    {"sourcefile": "Practice Direction 52E", "azure_id": "Practice_Direction_52E___Appeals_by_way_of_case_stated", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52e-appeals-by-way-of-case-stated", "section": "C"},
-    {"sourcefile": "Practice Direction 57", "azure_id": "Practice_Direction_57", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part57/pd_part57", "section": "C"},
-    {"sourcefile": "Practice Direction 63", "azure_id": "Practice_Direction_63", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part63/pd_part63", "section": "C"},
-    {"sourcefile": "Practice Direction 6B", "azure_id": "Practice_Direction_6B___Service_out_of_the_Jurisdiction", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part06/pd_part06b", "section": "C"},
-    {"sourcefile": "Practice Direction 77", "azure_id": "Practice_Direction_77", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part77/pd_part77", "section": "C"},
-    {"sourcefile": "Practice Direction 7B", "azure_id": "Practice_Direction_7B-_Production_Centre", "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part07/pd_part07c", "section": "C"},
+    {
+        "sourcefile": "Part 2",
+        "azure_id": "Part_2___Application_and_Interpretation_of_the_Rules",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part02",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 30",
+        "azure_id": "Part_30___Transfer",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part30",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 52",
+        "azure_id": "Part_52___Appeals_chunk_001",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 53",
+        "azure_id": "Part_53___Media_and_Communications_Claims",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part53",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 62",
+        "azure_id": "Part_62___Arbitration_Claims",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part62",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 65",
+        "azure_id": "Part_65___Proceedings_Relating_to_Anti-Social_Behaviour_and_Harassment_chunk_001",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part65",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 74",
+        "azure_id": "Part_74___Enforcement_of_Judgments_in_Different_Jurisdictions",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part74",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 79",
+        "azure_id": "Part_79___Proceedings_under_the_counter-terrorism_act_2008__part_1_of_the_terrorist_asset-freezing_e",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part79",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Part 80",
+        "azure_id": "Part_80___Proceedings_under_the_Terrorism_Prevention_and_Investigation_Measures_Act_2011",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part80",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 30",
+        "azure_id": "Practice_Direction_30",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part30/pd_part30",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 31A",
+        "azure_id": "Practice_Direction_31A___Disclosure_and_Inspection",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/pd_part31a",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 31B",
+        "azure_id": "Practice_Direction_31B___Disclosure_of_Electronic_Documents",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/pd_part31b",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 31C",
+        "azure_id": "Practice_Direction_31C___Disclosure_and_inspection_in_relation_to_competition_claims",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part31/practice-direction-31c-disclosure-and-inspection-in-relation-to-competition-claims",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 34A",
+        "azure_id": "Practice_Direction_34A___Depositions_and_Court_Attendance_by_Witnesses",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part34/pd_part34a",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 40B",
+        "azure_id": "Practice_Direction_40B___Judgments___Orders",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part40/pd_part40b",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 46",
+        "azure_id": "Practice_Direction_46___Costs_Special_Cases",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part-46-costs-special-cases/practice-direction-46-costs-special-cases",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 51R",
+        "azure_id": "Practice_Direction_51R___Online_Civil_Money_Claims_Pilot_chunk_001",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/practice-direction-51r-online-court-pilot",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 52C",
+        "azure_id": "Practice_Direction_52C___Appeals_to_the_Court_of_Appeal",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52c-appeals-to-the-court-of-appeal",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 52D",
+        "azure_id": "Practice_Direction_52D___Statutory_appeals_and_appeals_subject_to_special_provision_chunk_001",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52d-statutory-appeals-and-appeals-subject-to-special-provision",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 52E",
+        "azure_id": "Practice_Direction_52E___Appeals_by_way_of_case_stated",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52/practice-direction-52e-appeals-by-way-of-case-stated",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 57",
+        "azure_id": "Practice_Direction_57",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part57/pd_part57",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 63",
+        "azure_id": "Practice_Direction_63",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part63/pd_part63",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 6B",
+        "azure_id": "Practice_Direction_6B___Service_out_of_the_Jurisdiction",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part06/pd_part06b",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 77",
+        "azure_id": "Practice_Direction_77",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part77/pd_part77",
+        "section": "C",
+    },
+    {
+        "sourcefile": "Practice Direction 7B",
+        "azure_id": "Practice_Direction_7B-_Production_Centre",
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part07/pd_part07c",
+        "section": "C",
+    },
     # ── Section D: 2 missing docs ──
-    {"sourcefile": "Devolution Issues and Crown Office Applications in Wales (Welsh)", "azure_id": None, "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/devolution_issues_welsh", "section": "D"},
-    {"sourcefile": "PRACTICE DIRECTION 5C", "azure_id": None, "url": "https://www.justice.gov.uk/practice-direction-5c-ce-file-electronic-filing-and-case-management-system", "section": "D"},
+    {
+        "sourcefile": "Devolution Issues and Crown Office Applications in Wales (Welsh)",
+        "azure_id": None,
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/devolution_issues_welsh",
+        "section": "D",
+    },
+    {
+        "sourcefile": "PRACTICE DIRECTION 5C",
+        "azure_id": None,
+        "url": "https://www.justice.gov.uk/practice-direction-5c-ce-file-electronic-filing-and-case-management-system",
+        "section": "D",
+    },
     # ── Bonus: Debt Claims PAP (PDF) ──
-    {"sourcefile": "Pre-Action Protocol for Debt Claims", "azure_id": None, "url": "DISCOVER_FROM_PROTOCOL_PAGE", "section": "DEBT"},
+    {
+        "sourcefile": "Pre-Action Protocol for Debt Claims",
+        "azure_id": None,
+        "url": "https://www.justice.gov.uk/courts/procedure-rules/civil/pdf/protocols/debt-pap.pdf",
+        "section": "DEBT",
+    },
 ]
 
 CATEGORY = "Civil Procedure Rules and Practice Directions"
 PROTOCOL_INDEX_URL = "https://www.justice.gov.uk/courts/procedure-rules/civil/protocol"
+TITLE_ALIASES = {
+    "practice direction 40f": {"non-disclosure orders information scheme"},
+}
+
+
+def verify_scrape_target(action_entry: dict, final_url: str, page_title: str) -> tuple[bool, str]:
+    """Verify that a scraped page is the requested legal source."""
+    expected_url = str(action_entry.get("url") or "").rstrip("/")
+    observed_url = str(final_url or "").rstrip("/")
+    if not expected_url or not observed_url:
+        return False, "missing url"
+    if expected_url != observed_url:
+        return False, "url mismatch"
+
+    expected_title = str(action_entry.get("sourcefile") or "").strip().casefold()
+    observed_title = str(page_title or "").strip().casefold()
+    if not expected_title or not observed_title:
+        return False, "missing title"
+    if observed_title == expected_title or observed_title in TITLE_ALIASES.get(expected_title, set()):
+        return True, "ok"
+    return False, "title mismatch"
+
 
 # ---------------------------------------------------------------------------
 # HTTP session
 # ---------------------------------------------------------------------------
 def make_session() -> requests.Session:
     sess = requests.Session()
-    sess.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    })
+    sess.headers.update(
+        {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+    )
     return sess
 
 
@@ -172,10 +413,20 @@ def fetch_soup(session: requests.Session, url: str) -> Optional[BeautifulSoup]:
 
 def clean_html(soup: BeautifulSoup) -> BeautifulSoup:
     noise = [
-        "script", "style", "nav", "header", "footer",
-        ".tools", ".back-to-top", ".related-items",
-        "#cookie-banner", ".global-cookie-message",
-        ".breadcrumb", "#breadcrumb", ".breadcrumbs", ".you-are-here",
+        "script",
+        "style",
+        "nav",
+        "header",
+        "footer",
+        ".tools",
+        ".back-to-top",
+        ".related-items",
+        "#cookie-banner",
+        ".global-cookie-message",
+        ".breadcrumb",
+        "#breadcrumb",
+        ".breadcrumbs",
+        ".you-are-here",
     ]
     for sel in noise:
         for el in soup.select(sel):
@@ -186,12 +437,21 @@ def clean_html(soup: BeautifulSoup) -> BeautifulSoup:
     return soup
 
 
-def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
+def scrape_page(
+    session: requests.Session,
+    action_entry: dict | str,
+    prefetched_result: Optional[tuple] = None,
+) -> Optional[dict]:
     """
     Scrape a single justice.gov.uk page.
     Returns {"content": str, "title": str, "updated": str} or None.
     """
-    soup = fetch_soup(session, url)
+    url = action_entry["url"] if isinstance(action_entry, dict) else action_entry
+
+    if prefetched_result is not None:
+        soup, _, _ = prefetched_result
+    else:
+        soup = fetch_soup(session, url)
     if not soup:
         return None
 
@@ -222,7 +482,7 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
     context_rule = ""
     paragraphs = []
 
-    elements = content_div.find_all(["h1", "h2", "h3", "h4", "p", "div", "li", "table"])
+    elements = content_div.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "li", "table"])
     for elem in elements:
         if not elem.parent:
             continue
@@ -249,8 +509,7 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
             continue
 
         if elem.name == "h1" or (
-            elem.name == "p"
-            and re.match(r"^(PART|PRACTICE\s+DIRECTIONS?)\b", text, re.IGNORECASE)
+            elem.name == "p" and re.match(r"^(PART|PRACTICE\s+DIRECTIONS?)\b", text, re.IGNORECASE)
         ):
             context_part = text
             context_rule = ""
@@ -260,23 +519,21 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
         is_generic = re.match(
             r"^(DATA PROTECTION|MISUSE OF PRIVATE|HARASSMENT|DEFAMATION|INTRODUCTION"
             r"|OBJECTIVES|PROPORTIONALITY|EXPERTS|SETTLEMENT|LIMITATION)",
-            text, re.IGNORECASE,
+            text,
+            re.IGNORECASE,
         )
-        if (
-            (elem.name in ["h2", "h3", "h4"])
-            or (
-                elem.name == "p"
-                and (
-                    re.match(r"^(Rule|Para\.?|Paragraph)\s*\d+|^\d+(\.\d+)?", text, re.IGNORECASE)
-                    or is_generic
-                )
-            )
-        ) and len(text) < 100:
+        if (elem.name in ["h2", "h3", "h4", "h5", "h6"]) or (
+            elem.name == "p"
+            and (re.match(r"^(Rule|Para\.?|Paragraph)\s*\d+|^\d+(\.\d+)?", text, re.IGNORECASE) or is_generic)
+            and len(text) < 100
+        ):
             context_rule = text
             paragraphs.append(f"## {text}")
             continue
 
-        if elem.name in ["p", "li"] and not elem.find_all(["p", "li"]):
+        if elem.name in ["p", "li"]:
+            if elem.name == "p" and elem.find_all(["p", "li"]):
+                continue
             bc = ""
             if context_part or context_rule:
                 parts = [c for c in [context_part, context_rule] if c]
@@ -338,8 +595,7 @@ def has_existing_header(text: str) -> bool:
         return False
     head = [line.strip() for line in text.splitlines()[:6] if line.strip()]
     return any(
-        line.startswith(("SOURCE:", "SOURCEPAGE:", "SECTION:"))
-        or (line.startswith("[") and ">" in line)
+        line.startswith(("SOURCE:", "SOURCEPAGE:", "SECTION:")) or (line.startswith("[") and ">" in line)
         for line in head
     )
 
@@ -364,7 +620,9 @@ def extract_parent_section(value: str) -> str:
         return ""
     raw = value.strip()
     first_seg = raw.split(",", 1)[0].strip()
-    if re.match(r"^[A-Z]\.", first_seg) or re.match(r"^(Section|Appendix|Part|Practice Direction)\b", first_seg, re.IGNORECASE):
+    if re.match(r"^[A-Z]\.", first_seg) or re.match(
+        r"^(Section|Appendix|Part|Practice Direction)\b", first_seg, re.IGNORECASE
+    ):
         return first_seg
     for pat in [
         r"\b(Practice Direction\s+[0-9A-Z]+)\b",
@@ -390,20 +648,9 @@ def build_index_docs(action_entry: dict, scraped: dict) -> list[dict]:
     fallback_id = sanitize_id(sourcefile)
     doc_id = generate_id_from_content(title, content, fallback_id)
 
-    # Extract sourcefile from title (Part number)
+    # The action list owns the canonical sourcefile used for filtering and citations.
+    # The page title can vary in casing and wording, and is preserved in sourcepage.
     sf = sourcefile
-    if "–" in title:
-        sf_candidate = title.split("–")[0].strip()
-        if sf_candidate:
-            sf = sf_candidate
-    elif "-" in title:
-        sf_candidate = title.split("-")[0].strip()
-        if sf_candidate:
-            sf = sf_candidate
-
-    # For PAPs, keep the full sourcefile
-    if "pre-action" in sourcefile.lower() or "protocol" in sourcefile.lower():
-        sf = sourcefile
 
     # Chunk if needed
     chunker = LegalDocumentChunker(max_tokens=8000, overlap_tokens=200)
@@ -446,21 +693,23 @@ def build_index_docs(action_entry: dict, scraped: dict) -> list[dict]:
             if hdr:
                 final_content = "\n".join(hdr) + "\n\n" + final_content
 
-        docs.append({
-            "id": sanitize_id(chunk_id),
-            "content": final_content,
-            "embedding": [],
-            "category": CATEGORY,
-            "sourcepage": title or sourcefile,
-            "sourcefile": sf,
-            "storageUrl": url,
-            "oids": ["all"],
-            "groups": ["all", "36094ff3-5c6d-49ef-b385-fa37118527e3"],
-            "parent_id": sanitize_id(doc_id),
-            "subsection_id": subsection_id,
-            "subsections": subsections,
-            "updated": updated,
-        })
+        docs.append(
+            {
+                "id": sanitize_id(chunk_id),
+                "content": final_content,
+                "embedding": [],
+                "category": CATEGORY,
+                "sourcepage": title or sourcefile,
+                "sourcefile": sf,
+                "storageUrl": url,
+                "oids": ["all"],
+                "groups": ["all", "36094ff3-5c6d-49ef-b385-fa37118527e3"],
+                "parent_id": sanitize_id(doc_id),
+                "subsection_id": subsection_id,
+                "subsections": subsections,
+                "updated": updated,
+            }
+        )
 
     return docs
 
@@ -493,6 +742,7 @@ def discover_debt_claims_url(session: requests.Session) -> Optional[str]:
 def get_search_client(endpoint: str, index: str):
     from azure.identity import DefaultAzureCredential
     from azure.search.documents import SearchClient
+
     return SearchClient(endpoint=endpoint, index_name=index, credential=DefaultAzureCredential())
 
 
@@ -510,7 +760,13 @@ def get_openai_client():
         return AzureOpenAI(api_key=key, api_version="2023-05-15", azure_endpoint=ep, max_retries=3, timeout=120.0)
 
     token_provider = get_bearer_token_provider(DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default")
-    return AzureOpenAI(azure_ad_token_provider=token_provider, api_version="2023-05-15", azure_endpoint=ep, max_retries=3, timeout=120.0)
+    return AzureOpenAI(
+        azure_ad_token_provider=token_provider,
+        api_version="2023-05-15",
+        azure_endpoint=ep,
+        max_retries=3,
+        timeout=120.0,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -598,7 +854,7 @@ def delete_docs(client, ids: list[str], dry_run: bool) -> int:
         return 0
     deleted = 0
     for i in range(0, len(ids), 1000):
-        batch = [{"id": did} for did in ids[i:i + 1000]]
+        batch = [{"id": did} for did in ids[i : i + 1000]]
         try:
             client.delete_documents(documents=batch)
             deleted += len(batch)
@@ -611,8 +867,13 @@ def generate_embeddings(docs: list[dict], dry_run: bool) -> list[dict]:
     if dry_run or not docs:
         return docs
 
-    from openai import RateLimitError, APIConnectionError, APIError
-    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+    from openai import APIConnectionError, APIError, RateLimitError
+    from tenacity import (
+        retry,
+        retry_if_exception_type,
+        stop_after_attempt,
+        wait_exponential,
+    )
 
     client = get_openai_client()
     deployment = os.environ.get("AZURE_OPENAI_EMB_DEPLOYMENT", "text-embedding-3-large")
@@ -628,7 +889,7 @@ def generate_embeddings(docs: list[dict], dry_run: bool) -> list[dict]:
     batch_size = 50
     done = 0
     for i in range(0, len(docs), batch_size):
-        batch = docs[i:i + batch_size]
+        batch = docs[i : i + batch_size]
         texts = [d["content"].replace("\n", " ")[:8000] for d in batch]
         resp = _embed(texts)
         for j, data in enumerate(resp.data):
@@ -645,7 +906,7 @@ def upload_docs(client, docs: list[dict], dry_run: bool) -> int:
         return 0
     uploaded = 0
     for i in range(0, len(docs), 100):
-        batch = docs[i:i + 100]
+        batch = docs[i : i + 100]
         try:
             results = client.upload_documents(documents=batch)
             for r in results:
@@ -670,8 +931,12 @@ def compute_content_hash(content: str) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Update CPR/PD docs in index v3")
     parser.add_argument("--dry-run", action="store_true", help="Scrape and compare only, no index changes")
-    parser.add_argument("--sections", nargs="+", default=["A", "B", "C", "D", "DEBT"],
-                        help="Which sections to process (default: all). E.g. --sections A D DEBT")
+    parser.add_argument(
+        "--sections",
+        nargs="+",
+        default=["A", "B", "C", "D", "DEBT"],
+        help="Which sections to process (default: all). E.g. --sections A D DEBT",
+    )
     parser.add_argument("--verbose", action="store_true", help="Show content diffs")
     parser.add_argument("--save-json", action="store_true", help="Save scraped docs to /tmp/cpr_update_*.json")
     args = parser.parse_args()
@@ -739,8 +1004,12 @@ def main():
             continue
         results["scraped"] += 1
 
-        logger.info("   Scraped: %d chars, title='%s', updated=%s",
-                     len(scraped["content"]), scraped["title"][:60], scraped["updated"])
+        logger.info(
+            "   Scraped: %d chars, title='%s', updated=%s",
+            len(scraped["content"]),
+            scraped["title"][:60],
+            scraped["updated"],
+        )
 
         # 2. Build index documents
         new_docs = build_index_docs(entry, scraped)
@@ -787,8 +1056,13 @@ def main():
         else:
             results["unchanged_docs"] += 1
 
-        logger.info("   Status: %s | old=%d chunks, new=%d chunks, orphans=%d",
-                     status, len(existing_ids), len(new_docs), len(orphan_ids))
+        logger.info(
+            "   Status: %s | old=%d chunks, new=%d chunks, orphans=%d",
+            status,
+            len(existing_ids),
+            len(new_docs),
+            len(orphan_ids),
+        )
 
         if args.verbose and status == "UPDATED" and existing_ids:
             try:
@@ -837,9 +1111,15 @@ def main():
     # Detailed breakdown
     for d in results["details"]:
         flag = "✓" if d["status"] in ("UPDATED", "NEW") else ("=" if d["status"] == "UNCHANGED" else "✗")
-        logger.info("  %s [%s] %s: %s (old=%s, new=%s)",
-                     flag, d["section"], d.get("sourcefile", "?"), d["status"],
-                     d.get("old_chunks", "?"), d.get("new_chunks", "?"))
+        logger.info(
+            "  %s [%s] %s: %s (old=%s, new=%s)",
+            flag,
+            d["section"],
+            d.get("sourcefile", "?"),
+            d["status"],
+            d.get("old_chunks", "?"),
+            d.get("new_chunks", "?"),
+        )
 
     if args.dry_run:
         logger.info("")

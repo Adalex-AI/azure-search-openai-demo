@@ -29,15 +29,12 @@ Usage:
     pytest tests/test_index_v3.py -v -m "live"
 """
 
-import os
+import json
 import re
 import sys
-import json
-import pytest
-import hashlib
 from pathlib import Path
-from typing import Optional
-from unittest.mock import MagicMock
+
+import pytest
 
 # ── Path setup ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -50,20 +47,20 @@ sys.path.insert(0, str(BACKEND_DIR))
 sys.path.insert(0, str(SCRAPER_DIR))
 
 # ── Import project modules ──────────────────────────────────────────────────
-from customizations.subsection_extractor import SubsectionExtractor
-
 # Lazy-import scraper modules to avoid Config side-effects in unit tests
-import importlib.util
+
+from customizations.subsection_extractor import SubsectionExtractor  # noqa: E402
 
 
 def _load_scraper_module(name: str, filename: str):
     """Load a scraper module, handling import path conflicts.
-    
+
     The upload_with_embeddings.py module imports 'from config import Config'
     which conflicts with app/backend/config.py when backend is on sys.path.
     We temporarily adjust sys.path to prioritize the scraper directory.
     """
     import importlib
+
     saved_path = sys.path[:]
     saved_modules = {}
     # Temporarily prioritize scraper dir and remove backend from path
@@ -103,9 +100,7 @@ def _get_azure_clients():
     index_name = "legal-court-rag-index-v3"
     credential = DefaultAzureCredential()
 
-    _search_client = SearchClient(
-        endpoint=endpoint, index_name=index_name, credential=credential
-    )
+    _search_client = SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
     _index_client = SearchIndexClient(endpoint=endpoint, credential=credential)
     return _search_client, _index_client
 
@@ -132,9 +127,19 @@ class TestIndexSchema:
     def test_required_fields_exist(self):
         """All required fields must be present in the index."""
         required = [
-            "id", "content", "embedding", "category", "sourcepage",
-            "sourcefile", "storageUrl", "oids", "groups", "parent_id",
-            "subsection_id", "subsections", "updated",
+            "id",
+            "content",
+            "embedding",
+            "category",
+            "sourcepage",
+            "sourcefile",
+            "storageUrl",
+            "oids",
+            "groups",
+            "parent_id",
+            "subsection_id",
+            "subsections",
+            "updated",
         ]
         for field_name in required:
             assert field_name in self.fields, f"Missing field: {field_name}"
@@ -203,8 +208,6 @@ class TestDocumentCompleteness:
 
     def test_total_document_count(self):
         """v3 should have ~1784 documents (314 CPR + ~1470 Court Guides)."""
-        results = list(self.client.search(search_text="*", select=["id"], top=0, include_total_count=True))
-        # Access total count via the search results
         count_results = self.client.search(search_text="*", select=["id"], top=1, include_total_count=True)
         count = count_results.get_count()
         assert count is not None
@@ -213,13 +216,6 @@ class TestDocumentCompleteness:
 
     def test_cpr_documents_present(self):
         """CPR documents must be present with correct category."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="category eq 'Civil Procedure Rules and Practice Directions'",
-            select=["id"],
-            top=1,
-            include_total_count=True,
-        ))
         count = self.client.search(
             search_text="*",
             filter="category eq 'Civil Procedure Rules and Practice Directions'",
@@ -240,12 +236,14 @@ class TestDocumentCompleteness:
             "Patents Court",
         ]
         for cat in expected:
-            results = list(self.client.search(
-                search_text="*",
-                filter=f"category eq '{cat}'",
-                select=["id"],
-                top=1,
-            ))
+            results = list(
+                self.client.search(
+                    search_text="*",
+                    filter=f"category eq '{cat}'",
+                    select=["id"],
+                    top=1,
+                )
+            )
             display_name = cat.replace("''", "'")
             assert len(results) > 0, f"No documents found for category: {display_name}"
 
@@ -253,22 +251,26 @@ class TestDocumentCompleteness:
         """Critical CPR parts must exist (Part 1, 3, 7, 35, 44)."""
         critical_parts = ["Part 1", "Part 3", "Part 7", "Part 35", "Part 44"]
         for part in critical_parts:
-            results = list(self.client.search(
-                search_text="*",
-                filter=f"sourcefile eq '{part}'",
-                select=["id", "sourcefile"],
-                top=1,
-            ))
+            results = list(
+                self.client.search(
+                    search_text="*",
+                    filter=f"sourcefile eq '{part}'",
+                    select=["id", "sourcefile"],
+                    top=1,
+                )
+            )
             assert len(results) > 0, f"Missing critical CPR: {part}"
 
     def test_practice_directions_exist(self):
         """Practice Directions must exist."""
-        results = list(self.client.search(
-            search_text="Practice Direction",
-            filter="category eq 'Civil Procedure Rules and Practice Directions'",
-            select=["id", "sourcefile"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="Practice Direction",
+                filter="category eq 'Civil Procedure Rules and Practice Directions'",
+                select=["id", "sourcefile"],
+                top=5,
+            )
+        )
         pd_count = len([r for r in results if "Practice Direction" in (r.get("sourcefile") or r.get("id") or "")])
         assert pd_count > 0, "No Practice Directions found in index"
 
@@ -434,7 +436,7 @@ class TestScrapedFileQuality:
 
     def test_content_not_empty(self):
         """Content must not be empty for any document (>20 chars).
-        
+
         Some court guide sections are legitimate short intro/redirect pages.
         We use a 20-char threshold to catch truly empty docs while allowing
         short but valid sections.
@@ -453,9 +455,20 @@ class TestScrapedFileQuality:
 
     def test_content_contains_legal_terminology(self):
         """Documents should contain legal terms (court, rule, etc.)."""
-        legal_terms = {"court", "rule", "practice direction", "procedure",
-                       "claimant", "defendant", "proceedings", "order",
-                       "judgment", "application", "hearing", "parties"}
+        legal_terms = {
+            "court",
+            "rule",
+            "practice direction",
+            "procedure",
+            "claimant",
+            "defendant",
+            "proceedings",
+            "order",
+            "judgment",
+            "application",
+            "hearing",
+            "parties",
+        }
         docs_without_terms = []
         total_docs = 0
         for f in self.json_files[:50]:
@@ -469,13 +482,13 @@ class TestScrapedFileQuality:
                     docs_without_terms.append(f.name)
         # Allow 15% without terms (some court guide sections are tables/annexes without standard legal terminology)
         threshold = max(total_docs, 1) * 0.15
-        assert len(docs_without_terms) < threshold, (
-            f"{len(docs_without_terms)} of {total_docs} docs have no legal terms: {docs_without_terms[:5]}"
-        )
+        assert (
+            len(docs_without_terms) < threshold
+        ), f"{len(docs_without_terms)} of {total_docs} docs have no legal terms: {docs_without_terms[:5]}"
 
     def test_no_breadcrumbs_in_content(self):
         """Content should NOT have breadcrumb noise [Part X > Rule Y].
-        
+
         Breadcrumbs were removed from v3 to improve embedding quality
         and reduce token waste. Context is now provided via structured
         metadata fields (subsection_id, sourcepage, category).
@@ -491,14 +504,14 @@ class TestScrapedFileQuality:
                 if isinstance(content, list):
                     content = "\n".join(content)
                 # Match breadcrumb patterns like [Part 1 > Rule 1.1 > ...]
-                if re.search(r'\[(?:Part|Practice Direction)\s+\d.*>.*\]', content):
+                if re.search(r"\[(?:Part|Practice Direction)\s+\d.*>.*\]", content):
                     has_breadcrumb += 1
         ratio = has_breadcrumb / max(total_docs, 1)
         assert ratio < 0.05, f"{ratio:.0%} of docs still have breadcrumbs (expected < 5%)"
 
     def test_storage_urls_valid(self):
         """storageUrl should point to an official UK legal source.
-        
+
         CPR docs come from justice.gov.uk. Court guides come from
         judiciary.uk (PDF sources). Both are valid official sources.
         """
@@ -515,7 +528,7 @@ class TestScrapedFileQuality:
 
     def test_category_consistency(self):
         """All docs should have a valid category.
-        
+
         V3 index contains both CPR docs and Court Guides, each with
         their own valid category values.
         """
@@ -550,6 +563,7 @@ class TestUploadSchemaMapping:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.upload_mod = _load_scraper_module("upload_mod", "upload_with_embeddings.py")
+        self.upload_mod._INDEX_FIELDS = {"parent_id", "subsection_id", "subsections", "updated"}
 
     def test_sanitize_id_replaces_spaces(self):
         result = self.upload_mod.sanitize_id("Part 1 – Overriding Objective")
@@ -641,8 +655,24 @@ class TestUploadSchemaMapping:
         assert h1 == h2
 
     def test_compute_content_hash_changes_on_content_change(self):
-        doc1 = {"id": "test", "content": "Version 1", "sourcefile": "", "sourcepage": "", "category": "", "storageUrl": "", "updated": ""}
-        doc2 = {"id": "test", "content": "Version 2", "sourcefile": "", "sourcepage": "", "category": "", "storageUrl": "", "updated": ""}
+        doc1 = {
+            "id": "test",
+            "content": "Version 1",
+            "sourcefile": "",
+            "sourcepage": "",
+            "category": "",
+            "storageUrl": "",
+            "updated": "",
+        }
+        doc2 = {
+            "id": "test",
+            "content": "Version 2",
+            "sourcefile": "",
+            "sourcepage": "",
+            "category": "",
+            "storageUrl": "",
+            "updated": "",
+        }
         assert self.upload_mod.compute_content_hash(doc1) != self.upload_mod.compute_content_hash(doc2)
 
 
@@ -727,11 +757,13 @@ class TestSearchQuality:
 
     def test_text_search_returns_results(self):
         """Basic full-text search must return results."""
-        results = list(self.client.search(
-            search_text="overriding objective",
-            select=["id", "sourcefile", "content"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="overriding objective",
+                select=["id", "sourcefile", "content"],
+                top=5,
+            )
+        )
         assert len(results) > 0
         # Should find Part 1
         any_part1 = any("Part 1" in (r.get("sourcefile") or r.get("id") or "") for r in results)
@@ -739,13 +771,15 @@ class TestSearchQuality:
 
     def test_semantic_search_accuracy(self):
         """Semantic search for legal concept should return relevant documents."""
-        results = list(self.client.search(
-            search_text="duty of expert witnesses",
-            select=["id", "sourcefile", "sourcepage", "content"],
-            top=10,
-            query_type="semantic",
-            semantic_configuration_name="default",
-        ))
+        results = list(
+            self.client.search(
+                search_text="duty of expert witnesses",
+                select=["id", "sourcefile", "sourcepage", "content"],
+                top=10,
+                query_type="semantic",
+                semantic_configuration_name="default",
+            )
+        )
         assert len(results) > 0
         # Should find expert-related content (Part 35 CPR or court guide expert sections)
         expert_terms = {"expert", "witness"}
@@ -753,16 +787,20 @@ class TestSearchQuality:
             any(term in (r.get("sourcepage", "") + " " + r.get("content", "")[:200]).lower() for term in expert_terms)
             for r in results
         )
-        assert any_expert_content, f"No expert-related content found for 'duty of expert witnesses'. Got: {[r.get('sourcepage') for r in results]}"
+        assert (
+            any_expert_content
+        ), f"No expert-related content found for 'duty of expert witnesses'. Got: {[r.get('sourcepage') for r in results]}"
 
     def test_category_filter(self):
         """Category filter should correctly isolate document types."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="category eq 'Chancery Division'",
-            select=["id", "category"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="category eq 'Chancery Division'",
+                select=["id", "category"],
+                top=5,
+            )
+        )
         assert len(results) > 0
         for r in results:
             assert r["category"] == "Chancery Division"
@@ -770,12 +808,14 @@ class TestSearchQuality:
     def test_subsection_id_filter(self):
         """Filter by subsection_id should return specific rules."""
         # Try a common subsection
-        results = list(self.client.search(
-            search_text="*",
-            filter="subsection_id eq '1.1'",
-            select=["id", "subsection_id", "sourcefile"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="subsection_id eq '1.1'",
+                select=["id", "subsection_id", "sourcefile"],
+                top=5,
+            )
+        )
         # May or may not find exact match depending on how subsection_ids are populated
         # If subsection_id eq '1.1' exists, verify it
         for r in results:
@@ -783,46 +823,54 @@ class TestSearchQuality:
 
     def test_subsections_collection_filter(self):
         """Filter by subsections collection should find documents containing a section."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="subsections/any(s: s eq '35.1')",
-            select=["id", "subsections", "sourcefile"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="subsections/any(s: s eq '35.1')",
+                select=["id", "subsections", "sourcefile"],
+                top=5,
+            )
+        )
         for r in results:
             assert "35.1" in (r.get("subsections") or [])
 
     def test_sourcefile_filter(self):
         """Filter by sourcefile should return all chunks of a Part."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="sourcefile eq 'Part 44'",
-            select=["id", "sourcefile"],
-            top=50,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="sourcefile eq 'Part 44'",
+                select=["id", "sourcefile"],
+                top=50,
+            )
+        )
         assert len(results) > 0
         for r in results:
             assert r["sourcefile"] == "Part 44"
 
     def test_multi_category_filter(self):
         """OR filter across categories should return mixed results."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="category eq 'Civil Procedure Rules and Practice Directions' or category eq 'Chancery Division'",
-            select=["id", "category"],
-            top=10,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="category eq 'Civil Procedure Rules and Practice Directions' or category eq 'Chancery Division'",
+                select=["id", "category"],
+                top=10,
+            )
+        )
         categories = set(r["category"] for r in results)
         assert len(categories) >= 1  # At least one category present
 
     def test_storageUrl_filter(self):
         """Filter by storageUrl for specific CPR page."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="storageUrl eq 'https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part01'",
-            select=["id", "storageUrl"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="storageUrl eq 'https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part01'",
+                select=["id", "storageUrl"],
+                top=5,
+            )
+        )
         assert len(results) > 0
 
 
@@ -834,7 +882,7 @@ class TestSearchQuality:
 @live
 class TestEmbeddingIntegrity:
     """Validate embeddings stored in the index.
-    
+
     Note: The 'embedding' field is correctly marked as non-retrievable in the
     index schema (best practice for production—saves bandwidth). We verify
     embeddings exist by running vector searches and checking results.
@@ -849,39 +897,40 @@ class TestEmbeddingIntegrity:
         index = self.index_client.get_index("legal-court-rag-index-v3")
         embedding_field = next((f for f in index.fields if f.name == "embedding"), None)
         assert embedding_field is not None, "No 'embedding' field in index"
-        assert embedding_field.type == "Collection(Edm.Single)", (
-            f"Unexpected embedding type: {embedding_field.type}"
-        )
+        assert embedding_field.type == "Collection(Edm.Single)", f"Unexpected embedding type: {embedding_field.type}"
         # Verify dimension from vector search profile
-        for algo in (index.vector_search.algorithms or []):
+        for algo in index.vector_search.algorithms or []:
             # Algorithm config exists, dimension is validated at index creation
             pass
         # Verify via vector search config
-        for profile in (index.vector_search.profiles or []):
+        for profile in index.vector_search.profiles or []:
             assert profile.algorithm_configuration_name, "Vector profile has no algorithm"
 
     def test_embeddings_are_non_zero(self):
         """Vector search should return results, proving embeddings are valid (non-zero)."""
         from azure.search.documents.models import VectorizedQuery
+
         # Create a simple non-zero query vector (will match if any embeddings exist)
         query_vector = [0.01] * 3072
-        results = list(self.client.search(
-            search_text=None,
-            vector_queries=[
-                VectorizedQuery(
-                    vector=query_vector,
-                    k_nearest_neighbors=5,
-                    fields="embedding",
-                )
-            ],
-            select=["id", "sourcefile"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text=None,
+                vector_queries=[
+                    VectorizedQuery(
+                        vector=query_vector,
+                        k_nearest_neighbors=5,
+                        fields="embedding",
+                    )
+                ],
+                select=["id", "sourcefile"],
+                top=5,
+            )
+        )
         assert len(results) > 0, "Vector search returned no results—embeddings may be empty/zero"
 
     def test_all_documents_have_embeddings(self):
         """Embedding field should not be retrievable (production best practice).
-        
+
         Since the embedding field is non-retrievable, we verify it exists in the
         schema and that vector search works. If documents had missing embeddings,
         vector search would return fewer results than text search for the same query.
@@ -893,22 +942,25 @@ class TestEmbeddingIntegrity:
             top=10,
             include_total_count=True,
         ).get_count()
-        
+
         from azure.search.documents.models import VectorizedQuery
+
         # Simple query vector for "costs"
         query_vector = [0.01] * 3072
-        vector_results = list(self.client.search(
-            search_text=None,
-            vector_queries=[
-                VectorizedQuery(
-                    vector=query_vector,
-                    k_nearest_neighbors=10,
-                    fields="embedding",
-                )
-            ],
-            select=["id"],
-            top=10,
-        ))
+        vector_results = list(
+            self.client.search(
+                search_text=None,
+                vector_queries=[
+                    VectorizedQuery(
+                        vector=query_vector,
+                        k_nearest_neighbors=10,
+                        fields="embedding",
+                    )
+                ],
+                select=["id"],
+                top=10,
+            )
+        )
         # Vector search should return results (embeddings exist)
         assert len(vector_results) > 0, "Vector search found 0 results—documents may lack embeddings"
         # Note: Vector and text results won't match exactly in count since
@@ -931,62 +983,64 @@ class TestSubsectionFieldsInIndex:
 
     def test_cpr_docs_have_subsection_ids(self):
         """CPR documents should have populated subsection_id fields."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="category eq 'Civil Procedure Rules and Practice Directions'",
-            select=["id", "subsection_id", "subsections", "sourcefile"],
-            top=30,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="category eq 'Civil Procedure Rules and Practice Directions'",
+                select=["id", "subsection_id", "subsections", "sourcefile"],
+                top=30,
+            )
+        )
         has_subsection = sum(1 for r in results if r.get("subsection_id"))
         ratio = has_subsection / len(results) if results else 0
-        assert ratio >= 0.7, (
-            f"Only {ratio:.0%} of CPR docs have subsection_id (expected >= 70%)"
-        )
+        assert ratio >= 0.7, f"Only {ratio:.0%} of CPR docs have subsection_id (expected >= 70%)"
 
     def test_court_guide_docs_have_subsection_ids(self):
         """Court Guide documents should have populated subsection_id fields."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="category eq 'Commercial Court'",
-            select=["id", "subsection_id", "subsections"],
-            top=20,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="category eq 'Commercial Court'",
+                select=["id", "subsection_id", "subsections"],
+                top=20,
+            )
+        )
         has_subsection = sum(1 for r in results if r.get("subsection_id"))
         ratio = has_subsection / len(results) if results else 0
-        assert ratio >= 0.6, (
-            f"Only {ratio:.0%} of Court Guide docs have subsection_id (expected >= 60%)"
-        )
+        assert ratio >= 0.6, f"Only {ratio:.0%} of Court Guide docs have subsection_id (expected >= 60%)"
 
     def test_subsections_collection_populated(self):
         """Documents with subsection_id should also have subsections list."""
-        results = list(self.client.search(
-            search_text="*",
-            filter="subsection_id ne ''",
-            select=["id", "subsection_id", "subsections"],
-            top=20,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                filter="subsection_id ne ''",
+                select=["id", "subsection_id", "subsections"],
+                top=20,
+            )
+        )
         for r in results:
             subs = r.get("subsections", [])
             # If there's a subsection_id, subsections should contain at least that
-            assert len(subs) >= 1, (
-                f"Doc {r['id']} has subsection_id={r['subsection_id']} but empty subsections"
-            )
+            assert len(subs) >= 1, f"Doc {r['id']} has subsection_id={r['subsection_id']} but empty subsections"
             assert r["subsection_id"] in subs or any(
                 r["subsection_id"] in s for s in subs
             ), f"Doc {r['id']}: subsection_id not in subsections list"
 
     def test_get_document_by_key(self):
         """Direct document lookup by key should return all v3 metadata fields.
-        
+
         Note: 'embedding' is correctly non-retrievable in production, so it
         won't appear in get_document results. This is expected and correct.
         """
         # Get any document first
-        results = list(self.client.search(
-            search_text="*",
-            select=["id"],
-            top=1,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                select=["id"],
+                top=1,
+            )
+        )
         if not results:
             pytest.skip("No documents in index")
 
@@ -1015,11 +1069,13 @@ class TestAgenticRetrievalReadiness:
 
     def test_document_hydration_returns_subsections(self):
         """Simulates agentic hydration: get_document should return subsection fields."""
-        results = list(self.client.search(
-            search_text="costs",
-            select=["id"],
-            top=1,
-        ))
+        results = list(
+            self.client.search(
+                search_text="costs",
+                select=["id"],
+                top=1,
+            )
+        )
         if not results:
             pytest.skip("No search results")
 
@@ -1031,12 +1087,14 @@ class TestAgenticRetrievalReadiness:
     def test_mixed_search_with_subsection_filter(self):
         """Agentic frameworks may combine text search with subsection filter."""
         # This tests the feasibility of agentic subqueries
-        results = list(self.client.search(
-            search_text="costs",
-            filter="subsections/any(s: s eq '44.2')",
-            select=["id", "subsection_id", "content"],
-            top=5,
-        ))
+        results = list(
+            self.client.search(
+                search_text="costs",
+                filter="subsections/any(s: s eq '44.2')",
+                select=["id", "subsection_id", "content"],
+                top=5,
+            )
+        )
         # This is a narrow filter, may return 0, but should not error
         assert isinstance(results, list)
 
@@ -1066,15 +1124,26 @@ class TestAgenticRetrievalReadiness:
 
     def test_select_all_metadata_fields(self):
         """Agent frameworks need to select all metadata without errors."""
-        results = list(self.client.search(
-            search_text="*",
-            select=[
-                "id", "content", "category", "sourcepage", "sourcefile",
-                "storageUrl", "updated", "oids", "groups", "parent_id",
-                "subsection_id", "subsections",
-            ],
-            top=3,
-        ))
+        results = list(
+            self.client.search(
+                search_text="*",
+                select=[
+                    "id",
+                    "content",
+                    "category",
+                    "sourcepage",
+                    "sourcefile",
+                    "storageUrl",
+                    "updated",
+                    "oids",
+                    "groups",
+                    "parent_id",
+                    "subsection_id",
+                    "subsections",
+                ],
+                top=3,
+            )
+        )
         assert len(results) > 0
         for r in results:
             # All fields must be present (even if empty)
@@ -1096,38 +1165,41 @@ class TestEndToEndRAGAccuracy:
         self.client, _ = _get_azure_clients()
 
     def _search(self, query: str, top: int = 5) -> list:
-        return list(self.client.search(
-            search_text=query,
-            select=["id", "content", "sourcefile", "sourcepage", "subsection_id", "subsections", "category"],
-            top=top,
-            query_type="semantic",
-            semantic_configuration_name="default",
-        ))
+        return list(
+            self.client.search(
+                search_text=query,
+                select=["id", "content", "sourcefile", "sourcepage", "subsection_id", "subsections", "category"],
+                top=top,
+                query_type="semantic",
+                semantic_configuration_name="default",
+            )
+        )
 
     def test_overriding_objective_query(self):
         """'overriding objective' should return Part 1."""
         results = self._search("What is the overriding objective?")
-        assert any("Part 1" in (r.get("sourcefile") or "") for r in results), \
-            f"Part 1 not in results: {[r.get('sourcefile') for r in results]}"
+        assert any(
+            "Part 1" in (r.get("sourcefile") or "") for r in results
+        ), f"Part 1 not in results: {[r.get('sourcefile') for r in results]}"
 
     def test_expert_evidence_query(self):
         """'expert evidence' should return Part 35 or expert-related content.
-        
+
         Court guides also discuss expert evidence so results may include
         both CPR Part 35 and court guide sections on experts.
         """
         results = self._search("How is expert evidence regulated?", top=10)
         has_part35 = any("35" in (r.get("sourcefile") or r.get("id") or "") for r in results)
         has_expert_content = any("expert" in (r.get("content") or "").lower() for r in results)
-        assert has_part35 or has_expert_content, \
-            f"No expert evidence content in results: {[r.get('sourcefile') for r in results]}"
+        assert (
+            has_part35 or has_expert_content
+        ), f"No expert evidence content in results: {[r.get('sourcefile') for r in results]}"
 
     def test_default_costs_query(self):
         """'costs' should return Part 44 or related Practice Direction."""
         results = self._search("What are the rules about costs?")
         assert any(
-            "44" in (r.get("sourcefile") or r.get("id") or "")
-            or "cost" in (r.get("content") or "").lower()
+            "44" in (r.get("sourcefile") or r.get("id") or "") or "cost" in (r.get("content") or "").lower()
             for r in results
         ), "No costs-related content found"
 
@@ -1135,9 +1207,14 @@ class TestEndToEndRAGAccuracy:
         """Court-specific query should return Court Guide documents."""
         results = self._search("How does the Commercial Court handle case management?")
         has_court_guide = any(
-            r.get("category") in ("Commercial Court", "Chancery Division", 
-                                   "Technology and Construction Court",
-                                   "King's Bench Division", "Patents Court")
+            r.get("category")
+            in (
+                "Commercial Court",
+                "Chancery Division",
+                "Technology and Construction Court",
+                "King's Bench Division",
+                "Patents Court",
+            )
             for r in results
         )
         assert has_court_guide, f"No Court Guide in results: {[r.get('category') for r in results]}"
@@ -1147,8 +1224,7 @@ class TestEndToEndRAGAccuracy:
         results = self._search("pre-action protocol requirements")
         assert len(results) > 0, "No results for pre-action protocol query"
         any_protocol = any(
-            "protocol" in (r.get("content") or "").lower() or
-            "pre-action" in (r.get("content") or "").lower()
+            "protocol" in (r.get("content") or "").lower() or "pre-action" in (r.get("content") or "").lower()
             for r in results
         )
         assert any_protocol, "No protocol-related content in results"
@@ -1162,9 +1238,9 @@ class TestEndToEndRAGAccuracy:
             if sub_id and "35" in (r.get("sourcefile") or ""):
                 # If this is a Part 35 doc with a subsection_id, the subsection
                 # should appear in the content
-                assert sub_id in content or "35" in sub_id, (
-                    f"Doc {r['id']}: subsection_id '{sub_id}' not coherent with content"
-                )
+                assert (
+                    sub_id in content or "35" in sub_id
+                ), f"Doc {r['id']}: subsection_id '{sub_id}' not coherent with content"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1175,7 +1251,7 @@ class TestEndToEndRAGAccuracy:
 class TestSelectFieldsCoverage:
     """
     Detect whether the backend search() method includes subsection fields.
-    
+
     CRITICAL: The base Approach.search() method must include subsection_id
     and subsections in select_fields for the standard search path to work.
     Without this, subsection data is only available via agentic hydration.
@@ -1183,11 +1259,11 @@ class TestSelectFieldsCoverage:
 
     def test_approach_search_select_fields_include_subsections(self):
         """approach.py search() should return subsection_id in Document construction.
-        
+
         CRITICAL BUG DETECTION: If this test fails, it means the standard
         search path (non-agentic) does NOT include subsection_id in the
         Document construction from search results.
-        
+
         Note: When select_fields is not explicitly set, all fields are
         returned from the index, so subsection data is available. The key
         check is that Document() construction maps subsection_id.
@@ -1197,7 +1273,7 @@ class TestSelectFieldsCoverage:
 
         # If select_fields is explicitly set, verify subsection fields are included.
         # If not set, all fields are returned (which includes subsection fields).
-        match = re.search(r'select_fields\s*=\s*\[([^\]]+)\]', source)
+        match = re.search(r"select_fields\s*=\s*\[([^\]]+)\]", source)
         if match:
             select_str = match.group(1)
             assert "subsection_id" in select_str, (
@@ -1205,7 +1281,10 @@ class TestSelectFieldsCoverage:
                 "FIX: Add 'subsection_id' to select_fields list."
             )
         # Whether or not select_fields is set, the Document construction must map subsection_id
-        assert 'subsection_id=document.get("subsection_id")' in source or "subsection_id=document.get('subsection_id')" in source, (
+        assert (
+            'subsection_id=document.get("subsection_id")' in source
+            or "subsection_id=document.get('subsection_id')" in source
+        ), (
             "CRITICAL BUG: Document construction in search() does not map subsection_id. "
             "FIX: Add subsection_id=document.get('subsection_id') to Document() in search()."
         )
@@ -1219,10 +1298,10 @@ class TestSelectFieldsCoverage:
 
     def test_search_result_mapping_includes_subsections(self):
         """The Document() construction in search() should map subsection fields.
-        
+
         CRITICAL BUG DETECTION: If this fails, search results won't populate
         subsection_id/subsections on Document objects even if they're in select_fields.
-        
+
         Fix: Add subsection_id=d.get('subsection_id', ''), and
         subsections=d.get('subsections', []) to the Document() construction
         in the search() method's result loop.
@@ -1265,7 +1344,7 @@ class TestTokenChunker:
         assert chunks[0]["text"] == text
 
     def test_large_document_splits(self):
-        text = ("\n## Rule 35.1\n\n" + "Word " * 200 + "\n\n## Rule 35.2\n\n" + "Word " * 200)
+        text = "\n## Rule 35.1\n\n" + "Word " * 200 + "\n\n## Rule 35.2\n\n" + "Word " * 200
         chunks = self.chunker.chunk_legal_document(text, "doc1", "Part 35")
         assert len(chunks) >= 2
 
@@ -1282,6 +1361,22 @@ class TestTokenChunker:
         count = self.chunker.count_tokens(text)
         assert count > 0
         assert isinstance(count, int)
+
+    def test_fallback_splits_single_oversized_sentence_within_budget(self):
+        text = "word " * 500
+
+        chunks = self.chunker.chunk_legal_document(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(self.chunker.count_tokens(chunk["text"]) <= self.chunker.max_tokens for chunk in chunks)
+
+    def test_legal_boundary_chunking_enforces_token_budget(self):
+        text = "\n## Rule 1\n\n" + "word " * 500
+
+        chunks = self.chunker.chunk_legal_document(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(self.chunker.count_tokens(chunk["text"]) <= self.chunker.max_tokens for chunk in chunks)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

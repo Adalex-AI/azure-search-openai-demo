@@ -27,7 +27,7 @@ from pathlib import Path
 # Allow importing from app/backend
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "backend"))
 
-from azure.identity.aio import AzureDeveloperCliCredential
+from azure.identity.aio import DefaultAzureCredential
 from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import (
     AzureOpenAIVectorizerParameters,
@@ -63,9 +63,15 @@ def load_azd_env() -> dict[str, str]:
     return {}
 
 
+def create_credential():
+    """Create the credential used by local azd and azure/login environments."""
+    return DefaultAzureCredential(process_timeout=60)
+
+
 async def create_knowledgebase():
     # Merge azd env with actual env (actual env wins)
     azd_env = load_azd_env()
+
     def env(key: str, default: str = "") -> str:
         return os.getenv(key) or azd_env.get(key, default)
 
@@ -73,22 +79,26 @@ async def create_knowledgebase():
     search_index = env("AZURE_SEARCH_INDEX")
     kb_name = env("AZURE_SEARCH_KNOWLEDGEBASE_NAME")
     openai_service = env("AZURE_OPENAI_SERVICE")
+    openai_endpoint = env("AZURE_OPENAI_ENDPOINT")
     kb_deployment = env("AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT")
     kb_model = env("AZURE_OPENAI_KNOWLEDGEBASE_MODEL")
-    tenant_id = env("AZURE_TENANT_ID")
-
-    if not all([search_service, search_index, kb_name, openai_service, kb_deployment, kb_model]):
+    if not all([search_service, search_index, kb_name, kb_deployment, kb_model]) or not (
+        openai_service or openai_endpoint
+    ):
         print("Missing required env vars. Need:")
         print(f"  AZURE_SEARCH_SERVICE={search_service or '(missing)'}")
         print(f"  AZURE_SEARCH_INDEX={search_index or '(missing)'}")
         print(f"  AZURE_SEARCH_KNOWLEDGEBASE_NAME={kb_name or '(missing)'}")
-        print(f"  AZURE_OPENAI_SERVICE={openai_service or '(missing)'}")
+        print(f"  AZURE_OPENAI_ENDPOINT={openai_endpoint or '(missing)'}")
+        print(f"  AZURE_OPENAI_SERVICE={openai_service or '(missing fallback)'}")
         print(f"  AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT={kb_deployment or '(missing)'}")
         print(f"  AZURE_OPENAI_KNOWLEDGEBASE_MODEL={kb_model or '(missing)'}")
         sys.exit(1)
 
     search_endpoint = f"https://{search_service}.search.windows.net"
-    openai_endpoint = f"https://{openai_service}.openai.azure.com/"
+    openai_endpoint = (
+        openai_endpoint.rstrip("/") + "/" if openai_endpoint else f"https://{openai_service}.openai.azure.com/"
+    )
 
     print(f"Search endpoint: {search_endpoint}")
     print(f"Search index:    {search_index}")
@@ -98,7 +108,7 @@ async def create_knowledgebase():
     print(f"KB model:        {kb_model}")
     print()
 
-    credential = AzureDeveloperCliCredential(tenant_id=tenant_id, process_timeout=60) if tenant_id else AzureDeveloperCliCredential(process_timeout=60)
+    credential = create_credential()
 
     async with SearchIndexClient(endpoint=search_endpoint, credential=credential) as client:
         # Step 1: Create the knowledge source pointing at the existing index

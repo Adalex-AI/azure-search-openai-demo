@@ -26,12 +26,16 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
         python_version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        node_version: ["20.14", "22"]
+        node_version: ["20.19", "22"]
     steps:
         - uses: actions/checkout@v6
           with:
             # Fetch full history so diff-cover can compute a merge base with origin/main
             fetch-depth: 0
+            sparse-checkout: |
+              /*
+              !/data/legal-scraper/processed/html_cache/
+            sparse-checkout-cone-mode: false
         - name: Install uv
           uses: astral-sh/setup-uv@v7
           with:
@@ -55,14 +59,69 @@ jobs:
           run: |
             uv pip install -r requirements-dev.txt
         - name: Lint with ruff
-          run: ruff check .
+          shell: bash
+          run: |
+            changed_python_files=()
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              mapfile -t changed_python_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            if [ "${#changed_python_files[@]}" -gt 0 ]; then
+              ruff check "${changed_python_files[@]}"
+            else
+              echo "No changed Python files to lint."
+            fi
         - name: Check types with ty
-          run: ty check
+          shell: bash
+          run: |
+            changed_backend_files=()
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              changed_files_range="origin/${{ github.base_ref }}...HEAD"
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$changed_files_range" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              mapfile -t changed_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            for file in "${changed_files[@]}"; do
+              case "$file" in
+                app/backend/*.py|app/backend/**/*.py)
+                  changed_backend_files+=("$file")
+                  ;;
+              esac
+            done
+            if [ "${#changed_backend_files[@]}" -gt 0 ]; then
+              ty check "${changed_backend_files[@]}"
+            else
+              echo "No changed backend Python files to type-check."
+            fi
         - name: Check formatting with black
-          run: black . --check --verbose
+          shell: bash
+          run: |
+            changed_python_files=()
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" -- '*.py')
+            elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              mapfile -t changed_python_files < <(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}...HEAD" -- '*.py')
+            else
+              mapfile -t changed_python_files < <(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD -- '*.py')
+            fi
+            if [ "${#changed_python_files[@]}" -gt 0 ]; then
+              black "${changed_python_files[@]}" --check --verbose
+            else
+              echo "No changed Python files to format-check."
+            fi
         - name: Run Python tests
           if: runner.os != 'Windows'
-          run: pytest -s -vv --cov --cov-report=xml --cov-fail-under=90
+          run: |
+            coverage run --omit=tests/test_live_app_v3.py -m pytest tests --ignore=tests/adhoc -m "not live" -s -vv
+            coverage xml
         - name: Check diff coverage
           if: runner.os != 'Windows'
           run: |

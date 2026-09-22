@@ -311,6 +311,9 @@ param useVpnGateway bool = false
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
+@description('Object ID of the service principal used by the protected V4 release pipeline')
+param releasePipelinePrincipalId string = ''
+
 @description('Use Application Insights for monitoring and performance tracing')
 param useApplicationInsights bool = false
 
@@ -1130,6 +1133,16 @@ module cognitiveServicesRoleUser 'core/security/role.bicep' = {
     principalId: principalId
     roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
     principalType: principalType
+  }
+}
+
+module cognitiveServicesRoleReleasePipeline 'core/security/role.bicep' = if (!empty(releasePipelinePrincipalId)) {
+  scope: resourceGroup
+  name: 'cognitiveservices-role-release-pipeline'
+  params: {
+    principalId: releasePipelinePrincipalId
+    roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
+    principalType: 'ServicePrincipal'
   }
 }
 

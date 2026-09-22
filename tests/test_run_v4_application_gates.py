@@ -1,9 +1,14 @@
 import json
 
+import httpx
 import pytest
 
-from scripts.run_v4_application_gates import ApplicationGatesError, load_gate_reports
-
+from scripts import run_v4_application_gates
+from scripts.run_v4_application_gates import (
+    ApplicationGatesError,
+    fetch_provenance,
+    load_gate_reports,
+)
 
 PROVENANCE = {
     "release_id": "release-1",
@@ -14,28 +19,52 @@ PROVENANCE = {
     "search_service": "search-1",
     "search_index": "index-1",
     "knowledge_base": "kb-1",
+    "agentic_mode": "agentic",
+    "image_digest": "registry.example.test/legal-rag@sha256:" + "a" * 64,
+    "revision_name": "legal-rag--release-1",
 }
+
+
+def producer_browser_evidence():
+    return {
+        "browser": {
+            "candidate_url": "http://candidate",
+            "question": "What is CPR 24.2?",
+            "citation_count": 1,
+            "clicked_selector": '.supContainer[data-subsection-id="24.2"]',
+            "supporting_content_visible": True,
+            "highlight_visible": True,
+            "highlighted_text_sha256": "highlight-hash",
+            "citation_path_present": True,
+        },
+        "case_id": "case-24.2",
+        "subsection_id": "24.2",
+    }
 
 
 def write_report(tmp_path, name, status="PASS", provenance=None):
     path = tmp_path / f"{name}.json"
-    payload = {"status": status, "checks": [name], "provenance": provenance or PROVENANCE}
+    payload = {"status": status, "gate": name, "checks": [name], "provenance": provenance or PROVENANCE}
     if name == "highlight":
-        payload.update({
-            "gate": "highlight",
-            "oracle_version": "2026-07-15",
-            "case_count": 10,
-            "source_count": 2,
-            "snapshot_manifest_sha256": "manifest-hash",
-            "browser_evidence": {"highlight_visible": True},
-        })
+        payload.update(
+            {
+                "oracle_version": "2026-07-15",
+                "case_count": 10,
+                "source_count": 2,
+                "snapshot_manifest_sha256": "manifest-hash",
+                "browser_evidence": producer_browser_evidence(),
+            }
+        )
     path.write_text(json.dumps(payload))
     return f"{name}={path}"
 
 
 def test_load_gate_reports_requires_all_release_gates(tmp_path):
     reports = load_gate_reports(
-        [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")],
+        [
+            write_report(tmp_path, name)
+            for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+        ],
         expected_provenance=PROVENANCE,
     )
 
@@ -47,34 +76,65 @@ def test_load_gate_reports_requires_all_release_gates(tmp_path):
     [
         ([write_report.__name__], "name=path"),
         (["retrieval=/missing.json"], "Cannot load retrieval"),
-        (["retrieval=/missing.json", "category=/missing.json", "source_hierarchy=/missing.json", "citation=/missing.json"], "Cannot load retrieval"),
+        (
+            [
+                "retrieval=/missing.json",
+                "category=/missing.json",
+                "source_hierarchy=/missing.json",
+                "citation=/missing.json",
+            ],
+            "Cannot load retrieval",
+        ),
     ],
 )
 def test_load_gate_reports_fails_closed(tmp_path, items, message):
     if items == [write_report.__name__]:
         items = [write_report.__name__]
     with pytest.raises(ApplicationGatesError, match=message):
-        load_gate_reports(items)
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_skipped_gate(tmp_path):
     items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
     skipped = tmp_path / "highlight.json"
-    skipped.write_text(json.dumps({"status": "SKIPPED"}))
+    skipped.write_text(json.dumps({"status": "SKIPPED", "gate": "highlight", "provenance": PROVENANCE}))
     items.append(f"highlight={skipped}")
 
-    with pytest.raises(ApplicationGatesError, match="highlight.*status PASS"):
-        load_gate_reports(items)
+    with pytest.raises(ApplicationGatesError, match="highlight.*matching PASS report"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_incomplete_highlight_oracle(tmp_path):
     items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
     incomplete = tmp_path / "highlight.json"
-    incomplete.write_text(json.dumps({"status": "PASS", "gate": "highlight"}))
+    incomplete.write_text(json.dumps({"status": "PASS", "gate": "highlight", "provenance": PROVENANCE}))
     items.append(f"highlight={incomplete}")
 
     with pytest.raises(ApplicationGatesError, match="missing oracle evidence"):
-        load_gate_reports(items)
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+def test_load_gate_reports_rejects_incompatible_browser_evidence_shape(tmp_path):
+    items = [write_report(tmp_path, name) for name in ("retrieval", "category", "source_hierarchy", "citation", "acl")]
+    incompatible = tmp_path / "highlight.json"
+    incompatible.write_text(
+        json.dumps(
+            {
+                "status": "PASS",
+                "gate": "highlight",
+                "oracle_version": "2026-07-15",
+                "case_count": 10,
+                "source_count": 2,
+                "snapshot_manifest_sha256": "manifest-hash",
+                "browser_evidence": {"highlight_visible": True},
+                "provenance": PROVENANCE,
+            }
+        )
+    )
+    items.append(f"highlight={incompatible}")
+
+    with pytest.raises(ApplicationGatesError, match="run_browser_gate shape"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
 
 
 def test_load_gate_reports_rejects_stale_provenance(tmp_path):
@@ -89,3 +149,67 @@ def test_load_gate_reports_rejects_stale_provenance(tmp_path):
 
     with pytest.raises(ApplicationGatesError, match="retrieval provenance mismatch: search_index"):
         load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.parametrize(
+    "report_name, message",
+    [
+        ("unknown", "Unknown application gate"),
+        ("retrieval", "Duplicate application gate"),
+    ],
+)
+def test_load_gate_reports_rejects_unknown_or_duplicate_gate(tmp_path, report_name, message):
+    items = [
+        write_report(tmp_path, name)
+        for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+    ]
+    if report_name == "unknown":
+        items[-1] = write_report(tmp_path, report_name)
+    else:
+        items.append(write_report(tmp_path, report_name))
+
+    with pytest.raises(ApplicationGatesError, match=message):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.parametrize("field, value", [("case_count", 0), ("source_count", 0)])
+def test_load_gate_reports_rejects_highlight_with_no_oracle_cases(tmp_path, field, value):
+    items = [
+        write_report(tmp_path, name)
+        for name in ("retrieval", "category", "source_hierarchy", "citation", "acl", "highlight")
+    ]
+    highlight_path = tmp_path / "highlight.json"
+    payload = json.loads(highlight_path.read_text())
+    payload[field] = value
+    highlight_path.write_text(json.dumps(payload))
+
+    with pytest.raises(ApplicationGatesError, match="missing oracle evidence"):
+        load_gate_reports(items, expected_provenance=PROVENANCE)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status, payload, message",
+    [
+        (503, {}, "HTTP 503"),
+        (200, ["not-an-object"], "JSON object"),
+    ],
+)
+async def test_fetch_provenance_rejects_non_success_or_invalid_shape(monkeypatch, status, payload, message):
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def get(self, url, headers):
+            return httpx.Response(status, json=payload, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(run_v4_application_gates.httpx, "AsyncClient", FakeClient)
+
+    with pytest.raises(ApplicationGatesError, match=message):
+        await fetch_provenance("https://candidate.example.test", "proof-token")

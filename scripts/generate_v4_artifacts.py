@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -20,9 +21,12 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from audit_source_documents import CanonicalSource, load_web_sources, normalize_url  # noqa: E402
-import audit_html_transition as transition  # noqa: E402
 import update_cpr_index_v3 as updater  # noqa: E402
+from audit_source_documents import (  # noqa: E402
+    CanonicalSource,
+    load_web_sources,
+    normalize_url,
+)
 from upload_court_guides_v3 import GUIDE_FILES, map_doc  # noqa: E402
 
 
@@ -30,10 +34,13 @@ def content_hash(document: dict[str, Any]) -> str:
     content = document.get("content", "")
     if isinstance(content, list):
         content = "\n".join(content)
-    value = "|".join(
-        str(document.get(field, "") or "")
-        for field in ("id", "sourcefile", "sourcepage", "category", "storageUrl", "updated")
-    ) + f"|{content}|{document.get('embedding_text', '')}"
+    value = (
+        "|".join(
+            str(document.get(field, "") or "")
+            for field in ("id", "sourcefile", "sourcepage", "category", "storageUrl", "updated")
+        )
+        + f"|{content}|{document.get('embedding_text', '')}"
+    )
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
@@ -68,7 +75,6 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     content = str(document.get("content") or "")
     sourcepage = str(document.get("sourcepage") or "")
     sourcefile = str(document.get("sourcefile") or "")
-    category = str(document.get("category") or "")
     subsection_id = str(document.get("subsection_id") or "")
     section_title = subsection_id or sourcepage or sourcefile
     hierarchy_parts = [part for part in (sourcefile, sourcepage, subsection_id) if part]
@@ -85,8 +91,63 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     document["section_title"] = section_title
     document["hierarchy_path"] = hierarchy_path
     document["legal_references"] = legal_references
-    document["embedding_text"] = _build_embedding_text(document, content_override if content_override is not None else content)
+    document["embedding_text"] = _build_embedding_text(
+        document, content_override if content_override is not None else content
+    )
     return document
+
+
+def split_content_for_embedding_budget(
+    document: dict[str, Any], content: str, max_embedding_tokens: int, chunker: Any
+) -> list[str]:
+    """Losslessly split content when no legal boundary can fit the embedding budget."""
+    if chunker.count_tokens(_build_embedding_text(document, "")) > max_embedding_tokens:
+        raise ValueError(f"Embedding metadata exceeds {max_embedding_tokens} tokens: {document.get('id', '')}")
+
+    legal_boundaries = [position for position, _, _ in chunker.find_legal_boundaries(content)]
+    windows: list[str] = []
+    start = 0
+    metadata_tokens = chunker.count_tokens(_build_embedding_text(document, ""))
+    available_tokens = max_embedding_tokens - metadata_tokens
+    if not legal_boundaries:
+        character_budget = min(2048, max(1, available_tokens * 2))
+        content_start = 0
+        while content_start < len(content):
+            end = min(len(content), content_start + character_budget)
+            while (
+                chunker.count_tokens(_build_embedding_text(document, content[content_start:end])) > max_embedding_tokens
+            ):
+                end = content_start + max(1, (end - content_start) // 2)
+            window = content[content_start:end]
+            windows.append(window)
+            content_start = end
+        return windows
+
+    while start < len(content):
+        upper_bound = min(len(content), start + max(1, available_tokens * 4))
+        low = start + 1
+        high = upper_bound
+        end = start
+        while low <= high:
+            candidate_end = (low + high) // 2
+            token_count = chunker.count_tokens(_build_embedding_text(document, content[start:candidate_end]))
+            if token_count <= max_embedding_tokens:
+                end = candidate_end
+                low = candidate_end + 1
+            else:
+                high = candidate_end - 1
+
+        preferred_end = max((position for position in legal_boundaries if start < position <= end), default=0)
+        if preferred_end:
+            end = preferred_end
+
+        window = content[start:end]
+        if not window:
+            raise ValueError(f"Unable to losslessly split oversized embedding input: {document.get('id', '')}")
+        windows.append(window)
+        start = end
+
+    return windows
 
 
 def expand_oversized_embedding_windows(
@@ -97,24 +158,44 @@ def expand_oversized_embedding_windows(
     chunker = updater.LegalDocumentChunker(max_tokens=6500, overlap_tokens=200)
 
     for document in documents:
-        if chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens:
-            expanded.append(document)
-            continue
-
         original_id = str(document.get("id") or "")
-        chunks = chunker.chunk_legal_document(
-            str(document.get("content") or ""),
-            original_id,
-            str(document.get("section_title") or document.get("sourcefile") or original_id),
-        )
+        content = str(document.get("content") or "")
+        legal_boundaries = chunker.find_legal_boundaries(content)
+        if not legal_boundaries:
+            if (
+                len(content) <= max_embedding_tokens
+                and chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens
+            ):
+                expanded.append(document)
+                continue
+            window_texts = split_content_for_embedding_budget(document, content, max_embedding_tokens, chunker)
+        else:
+            if chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens:
+                expanded.append(document)
+                continue
+            chunks = chunker.chunk_legal_document(
+                content,
+                original_id,
+                str(document.get("section_title") or document.get("sourcefile") or original_id),
+            )
+            window_texts = [str(chunk["text"]) for chunk in chunks]
+            if (
+                len(window_texts) < 2
+                or "".join(window_texts) != content
+                or any(
+                    chunker.count_tokens(_build_embedding_text(document, window_text)) > max_embedding_tokens
+                    for window_text in window_texts
+                )
+            ):
+                window_texts = split_content_for_embedding_budget(document, content, max_embedding_tokens, chunker)
         children: list[dict[str, Any]] = []
-        for index, chunk in enumerate(chunks, start=1):
+        for index, window_text in enumerate(window_texts, start=1):
             child = dict(document)
             child["id"] = f"{original_id}__window_{index}"
             child["parent_id"] = original_id
             child["child_window"] = index
-            child["child_window_count"] = len(chunks)
-            child["embedding_text"] = _build_embedding_text(child, str(chunk["text"]))
+            child["child_window_count"] = len(window_texts)
+            child["embedding_text"] = _build_embedding_text(child, window_text)
             if chunker.count_tokens(child["embedding_text"]) > max_embedding_tokens:
                 raise ValueError(f"Child embedding window exceeds {max_embedding_tokens} tokens: {child['id']}")
             children.append(child)
@@ -135,7 +216,8 @@ def deduplicate_sources_by_url(sources: list[CanonicalSource]) -> dict[str, Cano
             continue
         current = selected.get(normalized_url)
         if current is None or (len(source.sourcefile), source.sourcefile) > (
-            len(current.sourcefile), current.sourcefile
+            len(current.sourcefile),
+            current.sourcefile,
         ):
             selected[normalized_url] = source
     return {source.identity: source for source in selected.values()}
@@ -231,9 +313,7 @@ def generate(
 
     missing_snapshot_identities = sorted(set(sources) - set(source_snapshot_hashes))
     if missing_snapshot_identities:
-        raise ValueError(
-            "Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities)
-        )
+        raise ValueError("Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities))
 
     court_guides_dir = court_guides_dir or ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
     extraction_manifest_path = court_guides_dir / "court_guides_extraction_manifest.json"
@@ -255,7 +335,10 @@ def generate(
             ),
             None,
         )
-        if not extraction_entry or extraction_entry.get("processed_json_sha256") != hashlib.sha256(guide_path.read_bytes()).hexdigest():
+        if (
+            not extraction_entry
+            or extraction_entry.get("processed_json_sha256") != hashlib.sha256(guide_path.read_bytes()).hexdigest()
+        ):
             raise ValueError(f"Court-guide artifact provenance does not match extraction manifest: {guide_path}")
         if not isinstance(raw_documents, list) or not raw_documents:
             raise ValueError(f"Fresh court-guide artifact is empty: {guide_path}")
@@ -288,7 +371,11 @@ def generate(
         document["artifact_content_sha256"] = content_hash(document)
 
     if duplicate_ids or missing_fields or oversized:
-        raise ValueError(json.dumps({"duplicate_ids": duplicate_ids, "missing_fields": missing_fields, "oversized": oversized}, indent=2))
+        raise ValueError(
+            json.dumps(
+                {"duplicate_ids": duplicate_ids, "missing_fields": missing_fields, "oversized": oversized}, indent=2
+            )
+        )
 
     manifest = {
         "release_id": release_id,
@@ -328,7 +415,9 @@ def main() -> int:
         "".join(json.dumps(document, ensure_ascii=False, sort_keys=True) + "\n" for document in documents),
         encoding="utf-8",
     )
-    (args.output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (args.output_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(manifest, indent=2, sort_keys=True))
     return 0
 

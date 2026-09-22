@@ -14,7 +14,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SECTION_RE = re.compile(
     r"^(?P<id>(?:rule\s+\d+(?:\.\d+)*|para\s+\d+(?:\.\d+)*|"
@@ -28,13 +27,16 @@ PDF_SECTION_RE = re.compile(
     r"[A-Z](?:\.?\d)+(?:\.\d+)*|\d+(?:\.\d+)+))\b(?P<title>.*)$",
     re.IGNORECASE,
 )
+LEADING_RULE_RE = re.compile(r"^(?P<id>\d+(?:\.\d+)+)\b")
 
 
 def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
-def body_evidence(blocks: list[dict[str, Any]], heading: dict[str, Any], next_heading: dict[str, Any] | None) -> tuple[str, str]:
+def body_evidence(
+    blocks: list[dict[str, Any]], heading: dict[str, Any], next_heading: dict[str, Any] | None
+) -> tuple[str, str]:
     """Fingerprint the complete canonical span from heading through its body."""
     start = blocks.index(heading)
     end = blocks.index(next_heading) if next_heading is not None else len(blocks)
@@ -43,7 +45,7 @@ def body_evidence(blocks: list[dict[str, Any]], heading: dict[str, Any], next_he
 
 
 def case_id(identity: str, locator: str) -> str:
-    return hashlib.sha256(f"{identity}|{locator}".encode("utf-8")).hexdigest()[:20]
+    return hashlib.sha256(f"{identity}|{locator}".encode()).hexdigest()[:20]
 
 
 def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
@@ -57,9 +59,7 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
         if snapshot.get("status") != "ok":
             continue
         identity = str(snapshot.get("identity") or "").strip()
-        content_hash = str(
-            snapshot.get("content_sha256") or snapshot.get("source_sha256") or ""
-        ).strip()
+        content_hash = str(snapshot.get("content_sha256") or snapshot.get("source_sha256") or "").strip()
         blocks = snapshot.get("schema_census", {}).get("blocks", [])
         if not identity or not content_hash:
             raise ValueError(f"Incomplete canonical snapshot: {path}")
@@ -72,23 +72,32 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
             for line_number, line in enumerate(extracted_text.splitlines(), start=1):
                 text = normalize_text(line)
                 if text:
-                    blocks.append({
-                        "kind": "heading" if PDF_SECTION_RE.match(line) else "body",
-                        "locator": f"pdf-line[{line_number}]",
-                        "text": text,
-                    })
+                    blocks.append(
+                        {
+                            "kind": "heading" if PDF_SECTION_RE.match(line) else "body",
+                            "locator": f"pdf-line[{line_number}]",
+                            "text": text,
+                        }
+                    )
             if not blocks:
                 raise ValueError(f"PDF snapshot produced no section headings: {path}")
 
         headings = [
             block
             for block in blocks
-            if isinstance(block, dict) and block.get("kind") == "heading" and normalize_text(str(block.get("text") or ""))
+            if isinstance(block, dict)
+            and block.get("kind") == "heading"
+            and normalize_text(str(block.get("text") or ""))
         ]
         for index, heading in enumerate(headings):
             text = normalize_text(str(heading["text"]))
             match = SECTION_RE.match(text)
-            if not match:
+            next_heading = headings[index + 1] if index + 1 < len(headings) else None
+            start = blocks.index(heading)
+            following_block = blocks[start + 1] if start + 1 < len(blocks) else {}
+            following_text = normalize_text(str(following_block.get("text") or ""))
+            rule_match = LEADING_RULE_RE.match(following_text)
+            if match is None and rule_match is None:
                 continue
             locator = str(heading.get("locator") or "").strip()
             if not locator:
@@ -97,7 +106,6 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
             if key in seen:
                 raise ValueError(f"Duplicate section heading: {identity} {locator}")
             seen.add(key)
-            next_heading = headings[index + 1] if index + 1 < len(headings) else None
             body_text, body_sha256 = body_evidence(blocks, heading, next_heading)
             cases.append(
                 {
@@ -109,7 +117,7 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
                     "category": str(snapshot.get("category") or ""),
                     "sourcefile": str(snapshot.get("sourcefile") or ""),
                     "sourcepage": text,
-                    "subsection_id": match.group("id"),
+                    "subsection_id": (match or rule_match).group("id"),
                     "expected_heading": text,
                     "heading_locator": locator,
                     "next_heading": normalize_text(str(next_heading.get("text") or "")) if next_heading else None,
@@ -131,11 +139,14 @@ def build_report(snapshot_dir: Path) -> dict[str, Any]:
     cases = load_snapshot_cases(snapshot_dir)
     identities = sorted({case["identity"] for case in cases})
     categories = sorted({case["category"] for case in cases})
+    oracle_versions = {str(case["oracle_version"] or "").strip() for case in cases}
+    if len(oracle_versions) != 1 or not next(iter(oracle_versions)):
+        raise ValueError("Canonical snapshots use inconsistent oracle versions")
     if len({case["case_id"] for case in cases}) != len(cases):
         raise ValueError("Oracle case IDs are not unique")
     return {
         "schema_version": 1,
-        "oracle_version": cases[0]["oracle_version"],
+        "oracle_version": next(iter(oracle_versions)),
         "snapshot_dir": str(snapshot_dir),
         "snapshot_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
         "case_count": len(cases),

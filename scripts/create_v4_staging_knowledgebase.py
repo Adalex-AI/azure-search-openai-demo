@@ -18,6 +18,7 @@ def main() -> int:
     parser.add_argument("--knowledgebase", required=True)
     parser.add_argument("--service", required=True)
     parser.add_argument("--openai-service", required=True)
+    parser.add_argument("--openai-endpoint", required=True)
     parser.add_argument("--deployment", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--tenant-id", default=os.environ.get("AZURE_TENANT_ID", ""))
@@ -46,6 +47,7 @@ def main() -> int:
             "AZURE_SEARCH_INDEX": args.index,
             "AZURE_SEARCH_KNOWLEDGEBASE_NAME": args.knowledgebase,
             "AZURE_OPENAI_SERVICE": args.openai_service,
+            "AZURE_OPENAI_ENDPOINT": args.openai_endpoint,
             "AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT": args.deployment,
             "AZURE_OPENAI_KNOWLEDGEBASE_MODEL": args.model,
         }
