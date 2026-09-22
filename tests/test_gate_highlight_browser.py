@@ -170,4 +170,4 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
         )
 
     assert timeouts == [CITATION_DISCOVERY_TIMEOUT_MS]
-    assert len(clicked) == 2
+    assert len(clicked) == 3
