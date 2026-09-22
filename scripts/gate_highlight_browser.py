@@ -97,7 +97,7 @@ def run_browser_gate(candidate_url: str, oracle: dict[str, Any], question: str |
             source_filter = page.locator("#chat-source-filter-desktop-button")
             source_filter.wait_for(state="visible", timeout=30_000)
             source_filter.click()
-            page.get_by_text("All Sources", exact=True).click()
+            page.locator("#source-filter-option-all-sources").click()
 
             question_input = page.get_by_placeholder(re.compile(r"Ask a question|Type a new question"))
             question_input.wait_for(state="visible", timeout=30_000)

@@ -120,7 +120,10 @@ def test_citation_discovery_uses_the_bounded_timeout(monkeypatch):
         def locator(self, selector):
             if selector.startswith(".supContainer"):
                 return Locator(fail=True)
-            if selector == "#chat-source-filter-desktop-button":
+            if selector in {
+                "#chat-source-filter-desktop-button",
+                "#source-filter-option-all-sources",
+            }:
                 return Locator()
             return Locator(visible=False)
 
