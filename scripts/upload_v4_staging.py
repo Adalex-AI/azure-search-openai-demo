@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import Any
 
 EMBEDDING_DIMENSIONS = 3072
+ARTIFACT_EMBEDDING_FIELD = "embedding"
+EMBEDDING_FIELD = "embedding3"
 PRODUCTION_INDEX = "legal-court-rag-index-v3"
 MAX_BATCH_SIZE = 1000
 REQUIRED_FIELDS = {
     "id",
     "content",
-    "embedding",
+    EMBEDDING_FIELD,
     "category",
     "sourcepage",
     "sourcefile",
@@ -90,7 +92,19 @@ def validate_index_schema(index: Any) -> None:
     missing = sorted(REQUIRED_FIELDS - fields.keys())
     if missing:
         raise ValueError(f"Staging index is missing required fields: {', '.join(missing)}")
-    embedding = fields["embedding"]
+    permission_filter_option = getattr(index, "permission_filter_option", None)
+    if getattr(permission_filter_option, "value", permission_filter_option) != "enabled":
+        raise ValueError("Staging index permission filtering must be enabled")
+    permission_fields = {
+        "oids": "userIds",
+        "groups": "groupIds",
+    }
+    for field_name, expected_filter in permission_fields.items():
+        actual_filter = getattr(fields[field_name], "permission_filter", None)
+        actual_value = getattr(actual_filter, "value", actual_filter)
+        if actual_value != expected_filter:
+            raise ValueError(f"Staging field {field_name} must use permission filter {expected_filter}")
+    embedding = fields[EMBEDDING_FIELD]
     dimensions = getattr(embedding, "vector_search_dimensions", None)
     if dimensions != EMBEDDING_DIMENSIONS:
         raise ValueError(f"Staging embedding dimensions are {dimensions}, expected {EMBEDDING_DIMENSIONS}")
@@ -100,7 +114,9 @@ def validate_index_schema(index: Any) -> None:
 
 
 def project_document(document: dict[str, Any]) -> dict[str, Any]:
-    return {field: document[field] for field in INDEX_FIELDS if field in document}
+    projected = {field: document[field] for field in INDEX_FIELDS if field in document}
+    projected[EMBEDDING_FIELD] = document[ARTIFACT_EMBEDDING_FIELD]
+    return projected
 
 
 def upload_documents(index_name: str, service: str, documents: list[dict[str, Any]], batch_size: int) -> int:
@@ -115,19 +131,25 @@ def upload_documents(index_name: str, service: str, documents: list[dict[str, An
     client = SearchClient(endpoint=endpoint, index_name=index_name, credential=credential)
     uploaded = 0
     for start in range(0, len(documents), batch_size):
-        batch = [project_document(document) for document in documents[start:start + batch_size]]
+        batch = [project_document(document) for document in documents[start : start + batch_size]]
         results = client.upload_documents(documents=batch)
+        if len(results) != len(batch):
+            raise RuntimeError(f"Upload acknowledgement count mismatch: expected {len(batch)}, found {len(results)}")
         failures = [result for result in results if not result.succeeded]
         if failures:
             details = ", ".join(f"{result.key}: {result.error_message}" for result in failures)
             raise RuntimeError(f"Upload failed: {details}")
         uploaded += len(results)
+    if uploaded != len(documents):
+        raise RuntimeError(f"Upload count mismatch: expected {len(documents)}, found {uploaded}")
     return uploaded
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--artifact", type=Path, default=Path("reports/index_v4_artifacts/documents_with_embeddings.jsonl"))
+    parser.add_argument(
+        "--artifact", type=Path, default=Path("reports/index_v4_artifacts/documents_with_embeddings.jsonl")
+    )
     parser.add_argument("--index", required=True, help="Disposable v4 staging index name")
     parser.add_argument("--service", default=os.environ.get("AZURE_SEARCH_SERVICE", ""))
     parser.add_argument("--batch-size", type=int, default=100)
