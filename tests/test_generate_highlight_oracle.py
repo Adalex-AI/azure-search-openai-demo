@@ -3,6 +3,34 @@ import json
 import pytest
 
 from scripts import generate_highlight_oracle
+from scripts.generate_highlight_oracle import load_snapshot_cases
+
+
+def test_load_snapshot_cases_uses_numbered_rule_after_semantic_heading(tmp_path):
+    snapshot = {
+        "status": "ok",
+        "oracle_version": "v1",
+        "identity": "cpr::part-24",
+        "content_sha256": "source-hash",
+        "sourcefile": "Part 24",
+        "category": "Civil Procedure Rules and Practice Directions",
+        "schema_census": {
+            "blocks": [
+                {"kind": "heading", "locator": "h1", "text": "Scope of this Part"},
+                {"kind": "p", "locator": "p1", "text": "24.1 This Part applies."},
+                {"kind": "p", "locator": "p2", "text": "It governs summary judgment."},
+                {"kind": "heading", "locator": "h2", "text": "Next rule"},
+            ]
+        },
+    }
+    (tmp_path / "part-24.json").write_text(json.dumps(snapshot), encoding="utf-8")
+
+    cases = load_snapshot_cases(tmp_path)
+
+    assert len(cases) == 1
+    assert cases[0]["subsection_id"] == "24.1"
+    assert cases[0]["expected_heading"] == "Scope of this Part"
+    assert cases[0]["next_heading"] == "Next rule"
 
 
 def write_snapshot(snapshot_dir, name, *, oracle_version):

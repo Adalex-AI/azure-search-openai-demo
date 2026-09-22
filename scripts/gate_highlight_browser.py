@@ -54,7 +54,7 @@ def choose_case(oracle: dict[str, Any]) -> dict[str, Any]:
         case
         for case in cases
         if str(case.get("sourcefile") or "").strip().casefold() == "part 24"
-        and str(case.get("subsection_id") or "").strip().casefold() == "part 24"
+        and str(case.get("subsection_id") or "").strip() == "24.1"
     ]
     return preferred[0] if preferred else min(cases, key=lambda case: len(str(case.get("body_text") or "")))
 

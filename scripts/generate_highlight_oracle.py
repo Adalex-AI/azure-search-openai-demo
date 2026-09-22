@@ -27,6 +27,7 @@ PDF_SECTION_RE = re.compile(
     r"[A-Z](?:\.?\d)+(?:\.\d+)*|\d+(?:\.\d+)+))\b(?P<title>.*)$",
     re.IGNORECASE,
 )
+LEADING_RULE_RE = re.compile(r"^(?P<id>\d+(?:\.\d+)+)\b")
 
 
 def normalize_text(value: str) -> str:
@@ -91,7 +92,12 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
         for index, heading in enumerate(headings):
             text = normalize_text(str(heading["text"]))
             match = SECTION_RE.match(text)
-            if not match:
+            next_heading = headings[index + 1] if index + 1 < len(headings) else None
+            start = blocks.index(heading)
+            following_block = blocks[start + 1] if start + 1 < len(blocks) else {}
+            following_text = normalize_text(str(following_block.get("text") or ""))
+            rule_match = LEADING_RULE_RE.match(following_text)
+            if match is None and rule_match is None:
                 continue
             locator = str(heading.get("locator") or "").strip()
             if not locator:
@@ -100,7 +106,6 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
             if key in seen:
                 raise ValueError(f"Duplicate section heading: {identity} {locator}")
             seen.add(key)
-            next_heading = headings[index + 1] if index + 1 < len(headings) else None
             body_text, body_sha256 = body_evidence(blocks, heading, next_heading)
             cases.append(
                 {
@@ -112,7 +117,7 @@ def load_snapshot_cases(snapshot_dir: Path) -> list[dict[str, Any]]:
                     "category": str(snapshot.get("category") or ""),
                     "sourcefile": str(snapshot.get("sourcefile") or ""),
                     "sourcepage": text,
-                    "subsection_id": match.group("id"),
+                    "subsection_id": (match or rule_match).group("id"),
                     "expected_heading": text,
                     "heading_locator": locator,
                     "next_heading": normalize_text(str(next_heading.get("text") or "")) if next_heading else None,

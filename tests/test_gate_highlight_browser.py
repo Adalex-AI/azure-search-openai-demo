@@ -43,7 +43,7 @@ def test_choose_case_prefers_cpr_part_24_sourcefile():
     preferred = {
         "case_id": "preferred",
         "sourcefile": "Part 24",
-        "subsection_id": "PART 24",
+        "subsection_id": "24.1",
         "body_text": "longer canonical body",
     }
     fallback = {"case_id": "fallback", "subsection_id": "1", "sourcepage": "Other", "body_text": "short"}
