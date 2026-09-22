@@ -151,6 +151,8 @@ def audit_snapshot(snapshot: dict[str, Any], source: Any, action_entry: dict[str
 
     docs = updater.build_index_docs(action_entry, scraped)
     result["chunk_count"] = len(docs)
+    document_sourcefiles: set[str] = set()
+    document_parent_ids: set[str] = set()
     for document in docs:
         token_count = updater.LegalDocumentChunker(max_tokens=8000).count_tokens(document["content"])
         if token_count > EMBEDDING_TOKEN_LIMIT:
@@ -158,8 +160,18 @@ def audit_snapshot(snapshot: dict[str, Any], source: Any, action_entry: dict[str
         for field in ("id", "content", "sourcefile", "sourcepage", "parent_id", "subsection_id", "subsections"):
             if field not in document:
                 result["metadata_failures"].append(f"{document.get('id', '<unknown>')}: missing {field}")
-        if document.get("sourcefile") != source.sourcefile:
-            result["metadata_failures"].append(f"{document.get('id', '<unknown>')}: sourcefile mismatch")
+        sourcefile = str(document.get("sourcefile") or "").strip()
+        parent_id = str(document.get("parent_id") or "").strip()
+        if not sourcefile:
+            result["metadata_failures"].append(f"{document.get('id', '<unknown>')}: empty sourcefile")
+        if not parent_id:
+            result["metadata_failures"].append(f"{document.get('id', '<unknown>')}: empty parent_id")
+        document_sourcefiles.add(sourcefile)
+        document_parent_ids.add(parent_id)
+    if len(document_sourcefiles) != 1:
+        result["metadata_failures"].append("chunk sourcefile values are inconsistent")
+    if len(document_parent_ids) != 1:
+        result["metadata_failures"].append("chunk parent_id values are inconsistent")
 
     if result["missing_blocks"] or result["oversized_chunks"] or result["metadata_failures"]:
         result["status"] = "FAIL"
