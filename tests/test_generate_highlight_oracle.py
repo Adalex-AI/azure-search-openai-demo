@@ -6,7 +6,7 @@ from scripts import generate_highlight_oracle
 from scripts.generate_highlight_oracle import load_snapshot_cases
 
 
-def test_load_snapshot_cases_uses_numbered_rule_after_semantic_heading(tmp_path):
+def test_load_snapshot_cases_uses_numbered_rule_after_semantic_heading(tmp_path, monkeypatch):
     snapshot = {
         "status": "ok",
         "oracle_version": "v1",
@@ -24,6 +24,7 @@ def test_load_snapshot_cases_uses_numbered_rule_after_semantic_heading(tmp_path)
         },
     }
     (tmp_path / "part-24.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    monkeypatch.setattr(generate_highlight_oracle, "ROOT", tmp_path)
 
     cases = load_snapshot_cases(tmp_path)
 
