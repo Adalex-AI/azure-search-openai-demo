@@ -120,7 +120,7 @@ def is_existing_index_error(error: Any) -> bool:
         or getattr(generated_error, "code", None) == expected_code
     )
     return (
-        (status_code == 409 and structured_code)
+        (status_code in {400, 409} and structured_code)
         or (not structured_code and f"({expected_code})" in str(error))
     )
 

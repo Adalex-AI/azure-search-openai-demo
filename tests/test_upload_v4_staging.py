@@ -202,9 +202,15 @@ def test_provisioner_recognizes_only_the_expected_existing_index_conflict():
             return "(ResourceNameAlreadyInUse) Cannot create index because it already exists."
 
     expected = UnstructuredExistingIndexError()
+    structured_expected = SimpleNamespace(
+        status_code=400,
+        error=SimpleNamespace(code="ResourceNameAlreadyInUse"),
+        model=None,
+    )
     wrong_code = SimpleNamespace(status_code=409, error=SimpleNamespace(code="CannotCreateExistingIndex"))
     wrong_status = SimpleNamespace(status_code=500, error=SimpleNamespace(code="ResourceNameAlreadyInUse"))
 
     assert is_existing_index_error(expected)
+    assert is_existing_index_error(structured_expected)
     assert not is_existing_index_error(wrong_code)
     assert not is_existing_index_error(wrong_status)
