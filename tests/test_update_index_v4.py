@@ -23,7 +23,8 @@ def test_v4_workflow_verifies_document_intelligence_before_extraction():
     assert workflow.index("Verify Document Intelligence access before extraction") < workflow.index(
         "Capture and extract canonical court guides"
     )
-    assert "roleDefinitionId == '/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleDefinitions/a97b65f3-24c7-4388-baec-2e87135dc908'" in workflow
+    assert 'subscription_scope="${document_intelligence_id%%/resourceGroups/*}"' in workflow
+    assert 'roleDefinitionId == \'${role_definition_id}\'' in workflow
     assert '--scope "${document_intelligence_id}"' in workflow
     assert '--assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' in workflow
     assert 'az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv' in workflow

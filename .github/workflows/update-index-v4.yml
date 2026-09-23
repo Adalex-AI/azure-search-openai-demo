@@ -189,6 +189,8 @@ jobs:
             --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
             --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
             --query id -o tsv)
+          subscription_scope="${document_intelligence_id%%/resourceGroups/*}"
+          role_definition_id="${subscription_scope}/providers/Microsoft.Authorization/roleDefinitions/a97b65f3-24c7-4388-baec-2e87135dc908"
           active_principal_id=$(az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv)
           [[ "${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" ]] || {
             echo "AZURE_RELEASE_PIPELINE_PRINCIPAL_ID does not match the service principal used by azure/login" >&2
@@ -198,7 +200,7 @@ jobs:
             --assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" \
             --scope "${document_intelligence_id}" \
             --include-inherited \
-            --query "[?roleDefinitionId == '/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleDefinitions/a97b65f3-24c7-4388-baec-2e87135dc908'] | length(@)" \
+            --query "[?roleDefinitionId == '${role_definition_id}'] | length(@)" \
             -o tsv)
           [[ "${role_count}" != "0" ]] || {
             echo "Release pipeline principal ${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID} lacks Cognitive Services User on ${document_intelligence_id}; provision the role before extraction" >&2
