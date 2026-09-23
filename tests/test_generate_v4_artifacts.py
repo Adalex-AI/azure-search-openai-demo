@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from scripts.audit_source_documents import CanonicalSource
+import scripts.generate_v4_artifacts as artifacts
 from scripts.generate_v4_artifacts import (
     GUIDE_FILES,
     ROOT,
@@ -139,3 +140,65 @@ def test_pdf_source_snapshot_rejects_missing_provenance(tmp_path, missing):
 
     with pytest.raises(ValueError, match="PDF snapshot|Source snapshot"):
         validate_source_snapshot(snapshot, source, tmp_path / "debt.json")
+
+
+def test_generate_uses_snapshot_html_with_current_scraper_api(monkeypatch, tmp_path):
+    source = CanonicalSource(
+        source_type="html",
+        sourcefile="Part 1",
+        category="Civil Procedure Rules and Practice Directions",
+        url="https://example.test/part-1",
+    )
+    snapshot_dir = tmp_path / "snapshots"
+    snapshot_dir.mkdir()
+    (snapshot_dir / "part-1.json").write_text(
+        json.dumps(
+            {
+                "status": "ok",
+                "identity": source.identity,
+                "source_type": "html",
+                "sourcefile": source.sourcefile,
+                "requested_url": source.url,
+                "final_url": source.url,
+                "html": "<main><p>Snapshot-only legal content.</p></main>",
+            }
+        ),
+        encoding="utf-8",
+    )
+    court_guides_dir = tmp_path / "court-guides"
+    court_guides_dir.mkdir()
+    (court_guides_dir / "court_guides_extraction_manifest.json").write_text(
+        json.dumps({"schema_version": 1, "guides": {}}), encoding="utf-8"
+    )
+
+    monkeypatch.setattr(artifacts, "load_web_sources", lambda: [source])
+    monkeypatch.setattr(artifacts, "GUIDE_FILES", {})
+
+    def scrape_snapshot(session, action):
+        soup = artifacts.updater.fetch_soup(session, action["url"])
+        return {"content": soup.get_text(" ", strip=True)}
+
+    monkeypatch.setattr(artifacts.updater, "scrape_page", scrape_snapshot)
+    monkeypatch.setattr(
+        artifacts.updater,
+        "build_index_docs",
+        lambda action, scraped: [
+            {
+                "id": "part-1",
+                "content": scraped["content"],
+                "sourcefile": action["sourcefile"],
+                "sourcepage": "Part 1",
+                "category": source.category,
+                "storageUrl": action["url"],
+                "updated": "2026-01-01T00:00:00Z",
+                "parent_id": "part-1",
+                "subsection_id": "1.1",
+                "subsections": ["1.1"],
+            }
+        ],
+    )
+
+    documents, manifest = artifacts.generate(snapshot_dir, court_guides_dir, "test-release")
+
+    assert documents[0]["content"] == "Snapshot-only legal content."
+    assert manifest["snapshot_count"] == 1

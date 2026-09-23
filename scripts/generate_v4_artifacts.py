@@ -208,11 +208,12 @@ def generate(
             "url": str(snapshot.get("final_url") or action.get("url") or source.url).rstrip("/"),
         }
         soup = BeautifulSoup(str(snapshot.get("html") or ""), "html.parser")
-        scraped = updater.scrape_page(
-            updater.requests.Session(),
-            action,
-            prefetched_result=(soup, snapshot.get("final_url", requested_url), snapshot.get("redirect_count", 0)),
-        )
+        original_fetch_soup = updater.fetch_soup
+        updater.fetch_soup = lambda session, url: soup
+        try:
+            scraped = updater.scrape_page(updater.requests.Session(), action)
+        finally:
+            updater.fetch_soup = original_fetch_soup
         if scraped is None:
             raise ValueError(f"Production scraper returned no content: {source.identity}")
         built = updater.build_index_docs(action, scraped)
