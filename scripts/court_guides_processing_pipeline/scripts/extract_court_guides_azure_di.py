@@ -24,8 +24,8 @@ import re
 import tempfile
 import time
 import unicodedata
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -822,7 +822,7 @@ def capture_canonical_sources(sources_dir: Path, manifest_path: Path) -> dict:
         raise RuntimeError("Canonical court-guide capture failed:\n" + "\n".join(failures))
 
     manifest = {
-        "captured_at": datetime.now(UTC).isoformat(),
+        "captured_at": datetime.now(timezone.utc).isoformat(),
         "sources": sources,
     }
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=manifest_path.parent, delete=False) as temporary:
