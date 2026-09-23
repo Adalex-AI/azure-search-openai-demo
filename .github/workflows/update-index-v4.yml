@@ -245,7 +245,7 @@ jobs:
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
             --image "${candidate_image}" \
-            --revision-suffix "v4-${V4_RELEASE_ID}-${GITHUB_RUN_ID}" \
+            --revision-suffix "v4-${GITHUB_RUN_ID}" \
             --set-env-vars \
               AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
               AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" \
@@ -325,7 +325,7 @@ jobs:
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
             --image "${candidate_image}" \
-            --revision-suffix "v4-${V4_RELEASE_ID}-gates-${GITHUB_RUN_ID}" \
+            --revision-suffix "v4-gates-${GITHUB_RUN_ID}" \
             --set-env-vars V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" >/dev/null
           echo "snapshot_sha256=${snapshot_sha256}" >> "$GITHUB_ENV"
         env:
