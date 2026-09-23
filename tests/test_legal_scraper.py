@@ -101,3 +101,19 @@ class TestLegalDocumentChunker:
         count = chunker.count_tokens(text)
         assert count > 0
         assert isinstance(count, int)
+
+    def test_sentence_fallback_splits_oversized_sentence(self, chunker):
+        text = "word " * 250
+
+        chunks = chunker._fallback_sentence_chunking(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(chunk["token_count"] <= chunker.max_tokens for chunk in chunks)
+
+    def test_large_section_reserves_tokens_for_chunk_context(self, chunker):
+        text = "\n## Rule 1\n" + ("word " * 250)
+
+        chunks = chunker.chunk_legal_document(text, "doc1", "Title")
+
+        assert len(chunks) > 1
+        assert all(chunk["token_count"] <= chunker.max_tokens for chunk in chunks)

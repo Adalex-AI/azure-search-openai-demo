@@ -222,7 +222,7 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
     context_rule = ""
     paragraphs = []
 
-    elements = content_div.find_all(["h1", "h2", "h3", "h4", "p", "div", "li", "table"])
+    elements = content_div.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "li", "table"])
     for elem in elements:
         if not elem.parent:
             continue
@@ -248,6 +248,15 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
         if not text:
             continue
 
+        if elem.name == "li":
+            text = " ".join(
+                child.get_text(" ", strip=True) if getattr(child, "name", None) else str(child).strip()
+                for child in elem.contents
+                if getattr(child, "name", None) not in ["ol", "ul"]
+            )
+            if not text:
+                continue
+
         if elem.name == "h1" or (
             elem.name == "p"
             and re.match(r"^(PART|PRACTICE\s+DIRECTIONS?)\b", text, re.IGNORECASE)
@@ -263,7 +272,7 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
             text, re.IGNORECASE,
         )
         if (
-            (elem.name in ["h2", "h3", "h4"])
+            (elem.name in ["h2", "h3", "h4", "h5", "h6"])
             or (
                 elem.name == "p"
                 and (
@@ -271,12 +280,12 @@ def scrape_page(session: requests.Session, url: str) -> Optional[dict]:
                     or is_generic
                 )
             )
-        ) and len(text) < 100:
+        ):
             context_rule = text
             paragraphs.append(f"## {text}")
             continue
 
-        if elem.name in ["p", "li"] and not elem.find_all(["p", "li"]):
+        if elem.name == "li" or (elem.name == "p" and not elem.find_all(["p", "li"])):
             bc = ""
             if context_part or context_rule:
                 parts = [c for c in [context_part, context_rule] if c]

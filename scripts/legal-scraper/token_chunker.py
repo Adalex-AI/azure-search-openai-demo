@@ -265,6 +265,17 @@ class LegalDocumentChunker:
     def _find_safe_break_point(self, text: str, start: int, end: int, 
                               section_context: str) -> int:
         """Find a safe place to break text while preserving legal meaning."""
+        token_budget = max(1, self.max_tokens - 128)
+        low = start + 1
+        high = end
+        while low < high:
+            midpoint = (low + high + 1) // 2
+            if self.count_tokens(text[start:midpoint]) <= token_budget:
+                low = midpoint
+            else:
+                high = midpoint - 1
+        end = low
+
         # Look for paragraph breaks, sentence endings, etc.
         search_text = text[start:end]
         
@@ -289,8 +300,8 @@ class LegalDocumentChunker:
                 if break_point - start > self.max_tokens * 0.3:
                     return break_point
         
-        # Fallback to hard limit
-        return min(end, start + self.max_tokens * 4)  # Rough character estimate
+        # The calculated endpoint is guaranteed to fit the token budget.
+        return end
     
     def _split_large_text(self, text: str, section_context: str) -> List[Dict]:
         """Split text that's still too large after boundary detection."""
@@ -330,15 +341,27 @@ class LegalDocumentChunker:
         sentences = re.split(r'(?<=[.!?])\s+', text)
         chunks = []
         current_chunk = ""
+        current_chunk_tokens = 0
+        token_budget = max(1, self.max_tokens - 128)
         
         for sentence in sentences:
-            potential_chunk = current_chunk + " " + sentence if current_chunk else sentence
-            if self.count_tokens(potential_chunk) > self.max_tokens:
+            sentence_tokens = self.count_tokens(sentence)
+            if sentence_tokens > token_budget:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = ""
+                    current_chunk_tokens = 0
+                chunks.extend(piece["text"] for piece in self._split_large_text(sentence, ""))
+                continue
+
+            if current_chunk_tokens + sentence_tokens > token_budget:
                 if current_chunk:
                     chunks.append(current_chunk.strip())
                 current_chunk = sentence
+                current_chunk_tokens = sentence_tokens
             else:
-                current_chunk = potential_chunk
+                current_chunk = current_chunk + " " + sentence if current_chunk else sentence
+                current_chunk_tokens += sentence_tokens
         
         if current_chunk:
             chunks.append(current_chunk.strip())
