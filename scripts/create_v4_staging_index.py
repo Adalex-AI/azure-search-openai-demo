@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.upload_v4_staging import (
@@ -108,16 +109,32 @@ def build_index(index_name: str):
     )
 
 
+def is_existing_index_error(error: Any) -> bool:
+    service_error = getattr(error, "error", None)
+    return (
+        getattr(error, "status_code", None) == 409
+        and getattr(service_error, "code", None) == "ResourceNameAlreadyInUse"
+    )
+
+
 def provision(index_name: str, service: str) -> None:
     from azure.identity import DefaultAzureCredential
+    from azure.core.exceptions import HttpResponseError
     from azure.search.documents.indexes import SearchIndexClient
 
     endpoint = service if service.startswith("https://") else f"https://{service}.search.windows.net"
     client = SearchIndexClient(endpoint=endpoint, credential=DefaultAzureCredential())
-    result = client.create_index(build_index(index_name))
+    try:
+        result = client.create_index(build_index(index_name))
+        status = "created"
+    except HttpResponseError as error:
+        if not is_existing_index_error(error):
+            raise
+        result = client.get_index(index_name)
+        status = "reused"
     validate_index_schema(result)
     validate_index_schema(client.get_index(index_name))
-    print(json.dumps({"index": result.name, "status": "created"}))
+    print(json.dumps({"index": result.name, "status": status}))
 
 
 def main() -> int:

@@ -1,7 +1,9 @@
 import json
+from types import SimpleNamespace
 
 import pytest
 
+from scripts.create_v4_staging_index import is_existing_index_error
 from scripts.upload_v4_staging import (
     EMBEDDING_DIMENSIONS,
     EMBEDDING_FIELD,
@@ -187,3 +189,13 @@ def test_provisioner_dry_run_accepts_disposable_target():
     # The parser-level behavior is covered by the validation-only invocation in
     # the release command; this test keeps the shared target guard exercised.
     validate_staging_target("legal-court-rag-v4-staging-test")
+
+
+def test_provisioner_recognizes_only_the_expected_existing_index_conflict():
+    expected = SimpleNamespace(status_code=409, error=SimpleNamespace(code="ResourceNameAlreadyInUse"))
+    wrong_code = SimpleNamespace(status_code=409, error=SimpleNamespace(code="CannotCreateExistingIndex"))
+    wrong_status = SimpleNamespace(status_code=500, error=SimpleNamespace(code="ResourceNameAlreadyInUse"))
+
+    assert is_existing_index_error(expected)
+    assert not is_existing_index_error(wrong_code)
+    assert not is_existing_index_error(wrong_status)
