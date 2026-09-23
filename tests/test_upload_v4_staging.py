@@ -193,7 +193,9 @@ def test_provisioner_dry_run_accepts_disposable_target():
 
 def test_provisioner_recognizes_only_the_expected_existing_index_conflict():
     expected = SimpleNamespace(
-        response=SimpleNamespace(status_code=409), error=SimpleNamespace(code="ResourceNameAlreadyInUse")
+        status_code=None,
+        response=SimpleNamespace(status_code=409),
+        error=SimpleNamespace(code="ResourceNameAlreadyInUse"),
     )
     wrong_code = SimpleNamespace(status_code=409, error=SimpleNamespace(code="CannotCreateExistingIndex"))
     wrong_status = SimpleNamespace(status_code=500, error=SimpleNamespace(code="ResourceNameAlreadyInUse"))
