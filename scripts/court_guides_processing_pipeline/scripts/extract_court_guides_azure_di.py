@@ -68,11 +68,11 @@ GUIDE_METADATA = {
         "sourcepage_style": "lettered",
         "annex_as_single": False,
     },
-    "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf": {
+    "Kings-Bench-Division-Guide-2026.pdf": {
         "category": "King's Bench Division",
         "sourcefile": "King's Bench Division Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2025/01/35.16_JO_Kings_Bench_Division_Guide_2025_WEB4.pdf",
-        "updated": "2025-01-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/09/Kings-Bench-Division-Guide.pdf",
+        "updated": "2026-04-01T00:00:00Z",
         "split_level": 2,
         "sourcepage_style": "numbered",
         "annex_as_single": True,
@@ -100,11 +100,11 @@ GUIDE_METADATA = {
         "sourcepage_style": "numbered",
         "annex_as_single": True,
     },
-    "The-Technology-and-Construction-Court-Guide.pdf": {
+    "46.20_JO_Technology_and_Construction_Court_Guide_2026_WEB.pdf": {
         "category": "Technology and Construction Court",
         "sourcefile": "Technology and Construction Court Guide",
-        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2022/12/TCC-Guide-Amended.pdf",
-        "updated": "2022-10-01T00:00:00Z",
+        "storageUrl": "https://www.judiciary.uk/wp-content/uploads/2026/06/46.20_JO_Technology_and_Construction_Court_Guide_2026_WEB.pdf",
+        "updated": "2026-07-01T00:00:00Z",
         "split_level": 4,
         "sourcepage_style": "section_dot",
         "annex_as_single": False,
