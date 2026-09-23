@@ -192,12 +192,16 @@ def test_provisioner_dry_run_accepts_disposable_target():
 
 
 def test_provisioner_recognizes_only_the_expected_existing_index_conflict():
-    expected = SimpleNamespace(
-        status_code=None,
-        response=SimpleNamespace(status_code=409),
-        error=None,
-        model=SimpleNamespace(code="ResourceNameAlreadyInUse"),
-    )
+    class UnstructuredExistingIndexError:
+        status_code = None
+        response = None
+        error = None
+        model = None
+
+        def __str__(self):
+            return "(ResourceNameAlreadyInUse) Cannot create index because it already exists."
+
+    expected = UnstructuredExistingIndexError()
     wrong_code = SimpleNamespace(status_code=409, error=SimpleNamespace(code="CannotCreateExistingIndex"))
     wrong_status = SimpleNamespace(status_code=500, error=SimpleNamespace(code="ResourceNameAlreadyInUse"))
 

@@ -114,12 +114,14 @@ def is_existing_index_error(error: Any) -> bool:
     generated_error = getattr(error, "model", None)
     response = getattr(error, "response", None)
     status_code = getattr(error, "status_code", None) or getattr(response, "status_code", None)
+    expected_code = "ResourceNameAlreadyInUse"
+    structured_code = (
+        getattr(service_error, "code", None) == expected_code
+        or getattr(generated_error, "code", None) == expected_code
+    )
     return (
-        status_code == 409
-        and (
-            getattr(service_error, "code", None) == "ResourceNameAlreadyInUse"
-            or getattr(generated_error, "code", None) == "ResourceNameAlreadyInUse"
-        )
+        (status_code == 409 and structured_code)
+        or (status_code is None and f"({expected_code})" in str(error))
     )
 
 
