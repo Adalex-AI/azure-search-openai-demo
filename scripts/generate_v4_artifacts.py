@@ -107,6 +107,12 @@ def expand_oversized_embedding_windows(
             original_id,
             str(document.get("section_title") or document.get("sourcefile") or original_id),
         )
+        if len(chunks) < 2:
+            chunks = chunker._fallback_sentence_chunking(
+                str(document.get("content") or ""),
+                original_id,
+                str(document.get("section_title") or document.get("sourcefile") or original_id),
+            )
         children: list[dict[str, Any]] = []
         for index, chunk in enumerate(chunks, start=1):
             child = dict(document)

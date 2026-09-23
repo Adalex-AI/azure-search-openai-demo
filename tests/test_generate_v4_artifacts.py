@@ -53,6 +53,38 @@ def test_oversized_embedding_windows_preserve_canonical_content():
     assert [child["child_window"] for child in children] == list(range(1, len(children) + 1))
 
 
+def test_oversized_embedding_windows_fall_back_when_legal_chunking_returns_one_window(monkeypatch):
+    class Chunker:
+        def __init__(self, max_tokens, overlap_tokens):
+            pass
+
+        def count_tokens(self, text):
+            return len(text.split())
+
+        def chunk_legal_document(self, text, document_id, rule_title):
+            return [{"text": text}]
+
+        def _fallback_sentence_chunking(self, text, document_id, rule_title):
+            first, second = text.split(". ", maxsplit=1)
+            return [{"text": first + "."}, {"text": second}]
+
+    monkeypatch.setattr(artifacts.updater, "LegalDocumentChunker", Chunker)
+    document = {
+        "id": "pd49e",
+        "content": ("first " * 5000) + ". " + ("second " * 5000),
+        "sourcefile": "Practice Direction 49E",
+        "sourcepage": "Alternative procedure for claims",
+        "category": "Civil Procedure Rules and Practice Directions",
+    }
+    enrich_retrieval_metadata(document)
+
+    children = expand_oversized_embedding_windows([document])
+
+    assert len(children) == 2
+    assert all(child["content"] == document["content"] for child in children)
+    assert [child["child_window"] for child in children] == [1, 2]
+
+
 COURT_GUIDES_DIR = ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
 
 
