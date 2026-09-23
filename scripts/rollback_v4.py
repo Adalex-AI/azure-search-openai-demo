@@ -32,7 +32,7 @@ CONFIRMATION = "ROLLBACK-PREVIOUS"
 
 def _containerapp_revision_suffix(revision_name: str, application_name: str) -> str:
     prefix = f"{application_name}--"
-    suffix = revision_name[len(prefix):] if revision_name.startswith(prefix) else revision_name
+    suffix = revision_name[len(prefix) :] if revision_name.startswith(prefix) else revision_name
     if not suffix or len(suffix) > 63 or not suffix.replace("-", "").isalnum():
         raise RollbackError("Rollback revision name does not contain a valid Container Apps suffix")
     return suffix
@@ -64,25 +64,49 @@ def build_rollback_plan(
         rollback_revision_suffix = _containerapp_revision_suffix(rollback_revision, application_name.strip())
         rollback_revision = f"{application_name.strip()}--{rollback_revision_suffix}"
     if rollback_platform == "appservice":
-        command = [[
-            "az", "webapp", "config", "container", "set",
-            "--resource-group", resource_group.strip(),
-            "--name", application_name.strip(),
-            "--docker-custom-image-name", rollback_image,
-        ], [
-            "az", "webapp", "config", "appsettings", "set",
-            "--resource-group", resource_group.strip(),
-            "--name", application_name.strip(),
-        ]]
+        command = [
+            [
+                "az",
+                "webapp",
+                "config",
+                "container",
+                "set",
+                "--resource-group",
+                resource_group.strip(),
+                "--name",
+                application_name.strip(),
+                "--docker-custom-image-name",
+                rollback_image,
+            ],
+            [
+                "az",
+                "webapp",
+                "config",
+                "appsettings",
+                "set",
+                "--resource-group",
+                resource_group.strip(),
+                "--name",
+                application_name.strip(),
+            ],
+        ]
     else:
-        command = [[
-            "az", "containerapp", "update",
-            "--resource-group", resource_group.strip(),
-            "--name", application_name.strip(),
-            "--image", rollback_image,
-            "--revision-suffix", rollback_revision_suffix,
-            "--set-env-vars",
-        ]]
+        command = [
+            [
+                "az",
+                "containerapp",
+                "update",
+                "--resource-group",
+                resource_group.strip(),
+                "--name",
+                application_name.strip(),
+                "--image",
+                rollback_image,
+                "--revision-suffix",
+                rollback_revision_suffix,
+                "--set-env-vars",
+            ]
+        ]
     settings = [
         f"AZURE_SEARCH_INDEX={targets['rollback_index']}",
         f"AZURE_SEARCH_KNOWLEDGEBASE_NAME={targets['rollback_knowledgebase']}",
