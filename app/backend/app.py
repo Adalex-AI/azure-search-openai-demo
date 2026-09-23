@@ -51,7 +51,7 @@ from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
 from approaches.promptmanager import PromptManager
 from chat_history.cosmosdb import chat_history_cosmosdb_bp
 from customizations.config import fetch_available_sources, is_deployed_ui_compat_enabled, is_feature_enabled
-from customizations.routes import categories_bp, feedback_bp, proxy_source_bp
+from customizations.routes import categories_bp, feedback_bp, provenance_bp, proxy_source_bp
 from config import (
     CONFIG_AGENTIC_KNOWLEDGEBASE_ENABLED,
     CONFIG_AUTH_CLIENT,
@@ -713,6 +713,10 @@ async def setup_clients():
         knowledgebase_client_with_web_and_sharepoint
     )
     current_app.config[CONFIG_AUTH_CLIENT] = auth_helper
+    # CUSTOM: expose release-bound identity to the candidate provenance route.
+    current_app.config["PROVENANCE_SEARCH_INDEX"] = AZURE_SEARCH_INDEX
+    current_app.config["PROVENANCE_KNOWLEDGE_BASE"] = AZURE_SEARCH_KNOWLEDGEBASE_NAME
+    current_app.config["PROVENANCE_AGENTIC_MODE"] = os.getenv("V4_AGENTIC_MODE", "agentic")
 
     current_app.config[CONFIG_SEMANTIC_RANKER_DEPLOYED] = AZURE_SEARCH_SEMANTIC_RANKER != "disabled"
     current_app.config[CONFIG_QUERY_REWRITING_ENABLED] = (
@@ -803,6 +807,8 @@ def create_app():
     app.register_blueprint(categories_bp)
     app.register_blueprint(feedback_bp)
     app.register_blueprint(proxy_source_bp)
+    # CUSTOM: expose immutable candidate provenance for release gates.
+    app.register_blueprint(provenance_bp)
 
     if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
         app.logger.info("APPLICATIONINSIGHTS_CONNECTION_STRING is set, enabling Azure Monitor")

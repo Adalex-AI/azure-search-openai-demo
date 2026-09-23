@@ -25,11 +25,11 @@ concurrency:
 
 env:
   PYTHON_VERSION: '3.10'
-  SEARCH_INDEX: legal-court-rag-v4-staging-${{ inputs.release_id || github.run_number }}
-  SEARCH_KNOWLEDGEBASE: legal-court-rag-v4-staging-${{ inputs.release_id || github.run_number }}-agent-upgrade
+  SEARCH_INDEX: legal-court-rag-v4-staging-${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}
+  SEARCH_KNOWLEDGEBASE: legal-court-rag-v4-staging-${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}-agent-upgrade
   ROLLBACK_INDEX: legal-court-rag-index-v3
   ROLLBACK_KNOWLEDGEBASE: legal-court-rag-index-v3-agent-upgrade
-  V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+  V4_RELEASE_ID: ${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}
   V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
   V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
 
@@ -49,7 +49,7 @@ jobs:
           AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
           V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
           V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
-          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
         run: |
           set -euo pipefail
           : "${AZURE_RESOURCE_GROUP:?Set repository variable V4_CANDIDATE_RESOURCE_GROUP}"
@@ -84,15 +84,8 @@ jobs:
           provisioning_state = properties.get("provisioningState")
           latest_revision = properties.get("latestRevisionName")
           latest_ready_revision = properties.get("latestReadyRevisionName")
-          recoverable_failed_state = (
-            provisioning_state == "Failed"
-            and latest_revision
-            and latest_revision == latest_ready_revision
-          )
-          if provisioning_state != "Succeeded" and not recoverable_failed_state:
+          if provisioning_state != "Succeeded":
             raise SystemExit("candidate Container App is not provisioned successfully")
-          if recoverable_failed_state:
-            print(f"Recovering candidate {candidate['name']} from a failed update; latest revision {latest_ready_revision} is ready")
           if not fqdn:
               raise SystemExit("candidate Container App has no ingress FQDN")
           configured = urllib.parse.urlparse(os.environ["V4_CANDIDATE_URL"])
@@ -180,9 +173,9 @@ jobs:
         run: echo "artifact_sha256=$(sha256sum reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: v4-candidate-${{ inputs.release_id || github.run_number }}
+          name: v4-candidate-${{ env.V4_RELEASE_ID }}
           path: |
-            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/
+            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/
             reports/html_oracle_snapshots/
             reports/html_transition_audit.json
             reports/highlight_oracle.json
@@ -203,7 +196,7 @@ jobs:
           pip install -r requirements-dev.txt
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ inputs.release_id || github.run_number }}
+          name: v4-candidate-${{ env.V4_RELEASE_ID }}
           path: reports
       - uses: azure/login@v2
         with:
@@ -230,7 +223,7 @@ jobs:
           pip install -r requirements-dev.txt
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ inputs.release_id || github.run_number }}
+          name: v4-candidate-${{ env.V4_RELEASE_ID }}
           path: reports
       - uses: azure/login@v2
         with:
@@ -242,9 +235,16 @@ jobs:
           : "${AZURE_RESOURCE_GROUP:?Set V4 candidate resource group}"
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
+          candidate_image=$(az containerapp show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --query "properties.template.containers[0].image" \
+            --only-show-errors -o tsv)
+          : "${candidate_image:?Candidate Container App has no configured image}"
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
+            --image "${candidate_image}" \
             --revision-suffix "v4-${V4_RELEASE_ID}-${GITHUB_RUN_ID}" \
             --set-env-vars \
               AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
@@ -278,7 +278,7 @@ jobs:
         run: |
           python scripts/upload_v4_staging.py \
             --index "${SEARCH_INDEX}" \
-            --artifact reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/documents_with_embeddings.jsonl \
+            --artifact reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/documents_with_embeddings.jsonl \
             --service "${AZURE_SEARCH_SERVICE}" --execute
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
@@ -295,7 +295,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ inputs.release_id || github.run_number }}
+          name: v4-candidate-${{ env.V4_RELEASE_ID }}
           path: reports
       - uses: actions/setup-python@v5
         with:
@@ -315,9 +315,16 @@ jobs:
           : "${AZURE_RESOURCE_GROUP:?Set V4 candidate resource group}"
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           snapshot_sha256=$(sha256sum reports/v4_search_snapshot.json | cut -d' ' -f1)
+          candidate_image=$(az containerapp show \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --query "properties.template.containers[0].image" \
+            --only-show-errors -o tsv)
+          : "${candidate_image:?Candidate Container App has no configured image}"
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
+            --image "${candidate_image}" \
             --revision-suffix "v4-${V4_RELEASE_ID}-gates-${GITHUB_RUN_ID}" \
             --set-env-vars V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" >/dev/null
           echo "snapshot_sha256=${snapshot_sha256}" >> "$GITHUB_ENV"
@@ -373,7 +380,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
           SEARCH_KNOWLEDGEBASE: ${{ env.SEARCH_KNOWLEDGEBASE }}
-          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
       - name: Generate provenance-bound ACL gate
         run: |
           python scripts/gate_acl.py \
@@ -424,7 +431,7 @@ jobs:
             --output reports/v4_application_gates.json
         env:
           APP_URL: ${{ vars.V4_CANDIDATE_URL }}
-          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
@@ -446,7 +453,7 @@ jobs:
       - name: Build unapproved evidence bundle
         run: |
           python scripts/build_v4_evidence_bundle.py \
-            --artifact-manifest reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json \
+            --artifact-manifest reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json \
             --search-snapshot reports/v4_search_snapshot.json \
             --fidelity-report reports/v4_fidelity.json \
             --transition-report reports/html_transition_audit.json \
@@ -460,12 +467,12 @@ jobs:
             --output reports/v4_evidence.json
       - uses: actions/upload-artifact@v4
         with:
-          name: v4-evidence-${{ inputs.release_id || github.run_number }}
+          name: v4-evidence-${{ env.V4_RELEASE_ID }}
           path: |
             reports/v4_*
-            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json
-            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/documents_with_embeddings.jsonl
-            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/court_guides_extraction_manifest.json
+            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json
+            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/documents_with_embeddings.jsonl
+            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/court_guides_extraction_manifest.json
             reports/highlight_oracle.json
             reports/highlight_gate.json
             reports/acl_gate.json
@@ -486,7 +493,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: actions/download-artifact@v4
         with:
-          name: v4-evidence-${{ inputs.release_id || github.run_number }}
+          name: v4-evidence-${{ env.V4_RELEASE_ID }}
           path: reports
       - uses: actions/setup-python@v5
         with:
@@ -494,7 +501,7 @@ jobs:
       - name: Rebuild evidence with Production approval
         run: |
           python scripts/build_v4_evidence_bundle.py \
-            --artifact-manifest reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json \
+            --artifact-manifest reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json \
             --search-snapshot reports/v4_search_snapshot.json \
             --fidelity-report reports/v4_fidelity.json \
             --transition-report reports/html_transition_audit.json \

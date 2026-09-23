@@ -138,8 +138,10 @@ def provision(index_name: str, service: str) -> None:
     except HttpResponseError as error:
         if not is_existing_index_error(error):
             raise
-        result = client.get_index(index_name)
-        status = "reused"
+        raise RuntimeError(
+            f"Staging index {index_name!r} already exists. Refusing to reuse an immutable release target; "
+            "choose a fresh release_id."
+        ) from error
     validate_index_schema(result)
     validate_index_schema(client.get_index(index_name))
     print(json.dumps({"index": result.name, "status": status}))
