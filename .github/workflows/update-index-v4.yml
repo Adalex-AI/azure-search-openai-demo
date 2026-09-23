@@ -175,6 +175,7 @@ jobs:
         shell: bash
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_RELEASE_PIPELINE_PRINCIPAL_ID: ${{ secrets.AZURE_RELEASE_PIPELINE_PRINCIPAL_ID }}
           AZURE_DOCUMENTINTELLIGENCE_SERVICE: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_SERVICE }}
           AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP }}
@@ -197,7 +198,7 @@ jobs:
             --assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" \
             --scope "${document_intelligence_id}" \
             --include-inherited \
-            --query "[?roleDefinitionName == 'Cognitive Services User'] | length(@)" \
+            --query "[?roleDefinitionId == '/subscriptions/${AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleDefinitions/a97b65f3-24c7-4388-baec-2e87135dc908'] | length(@)" \
             -o tsv)
           [[ "${role_count}" != "0" ]] || {
             echo "Release pipeline principal ${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID} lacks Cognitive Services User on ${document_intelligence_id}; provision the role before extraction" >&2
