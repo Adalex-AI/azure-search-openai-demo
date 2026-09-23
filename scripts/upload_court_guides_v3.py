@@ -69,7 +69,7 @@ GUIDE_FILES = {
         "category": "Commercial Court",
     },
     "King's Bench Division": {
-        "file": "35.16_JO_Kings_Bench_Division_Guide_2025_WEB4_processed.json",
+        "file": "Kings-Bench-Division-Guide-2026_processed.json",
         "sourcefile": "King's Bench Division Guide",
         "category": "King's Bench Division",
     },
@@ -84,7 +84,7 @@ GUIDE_FILES = {
         "category": "Patents Court",
     },
     "Technology and Construction Court": {
-        "file": "The-Technology-and-Construction-Court-Guide_processed.json",
+        "file": "46.20_JO_Technology_and_Construction_Court_Guide_2026_WEB_processed.json",
         "sourcefile": "Technology and Construction Court Guide",
         "category": "Technology and Construction Court",
     },
