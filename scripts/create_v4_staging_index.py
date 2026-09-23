@@ -121,7 +121,7 @@ def is_existing_index_error(error: Any) -> bool:
     )
     return (
         (status_code == 409 and structured_code)
-        or (status_code is None and f"({expected_code})" in str(error))
+        or (not structured_code and f"({expected_code})" in str(error))
     )
 
 

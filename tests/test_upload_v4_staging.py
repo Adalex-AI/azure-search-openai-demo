@@ -193,7 +193,7 @@ def test_provisioner_dry_run_accepts_disposable_target():
 
 def test_provisioner_recognizes_only_the_expected_existing_index_conflict():
     class UnstructuredExistingIndexError:
-        status_code = None
+        status_code = 409
         response = None
         error = None
         model = None
