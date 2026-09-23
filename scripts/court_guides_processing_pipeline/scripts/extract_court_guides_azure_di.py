@@ -16,14 +16,18 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import re
+import tempfile
 import time
 import unicodedata
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
@@ -779,6 +783,56 @@ def process_pdf(pdf_path: str, output_dir: str, dry_run: bool = False) -> list[d
     return doc_dicts
 
 
+def capture_canonical_sources(sources_dir: Path, manifest_path: Path) -> dict:
+    """Download every registered court guide and record immutable source evidence."""
+    sources_dir.mkdir(parents=True, exist_ok=True)
+    sources = []
+    failures = []
+
+    for filename, metadata in GUIDE_METADATA.items():
+        request = Request(metadata["storageUrl"], headers={"User-Agent": "Adalex-v4-candidate-capture/1.0"})
+        try:
+            with urlopen(request, timeout=60) as response:
+                content = response.read()
+                resolved_url = response.geturl()
+        except Exception as error:
+            failures.append(f"{filename}: {error}")
+            continue
+
+        if not content.startswith(b"%PDF-"):
+            failures.append(f"{filename}: resolved resource is not a PDF")
+            continue
+
+        destination = sources_dir / filename
+        with tempfile.NamedTemporaryFile(dir=sources_dir, prefix=f".{filename}.", delete=False) as temporary:
+            temporary.write(content)
+            temporary_path = Path(temporary.name)
+        temporary_path.replace(destination)
+        sources.append(
+            {
+                "filename": filename,
+                "source_url": metadata["storageUrl"],
+                "resolved_url": resolved_url,
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "size_bytes": len(content),
+            }
+        )
+
+    if failures:
+        raise RuntimeError("Canonical court-guide capture failed:\n" + "\n".join(failures))
+
+    manifest = {
+        "captured_at": datetime.now(UTC).isoformat(),
+        "sources": sources,
+    }
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=manifest_path.parent, delete=False) as temporary:
+        json.dump(manifest, temporary, indent=2)
+        temporary.write("\n")
+        temporary_path = Path(temporary.name)
+    temporary_path.replace(manifest_path)
+    return manifest
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract court guides using Azure Document Intelligence")
     parser.add_argument("--pdf", help="Path to a single PDF to process")
@@ -792,21 +846,32 @@ def main():
         default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs_azure_di"),
         help="Output directory for processed JSONs (default: ../outputs_azure_di/)",
     )
+    parser.add_argument(
+        "--capture-canonical",
+        action="store_true",
+        help="Download every registered guide and write a source checksum manifest before extraction",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Parse and report only, no file output")
     args = parser.parse_args()
+
+    if args.capture_canonical and args.pdf:
+        parser.error("--capture-canonical cannot be used with --pdf")
 
     output_dir = os.path.abspath(args.output_dir)
     if not args.dry_run:
         os.makedirs(output_dir, exist_ok=True)
 
+    sources_dir = Path(os.path.abspath(args.sources_dir))
+    if args.capture_canonical:
+        capture_canonical_sources(sources_dir, sources_dir.parent / "source_manifest.json")
+
     if args.pdf:
         pdfs = [os.path.abspath(args.pdf)]
     else:
-        sources_dir = os.path.abspath(args.sources_dir)
         pdfs = sorted(
-            os.path.join(sources_dir, f)
-            for f in os.listdir(sources_dir)
-            if f.lower().endswith(".pdf")
+            str(sources_dir / filename)
+            for filename in os.listdir(sources_dir)
+            if filename.lower().endswith(".pdf")
         )
         logger.info("Found %d PDFs in %s", len(pdfs), sources_dir)
 
