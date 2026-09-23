@@ -79,9 +79,20 @@ jobs:
           import urllib.parse
 
           candidate = json.loads(os.environ["CANDIDATE_JSON"])
-          fqdn = candidate.get("properties", {}).get("configuration", {}).get("ingress", {}).get("fqdn", "")
-          if candidate.get("properties", {}).get("provisioningState") != "Succeeded":
-              raise SystemExit("candidate Container App is not provisioned successfully")
+          properties = candidate.get("properties", {})
+          fqdn = properties.get("configuration", {}).get("ingress", {}).get("fqdn", "")
+          provisioning_state = properties.get("provisioningState")
+          latest_revision = properties.get("latestRevisionName")
+          latest_ready_revision = properties.get("latestReadyRevisionName")
+          recoverable_failed_state = (
+            provisioning_state == "Failed"
+            and latest_revision
+            and latest_revision == latest_ready_revision
+          )
+          if provisioning_state != "Succeeded" and not recoverable_failed_state:
+            raise SystemExit("candidate Container App is not provisioned successfully")
+          if recoverable_failed_state:
+            print(f"Recovering candidate {candidate['name']} from a failed update; latest revision {latest_ready_revision} is ready")
           if not fqdn:
               raise SystemExit("candidate Container App has no ingress FQDN")
           configured = urllib.parse.urlparse(os.environ["V4_CANDIDATE_URL"])
