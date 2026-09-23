@@ -10,7 +10,12 @@ on:
         required: true
         type: string
       promote:
-        description: 'Request the separately approved Production promotion job'
+        description: 'Promote after all audit gates and Production approval; set false to build and audit only'
+        required: false
+        type: boolean
+        default: true
+      rollback:
+        description: 'Request the separately approved Production rollback job'
         required: false
         type: boolean
         default: false
@@ -18,23 +23,26 @@ on:
 permissions:
   id-token: write
   contents: read
+  actions: read
 
 concurrency:
-  group: update-index-v4-${{ github.ref }}
-  cancel-in-progress: true
+  group: update-index-v4-production
+  cancel-in-progress: false
 
 env:
   PYTHON_VERSION: '3.10'
-  SEARCH_INDEX: legal-court-rag-v4-staging-${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}
-  SEARCH_KNOWLEDGEBASE: legal-court-rag-v4-staging-${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}-agent-upgrade
+  SEARCH_INDEX: legal-court-rag-v4-staging-${{ inputs.release_id || github.run_number }}
+  SEARCH_KNOWLEDGEBASE: legal-court-rag-v4-staging-${{ inputs.release_id || github.run_number }}-agent-upgrade
   ROLLBACK_INDEX: legal-court-rag-index-v3
   ROLLBACK_KNOWLEDGEBASE: legal-court-rag-index-v3-agent-upgrade
-  V4_RELEASE_ID: ${{ inputs.release_id || format('{0}-{1}', github.run_id, github.run_attempt) }}
+  V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
   V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
   V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
+  V4_ROLLBACK_EVIDENCE_ARTIFACT: ${{ vars.V4_ROLLBACK_EVIDENCE_ARTIFACT }}
 
 jobs:
   preflight:
+    if: inputs.rollback != true
     runs-on: ubuntu-latest
     steps:
       - uses: azure/login@v2
@@ -49,13 +57,21 @@ jobs:
           AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
           V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
           V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
-          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
         run: |
           set -euo pipefail
           : "${AZURE_RESOURCE_GROUP:?Set repository variable V4_CANDIDATE_RESOURCE_GROUP}"
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
+          [[ "${V4_RELEASE_ID}" =~ ^[a-z0-9][a-z0-9-]{0,40}$ ]] || {
+            echo "V4_RELEASE_ID must be 1-41 lowercase letters, digits, or hyphens and start with a letter or digit" >&2
+            exit 1
+          }
           [[ "${V4_RELEASE_ID}" != *r4* ]] || { echo "Refusing an r4 release id: ${V4_RELEASE_ID}" >&2; exit 1; }
+          [[ "${{ inputs.promote }}" != "true" || "${{ inputs.rollback }}" != "true" ]] || {
+            echo "Promotion and rollback cannot be requested together" >&2
+            exit 1
+          }
           [[ "${V4_CANDIDATE_APP}" != "capps-v4-candidate-20260715" ]] || { echo "Refusing the blocked r4 candidate app" >&2; exit 1; }
           [[ "${V4_CANDIDATE_URL}" == https://* ]] || { echo "V4_CANDIDATE_URL must use HTTPS" >&2; exit 1; }
           : "${AZURE_SEARCH_SERVICE:?Set secret AZURE_SEARCH_SERVICE}"
@@ -79,13 +95,9 @@ jobs:
           import urllib.parse
 
           candidate = json.loads(os.environ["CANDIDATE_JSON"])
-          properties = candidate.get("properties", {})
-          fqdn = properties.get("configuration", {}).get("ingress", {}).get("fqdn", "")
-          provisioning_state = properties.get("provisioningState")
-          latest_revision = properties.get("latestRevisionName")
-          latest_ready_revision = properties.get("latestReadyRevisionName")
-          if provisioning_state != "Succeeded":
-            raise SystemExit("candidate Container App is not provisioned successfully")
+          fqdn = candidate.get("properties", {}).get("configuration", {}).get("ingress", {}).get("fqdn", "")
+          if candidate.get("properties", {}).get("provisioningState") != "Succeeded":
+              raise SystemExit("candidate Container App is not provisioned successfully")
           if not fqdn:
               raise SystemExit("candidate Container App has no ingress FQDN")
           configured = urllib.parse.urlparse(os.environ["V4_CANDIDATE_URL"])
@@ -97,10 +109,12 @@ jobs:
           PY
 
   build-candidate:
+    if: inputs.rollback != true
     needs: preflight
     runs-on: ubuntu-latest
     outputs:
       artifact_sha256: ${{ steps.hash.outputs.artifact_sha256 }}
+      image_digest: ${{ steps.image.outputs.image_digest }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -108,22 +122,175 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      - name: Build frontend assets for immutable image
+        working-directory: app/frontend
+        run: npm ci && npm run build
+      - name: Verify frontend assets are in the Docker context
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s app/backend/static/index.html
+          grep -q '<div id="root">' app/backend/static/index.html
+          compgen -G 'app/backend/static/assets/*.js' >/dev/null
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Build immutable application image
+        id: image
+        shell: bash
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
+          V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+        run: |
+          set -euo pipefail
+          registry_server=$(az containerapp show \
+            --resource-group "${AZURE_RESOURCE_GROUP:?Set V4 candidate resource group}" \
+            --name "${V4_CANDIDATE_APP:?Set V4 candidate app}" \
+            --query 'properties.template.containers[0].image' -o tsv | cut -d/ -f1)
+          : "${registry_server:?Candidate app has no configured container registry}"
+          acr_name="${registry_server%%.azurecr.io}"
+          image_tag="legal-rag:v4-${V4_RELEASE_ID}-${GITHUB_SHA}"
+          az acr build \
+            --registry "${acr_name}" \
+            --image "${image_tag}" \
+            --file app/backend/Dockerfile \
+            app/backend
+          image_digest=$(az acr repository show-manifests \
+            --name "${acr_name}" \
+            --repository legal-rag \
+            --query "[?tags[?@ == '${image_tag#legal-rag:}']].digest | [0]" \
+            -o tsv)
+          : "${image_digest:?ACR did not return an immutable image digest}"
+          [[ "${image_digest}" == sha256:* ]] || { echo "ACR returned an invalid image digest: ${image_digest}" >&2; exit 1; }
+          echo "image_digest=${registry_server}/legal-rag@${image_digest}" >> "${GITHUB_OUTPUT}"
+      - name: Verify Document Intelligence access before extraction
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_RELEASE_PIPELINE_PRINCIPAL_ID: ${{ secrets.AZURE_RELEASE_PIPELINE_PRINCIPAL_ID }}
+          AZURE_DOCUMENTINTELLIGENCE_SERVICE: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_SERVICE }}
+          AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+          : "${AZURE_CLIENT_ID:?Set secret AZURE_CLIENT_ID}"
+          : "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID:?Set secret AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_SERVICE:?Set secret AZURE_DOCUMENTINTELLIGENCE_SERVICE}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP:?Set secret AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}"
+          document_intelligence_id=$(az cognitiveservices account show \
+            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
+            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
+            --query id -o tsv)
+          active_principal_id=$(az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv)
+          [[ "${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" ]] || {
+            echo "AZURE_RELEASE_PIPELINE_PRINCIPAL_ID does not match the service principal used by azure/login" >&2
+            exit 1
+          }
+          role_count=$(az role assignment list \
+            --assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" \
+            --scope "${document_intelligence_id}" \
+            --include-inherited \
+            --query "[?roleDefinitionName == 'Cognitive Services User'] | length(@)" \
+            -o tsv)
+          [[ "${role_count}" != "0" ]] || {
+            echo "Release pipeline principal ${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID} lacks Cognitive Services User on ${document_intelligence_id}; provision the role before extraction" >&2
+            exit 1
+          }
+          document_intelligence_endpoint=$(az cognitiveservices account show \
+            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
+            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
+            --query properties.endpoint -o tsv)
+          : "${document_intelligence_endpoint:?Document Intelligence account has no endpoint}"
+          echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"
+          echo "Verified Cognitive Services User access for the release pipeline principal"
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       - name: Recapture canonical HTML oracle
+        continue-on-error: true
         run: |
           rm -rf reports/html_oracle_snapshots
+          mkdir -p reports/html_oracle_snapshots
           python scripts/capture_html_oracle.py \
             --output-dir reports/html_oracle_snapshots \
             --refresh \
             --retries 8 \
             --retry-delay 2
+      - name: Summarize HTML oracle diagnostics
+        if: always()
+        run: |
+          {
+            echo "### HTML oracle diagnostics"
+            manifest="reports/html_oracle_snapshots/manifest.json"
+            if [[ -f "${manifest}" ]]; then
+              python - "${manifest}" <<'PY'
+          import json
+          import sys
+
+          manifest = json.loads(open(sys.argv[1], encoding="utf-8").read())
+          print(f"source_count: {manifest.get('source_count', 0)}")
+          print(f"ok_count: {manifest.get('ok_count', 0)}")
+          print(f"not_applicable_count: {manifest.get('not_applicable_count', 0)}")
+          print(f"skipped_count: {manifest.get('skipped_count', 0)}")
+          print(f"unavailable_count: {manifest.get('unavailable_count', 0)}")
+          for result in manifest.get("unavailable_results", []):
+              print(
+                  "unavailable: "
+                  f"identity={result.get('identity', '<unknown>')} "
+                  f"sourcefile={result.get('sourcefile', '<unknown>')} "
+                  f"url={result.get('requested_url', '<unknown>')} "
+                  f"error_type={result.get('error_type', '<unknown>')} "
+                  f"error={result.get('error', '<unknown>')}"
+              )
+          PY
+            elif [[ -d reports/html_oracle_snapshots ]]; then
+              echo "No HTML oracle manifest was created"
+              find reports/html_oracle_snapshots -maxdepth 2 -type f -print | sort
+            else
+              echo "No HTML oracle snapshot directory was created"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Upload HTML oracle diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-html-oracle-${{ inputs.release_id || github.run_number }}
+          path: reports/html_oracle_snapshots/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Require complete HTML oracle evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          manifest="reports/html_oracle_snapshots/manifest.json"
+          [[ -f "${manifest}" ]] || {
+            echo "HTML oracle did not create ${manifest}; inspect the retained v4-html-oracle artifact" >&2
+            exit 1
+          }
+          python - "${manifest}" <<'PY'
+          import json
+          import sys
+
+          manifest = json.loads(open(sys.argv[1], encoding="utf-8").read())
+          unavailable = manifest.get("unavailable_results", [])
+          if unavailable:
+              raise SystemExit(
+                  "HTML oracle has unavailable canonical sources; inspect the retained "
+                  f"v4-html-oracle artifact: {json.dumps(unavailable, sort_keys=True)}"
+              )
+          if manifest.get("source_count", 0) != manifest.get("ok_count", 0):
+              raise SystemExit(
+                  "HTML oracle did not capture every canonical HTML source: "
+                  f"source_count={manifest.get('source_count')} ok_count={manifest.get('ok_count')}"
+              )
+          PY
       - name: Recapture canonical PDF oracle
         run: |
           python scripts/capture_pdf_oracle.py \
@@ -145,6 +312,28 @@ jobs:
             --capture-canonical \
             --sources-dir "reports/court_guides_${V4_RELEASE_ID}/sources" \
             --output-dir "reports/court_guides_${V4_RELEASE_ID}/outputs"
+      - name: Validate canonical extraction manifest
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.court_guides_processing_pipeline.scripts.extract_court_guides_azure_di import GUIDE_METADATA
+
+          manifest_path = Path("reports") / f"court_guides_{os.environ['V4_RELEASE_ID']}" / "outputs" / "court_guides_extraction_manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          sources = manifest.get("sources", [])
+          expected = set(GUIDE_METADATA)
+          actual = {source.get("filename") for source in sources}
+          if manifest.get("source_count") != len(expected) or actual != expected:
+              raise SystemExit(f"canonical source manifest mismatch: expected {expected}, got {actual}")
+          if any(len(source.get("sha256", "")) != 64 for source in sources):
+              raise SystemExit("canonical source manifest contains an invalid SHA-256")
+          guides = manifest.get("guides", {})
+          if set(guides) != {source.get("sourcefile") for source in sources}:
+              raise SystemExit("canonical extraction manifest does not contain every processed guide")
+          PY
       - name: Generate release-bound source artifact
         run: |
           python scripts/generate_v4_artifacts.py \
@@ -152,15 +341,18 @@ jobs:
             --court-guides-dir "reports/court_guides_${V4_RELEASE_ID}/outputs" \
             --release-id "${V4_RELEASE_ID}" \
             --output-dir "reports/index_v4_artifacts_${V4_RELEASE_ID}"
+          cp "reports/court_guides_${V4_RELEASE_ID}/outputs/court_guides_extraction_manifest.json" \
+            "reports/index_v4_artifacts_${V4_RELEASE_ID}/court_guides_extraction_manifest.json"
+          while IFS= read -r processed_json; do
+            cp "${processed_json}" "reports/index_v4_artifacts_${V4_RELEASE_ID}/$(basename "${processed_json}")"
+          done < <(find "reports/court_guides_${V4_RELEASE_ID}/outputs" -maxdepth 1 -type f -name '*_processed.json' -print)
       - name: Generate embeddings with managed identity
         run: |
-          : "${AZURE_OPENAI_SERVICE:?Set repository secret AZURE_OPENAI_SERVICE}"
-          export AZURE_OPENAI_ENDPOINT="https://${AZURE_OPENAI_SERVICE}.openai.azure.com"
           python scripts/generate_v4_embeddings.py \
             --input "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents.jsonl" \
             --output "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl"
         env:
-          AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       - name: Validate candidate documents
@@ -173,15 +365,18 @@ jobs:
         run: echo "artifact_sha256=$(sha256sum reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: v4-candidate-${{ env.V4_RELEASE_ID }}
+          name: v4-candidate-${{ inputs.release_id || github.run_number }}
           path: |
-            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/
             reports/html_oracle_snapshots/
             reports/html_transition_audit.json
             reports/highlight_oracle.json
+            reports/court_guides_${{ inputs.release_id || github.run_number }}/sources/
+            reports/court_guides_${{ inputs.release_id || github.run_number }}/outputs/
           retention-days: 30
 
   provision-and-upload:
+    if: inputs.rollback != true
     needs: [preflight, build-candidate]
     runs-on: ubuntu-latest
     steps:
@@ -191,12 +386,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements-dev.txt
-      - run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ env.V4_RELEASE_ID }}
+          name: v4-candidate-${{ inputs.release_id || github.run_number }}
           path: reports
       - uses: azure/login@v2
         with:
@@ -209,6 +402,7 @@ jobs:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
 
   deploy-candidate-app:
+    if: inputs.rollback != true
     needs: [preflight, build-candidate, provision-and-upload]
     runs-on: ubuntu-latest
     steps:
@@ -218,12 +412,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: requirements-dev.txt
-      - run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ env.V4_RELEASE_ID }}
+          name: v4-candidate-${{ inputs.release_id || github.run_number }}
           path: reports
       - uses: azure/login@v2
         with:
@@ -235,29 +427,80 @@ jobs:
           : "${AZURE_RESOURCE_GROUP:?Set V4 candidate resource group}"
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
-          candidate_image=$(az containerapp show \
-            --resource-group "${AZURE_RESOURCE_GROUP}" \
-            --name "${V4_CANDIDATE_APP}" \
-            --query "properties.template.containers[0].image" \
-            --only-show-errors -o tsv)
-          : "${candidate_image:?Candidate Container App has no configured image}"
+          : "${V4_CANDIDATE_IMAGE_DIGEST:?Build job did not produce an immutable image reference}"
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
-            --image "${candidate_image}" \
-            --revision-suffix "v4-${GITHUB_RUN_ID}" \
+            --image "${V4_CANDIDATE_IMAGE_DIGEST}" \
+            --revision-suffix "v4-${V4_RELEASE_ID}" \
             --set-env-vars \
               AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
               AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" \
+              AZURE_OPENAI_EMB_MODEL_NAME="text-embedding-3-large" \
+              AZURE_OPENAI_EMB_DIMENSIONS="3072" \
+              AZURE_SEARCH_FIELD_NAME_EMBEDDING="embedding3" \
               V4_RELEASE_ID="${V4_RELEASE_ID}" \
-              GIT_SHA="${GITHUB_SHA}" \
               DEPLOYMENT_ID="${GITHUB_RUN_ID}" \
+              GIT_SHA="${GITHUB_SHA}" \
+              V4_IMAGE_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" \
               V4_ARTIFACT_SHA256="${ARTIFACT_SHA256}" \
               V4_SEARCH_SNAPSHOT_SHA256="pending" \
               RUNNING_IN_PRODUCTION=false >/dev/null
+          revision=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" \
+              --query "properties.latestRevisionName" --output tsv)
+          : "${revision:?Candidate app has no latest revision name after update}"
+          az containerapp ingress traffic set \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --revision-weight "${revision}=100" >/dev/null
+          serving_json=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" -o json)
+          SERVING_JSON="${serving_json}" EXPECTED_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" python - <<'PY'
+          import json
+          import os
+
+          app = json.loads(os.environ["SERVING_JSON"])
+          expected = os.environ["EXPECTED_DIGEST"]
+          properties = app.get("properties", {})
+          image = properties.get("template", {}).get("containers", [{}])[0].get("image", "")
+          revision = properties.get("latestRevisionName", "")
+          environment = {
+              item.get("name"): item.get("value", "")
+              for item in properties.get("template", {}).get("containers", [{}])[0].get("env", [])
+              if item.get("name")
+          }
+          if "@sha256:" not in expected:
+            raise SystemExit("V4_CANDIDATE_IMAGE_DIGEST must be an immutable image reference containing @sha256:")
+          if image != expected:
+            raise SystemExit(f"candidate image mismatch: serving {image!r}, expected {expected!r}")
+          if environment.get("GIT_SHA") != os.environ["EXPECTED_GIT_SHA"]:
+            raise SystemExit(
+                f"candidate image is not bound to workflow commit: serving {environment.get('GIT_SHA')!r}, "
+                f"expected {os.environ['EXPECTED_GIT_SHA']!r}"
+            )
+          if not revision:
+            raise SystemExit("candidate has no latest revision name")
+          from scripts.validate_v4_active_release import validate_active_release
+          validate_active_release(
+            app,
+            os.environ["EXPECTED_RELEASE_ID"],
+            expected_image_digest=expected,
+            expected_revision_name=revision,
+          )
+          print(f"Verified serving candidate revision {revision} with image {image}")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+            handle.write(f"V4_REVISION_NAME={revision}\n")
+          PY
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
+          EXPECTED_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
           ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
+          EXPECTED_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          EXPECTED_GIT_SHA: ${{ github.sha }}
       - name: Provision paired staging knowledge base
         run: |
           python scripts/create_v4_staging_knowledgebase.py \
@@ -271,21 +514,23 @@ jobs:
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_OPENAI_SERVICE: ${{ secrets.AZURE_OPENAI_SERVICE }}
-          AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT || 'gpt-4.1-mini' }}
-          AZURE_OPENAI_KNOWLEDGEBASE_MODEL: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_MODEL || 'gpt-4.1-mini' }}
+          AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT }}
+          AZURE_OPENAI_KNOWLEDGEBASE_MODEL: ${{ secrets.AZURE_OPENAI_KNOWLEDGEBASE_MODEL }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       - name: Upload candidate documents
         run: |
           python scripts/upload_v4_staging.py \
             --index "${SEARCH_INDEX}" \
-            --artifact reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/documents_with_embeddings.jsonl \
+            --artifact reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/documents_with_embeddings.jsonl \
             --service "${AZURE_SEARCH_SERVICE}" --execute
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
 
   audit-candidate:
+    if: inputs.rollback != true
     needs: [preflight, build-candidate, provision-and-upload, deploy-candidate-app]
     runs-on: ubuntu-latest
+    environment: Production
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -295,7 +540,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: actions/download-artifact@v4
         with:
-          name: v4-candidate-${{ env.V4_RELEASE_ID }}
+          name: v4-candidate-${{ inputs.release_id || github.run_number }}
           path: reports
       - uses: actions/setup-python@v5
         with:
@@ -315,21 +560,49 @@ jobs:
           : "${AZURE_RESOURCE_GROUP:?Set V4 candidate resource group}"
           : "${V4_CANDIDATE_APP:?Set repository variable V4_CANDIDATE_APP}"
           snapshot_sha256=$(sha256sum reports/v4_search_snapshot.json | cut -d' ' -f1)
-          candidate_image=$(az containerapp show \
-            --resource-group "${AZURE_RESOURCE_GROUP}" \
-            --name "${V4_CANDIDATE_APP}" \
-            --query "properties.template.containers[0].image" \
-            --only-show-errors -o tsv)
-          : "${candidate_image:?Candidate Container App has no configured image}"
           az containerapp update \
             --resource-group "${AZURE_RESOURCE_GROUP}" \
             --name "${V4_CANDIDATE_APP}" \
-            --image "${candidate_image}" \
-            --revision-suffix "v4-gates-${GITHUB_RUN_ID}" \
-            --set-env-vars V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" >/dev/null
+            --revision-suffix "v4-${V4_RELEASE_ID}-gates" \
+            --set-env-vars \
+              V4_SEARCH_SNAPSHOT_SHA256="${snapshot_sha256}" \
+              V4_IMAGE_DIGEST="${V4_CANDIDATE_IMAGE_DIGEST}" \
+              V4_RELEASE_ID="${V4_RELEASE_ID}" >/dev/null
+          revision=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" \
+              --query "properties.latestRevisionName" --output tsv)
+          : "${revision:?Candidate app has no latest revision name after gate configuration}"
+          az containerapp ingress traffic set \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --name "${V4_CANDIDATE_APP}" \
+            --revision-weight "${revision}=100" >/dev/null
+          serving_json=$(az containerapp show \
+              --resource-group "${AZURE_RESOURCE_GROUP}" \
+              --name "${V4_CANDIDATE_APP}" -o json)
+          SERVING_JSON="${serving_json}" EXPECTED_RELEASE_ID="${V4_RELEASE_ID}" python - <<'PY'
+          import json
+          import os
+          from scripts.validate_v4_active_release import validate_active_release
+
+          app = json.loads(os.environ["SERVING_JSON"])
+          revision = app.get("properties", {}).get("latestRevisionName", "")
+          if not revision:
+              raise SystemExit("candidate has no latest revision name after gate configuration")
+          validate_active_release(
+            app,
+            os.environ["EXPECTED_RELEASE_ID"],
+            expected_image_digest=os.environ["EXPECTED_DIGEST"],
+            expected_revision_name=revision,
+          )
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
+              handle.write(f"V4_REVISION_NAME={revision}\n")
+          PY
           echo "snapshot_sha256=${snapshot_sha256}" >> "$GITHUB_ENV"
         env:
           AZURE_RESOURCE_GROUP: ${{ vars.V4_CANDIDATE_RESOURCE_GROUP }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          EXPECTED_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
       - name: Wait for candidate provenance readiness
         run: |
           : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
@@ -337,7 +610,7 @@ jobs:
             response=$(curl --silent --show-error --location --write-out '\n%{http_code}' "${V4_CANDIDATE_URL%/}/api/provenance" || true)
             http_code=$(printf '%s\n' "$response" | tail -n 1)
             body=$(printf '%s\n' "$response" | sed '$d')
-            if [[ "$http_code" == "200" ]] && printf '%s' "$body" | python -c 'import json, sys; payload = json.load(sys.stdin); required = ("release_id", "git_sha", "deployment_id", "artifact_sha256", "search_snapshot_sha256", "search_service", "search_index", "knowledge_base"); raise SystemExit(0 if payload.get("schema_version") == 1 and all(str(payload.get(field) or "").strip() for field in required) else 1)'; then
+            if [[ "$http_code" == "200" ]] && printf '%s' "$body" | python -c 'import json, sys, os; payload = json.load(sys.stdin); expected = {"release_id": os.environ["V4_RELEASE_ID"], "git_sha": os.environ["GITHUB_SHA"], "deployment_id": os.environ["GITHUB_RUN_ID"], "artifact_sha256": os.environ["ARTIFACT_SHA256"], "search_snapshot_sha256": os.environ["snapshot_sha256"], "search_service": os.environ["AZURE_SEARCH_SERVICE"], "search_index": os.environ["SEARCH_INDEX"], "knowledge_base": os.environ["SEARCH_KNOWLEDGEBASE"], "image_digest": os.environ["V4_CANDIDATE_IMAGE_DIGEST"], "revision_name": os.environ["V4_REVISION_NAME"], "agentic_mode": os.environ["V4_AGENTIC_MODE"]}; raise SystemExit(0 if payload.get("schema_version") == 1 and payload["image_digest"] == os.environ["V4_CANDIDATE_IMAGE_DIGEST"] and all(str(payload.get(field) or "").strip() == value.strip() for field, value in expected.items()) else 1)'; then
               exit 0
             fi
             echo "Candidate provenance is not ready (attempt ${attempt}/60, HTTP ${http_code})"
@@ -345,6 +618,39 @@ jobs:
           done
           echo "Candidate provenance did not become ready: ${V4_CANDIDATE_URL%/}/api/provenance" >&2
           exit 1
+        env:
+          V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
+          AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
+          SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
+          SEARCH_KNOWLEDGEBASE: ${{ env.SEARCH_KNOWLEDGEBASE }}
+          V4_AGENTIC_MODE: agentic
+      - name: Smoke test candidate frontend assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${V4_CANDIDATE_URL:?Set repository variable V4_CANDIDATE_URL}"
+          root_headers=$(mktemp)
+          root_body=$(mktemp)
+          trap 'rm -f "${root_headers}" "${root_body}"' EXIT
+          curl --fail --silent --show-error --location \
+            --dump-header "${root_headers}" \
+            --output "${root_body}" \
+            "${V4_CANDIDATE_URL%/}/"
+          grep -iq '^content-type:.*text/html' "${root_headers}"
+          asset_path=$(grep -Eo '/assets/[^"[:space:]]+\.js' "${root_body}" | head -n 1)
+          : "${asset_path:?Candidate HTML does not reference a JavaScript asset}"
+          asset_headers=$(mktemp)
+          trap 'rm -f "${root_headers}" "${root_body}" "${asset_headers}"' EXIT
+          curl --fail --silent --show-error --location \
+            --dump-header "${asset_headers}" \
+            --output /dev/null \
+            "${V4_CANDIDATE_URL%/}${asset_path}"
+          grep -Eiq '^content-type:.*(javascript|ecmascript)' "${asset_headers}"
         env:
           V4_CANDIDATE_URL: ${{ vars.V4_CANDIDATE_URL }}
       - name: Generate provenance-bound browser highlight gate
@@ -364,6 +670,9 @@ jobs:
               "search_service": os.environ["AZURE_SEARCH_SERVICE"],
               "search_index": os.environ["SEARCH_INDEX"],
               "knowledge_base": os.environ["SEARCH_KNOWLEDGEBASE"],
+              "image_digest": os.environ["V4_CANDIDATE_IMAGE_DIGEST"],
+              "revision_name": os.environ["V4_REVISION_NAME"],
+              "agentic_mode": os.environ["V4_AGENTIC_MODE"],
           }
           Path("reports/candidate_provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
           PY
@@ -380,17 +689,24 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
           SEARCH_KNOWLEDGEBASE: ${{ env.SEARCH_KNOWLEDGEBASE }}
-          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          V4_AGENTIC_MODE: agentic
       - name: Generate provenance-bound ACL gate
         run: |
           python scripts/gate_acl.py \
             --candidate-url "${V4_CANDIDATE_URL}" \
             --provenance reports/candidate_provenance.json \
+            --auth-token "${V4_RESTRICTED_AUTH_TOKEN}" \
+            --auth-cookie "${V4_RESTRICTED_AUTH_COOKIE}" \
             --output reports/acl_gate.json
         env:
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
           AZURE_SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          V4_SEARCH_CREDENTIAL: azure-cli
+          V4_RESTRICTED_AUTH_TOKEN: ${{ secrets.V4_RESTRICTED_AUTH_TOKEN }}
+          V4_RESTRICTED_AUTH_COOKIE: ${{ secrets.V4_RESTRICTED_AUTH_COOKIE }}
       - name: Generate provenance-bound behavioral gates
         run: |
           python scripts/gate_retrieval.py \
@@ -422,6 +738,9 @@ jobs:
             --search-service "${AZURE_SEARCH_SERVICE}" \
             --search-index "${SEARCH_INDEX}" \
             --knowledge-base "${SEARCH_KNOWLEDGEBASE}" \
+            --image-digest "${V4_CANDIDATE_IMAGE_DIGEST}" \
+            --revision-name "${V4_REVISION_NAME}" \
+            --agentic-mode "${V4_AGENTIC_MODE}" \
             --gate-report "retrieval=reports/retrieval_gate.json" \
             --gate-report "category=reports/category_gate.json" \
             --gate-report "source_hierarchy=reports/source_hierarchy_gate.json" \
@@ -431,12 +750,15 @@ jobs:
             --output reports/v4_application_gates.json
         env:
           APP_URL: ${{ vars.V4_CANDIDATE_URL }}
-          V4_RELEASE_ID: ${{ env.V4_RELEASE_ID }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          V4_CANDIDATE_APP: ${{ vars.V4_CANDIDATE_APP }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
           SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
           SEARCH_KNOWLEDGEBASE: ${{ env.SEARCH_KNOWLEDGEBASE }}
+          V4_AGENTIC_MODE: agentic
           AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
       - name: Run complete fidelity audit
         run: |
@@ -450,42 +772,144 @@ jobs:
           python scripts/validate_v4_candidate.py \
             --snapshot reports/v4_search_snapshot.json \
             --output reports/v4_candidate_validation.json
+      - name: Capture current Production application rollback identity
+        run: |
+          : "${AZURE_RESOURCE_GROUP:?Set the Production environment secret AZURE_RESOURCE_GROUP}"
+          : "${AZURE_BACKEND_SERVICE:?Set the Production environment secret AZURE_BACKEND_SERVICE}"
+            case "${AZURE_DEPLOYMENT_TARGET}" in
+              containerapps)
+                az containerapp show --resource-group "${AZURE_RESOURCE_GROUP}" --name "${AZURE_BACKEND_SERVICE}" --only-show-errors --output json > reports/v4_rollback_resource.json
+                ;;
+              appservice)
+                az webapp config appsettings list --resource-group "${AZURE_RESOURCE_GROUP}" --name "${AZURE_BACKEND_SERVICE}" --only-show-errors --output json > reports/v4_rollback_resource.json
+                ;;
+              *) echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2; exit 1 ;;
+            esac
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          source = json.loads(Path("reports/v4_rollback_resource.json").read_text(encoding="utf-8"))
+          if os.environ["AZURE_DEPLOYMENT_TARGET"] == "containerapps":
+              properties = source.get("properties", {})
+              containers = properties.get("template", {}).get("containers", [])
+              image = containers[0].get("image", "") if containers else ""
+              revision = properties.get("latestRevisionName", "")
+              env = {item.get("name"): item.get("value", "") for item in (containers[0].get("env", []) if containers else []) if item.get("name")}
+          else:
+              settings = {item.get("name"): item.get("value", "") for item in source if item.get("name")}
+              image = settings.get("V4_IMAGE_DIGEST", "")
+              revision = settings.get("V4_REVISION_NAME", "")
+              env = settings
+          rollback = {
+              "schema_version": 1,
+              "platform": os.environ["AZURE_DEPLOYMENT_TARGET"],
+              "image_digest": image,
+              "revision_name": revision,
+              "release_id": env.get("V4_RELEASE_ID", ""),
+              "search_index": env.get("AZURE_SEARCH_INDEX", ""),
+              "knowledge_base": env.get("AZURE_SEARCH_KNOWLEDGEBASE_NAME", ""),
+          }
+          if "@sha256:" not in image or not revision:
+              raise SystemExit("Production rollback identity must contain an immutable image and revision")
+          if "@sha256:" not in rollback["image_digest"] or not rollback["revision_name"] or not rollback["release_id"]:
+              raise SystemExit("Production rollback identity must contain a release, immutable image, and revision")
+          if not rollback["search_index"] or not rollback["knowledge_base"]:
+              raise SystemExit("Production rollback identity must contain a Search index and knowledge base")
+          Path("reports/v4_rollback_application.json").write_text(json.dumps(rollback, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_BACKEND_SERVICE: ${{ secrets.AZURE_BACKEND_SERVICE }}
+          AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
       - name: Build unapproved evidence bundle
+        env:
+          ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
+          AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
+          V4_CANDIDATE_IMAGE_DIGEST: ${{ needs.build-candidate.outputs.image_digest }}
+          V4_AGENTIC_MODE: agentic
         run: |
           python scripts/build_v4_evidence_bundle.py \
-            --artifact-manifest reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json \
+            --artifact-manifest reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json \
             --search-snapshot reports/v4_search_snapshot.json \
             --fidelity-report reports/v4_fidelity.json \
             --transition-report reports/html_transition_audit.json \
             --candidate-validation reports/v4_candidate_validation.json \
             --application-gates reports/v4_application_gates.json \
+            --rollback-application reports/v4_rollback_application.json \
             --highlight-oracle reports/highlight_oracle.json \
             --candidate-index "${SEARCH_INDEX}" \
             --candidate-knowledgebase "${SEARCH_KNOWLEDGEBASE}" \
             --rollback-index "${ROLLBACK_INDEX}" \
             --rollback-knowledgebase "${ROLLBACK_KNOWLEDGEBASE}" \
+            --expected-release-id "${V4_RELEASE_ID}" \
+            --expected-git-sha "${GITHUB_SHA}" \
+            --expected-deployment-id "${GITHUB_RUN_ID}" \
+            --expected-artifact-sha256 "${ARTIFACT_SHA256}" \
+            --expected-search-snapshot-sha256 "${snapshot_sha256}" \
+            --expected-search-service "${AZURE_SEARCH_SERVICE}" \
+            --expected-search-index "${SEARCH_INDEX}" \
+            --expected-knowledge-base "${SEARCH_KNOWLEDGEBASE}" \
+            --expected-image-digest "${V4_CANDIDATE_IMAGE_DIGEST}" \
+            --expected-revision-name "${V4_REVISION_NAME}" \
             --output reports/v4_evidence.json
       - uses: actions/upload-artifact@v4
         with:
-          name: v4-evidence-${{ env.V4_RELEASE_ID }}
+          name: v4-evidence-${{ inputs.release_id || github.run_number }}
           path: |
-            reports/v4_*
-            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json
-            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/documents_with_embeddings.jsonl
-            reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/court_guides_extraction_manifest.json
+            reports/v4_evidence.json
+            reports/v4_search_snapshot.json
+            reports/v4_fidelity.json
+            reports/v4_fidelity.md
+            reports/v4_candidate_validation.json
+            reports/v4_application_gates.json
+            reports/v4_rollback_application.json
+            reports/v4_rollback_resource.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/documents_with_embeddings.jsonl
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/court_guides_extraction_manifest.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/*_processed.json
             reports/highlight_oracle.json
             reports/highlight_gate.json
             reports/acl_gate.json
             reports/candidate_provenance.json
+            reports/html_transition_audit.json
           retention-days: 90
 
   promote:
     needs: audit-candidate
-    if: inputs.promote == true
+    if: inputs.rollback != true && inputs.promote != false && (github.event_name != 'schedule' || vars.V4_AUTO_PROMOTE == 'true')
     runs-on: ubuntu-latest
     environment: Production
     steps:
       - uses: actions/checkout@v4
+      - name: Validate scheduled promotion policy
+        if: github.event_name == 'schedule'
+        env:
+          V4_AUTO_PROMOTE: ${{ vars.V4_AUTO_PROMOTE }}
+        run: |
+          set -euo pipefail
+          [[ "${V4_AUTO_PROMOTE}" == "true" ]] || {
+            echo "Scheduled promotion requires repository variable V4_AUTO_PROMOTE=true" >&2
+            exit 1
+          }
+      - name: Validate Production deployment target configuration
+        env:
+          AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
+        run: |
+          set -euo pipefail
+          case "${AZURE_DEPLOYMENT_TARGET}" in
+            appservice|containerapps) ;;
+            '')
+              echo "Set the Production repository variable AZURE_DEPLOYMENT_TARGET to appservice or containerapps before promotion" >&2
+              exit 1
+              ;;
+            *)
+              echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2
+              exit 1
+              ;;
+          esac
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -493,48 +917,135 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: actions/download-artifact@v4
         with:
-          name: v4-evidence-${{ env.V4_RELEASE_ID }}
+          name: v4-evidence-${{ inputs.release_id || github.run_number }}
           path: reports
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Rebuild evidence with Production approval
+      - run: pip install -r requirements-dev.txt
+      - id: validate
+        name: Rebuild evidence with Production approval
+        env:
+          AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
         run: |
+          artifact_documents="reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl"
+          : "${artifact_documents:?Downloaded artifact documents are required}"
+          : "${snapshot_sha256:=$(sha256sum reports/v4_search_snapshot.json | cut -d' ' -f1)}"
+          : "${ARTIFACT_SHA256:=$(sha256sum "${artifact_documents}" | cut -d' ' -f1)}"
+          : "${V4_CANDIDATE_IMAGE_DIGEST:=$(python -c 'import json; print(json.load(open("reports/candidate_provenance.json"))["image_digest"])')}"
+          : "${V4_REVISION_NAME:=$(python -c 'import json; print(json.load(open("reports/candidate_provenance.json"))["revision_name"])')}"
+          : "${V4_AGENTIC_MODE:=$(python -c 'import json; print(json.load(open("reports/candidate_provenance.json"))["agentic_mode"])')}"
           python scripts/build_v4_evidence_bundle.py \
-            --artifact-manifest reports/index_v4_artifacts_${{ env.V4_RELEASE_ID }}/manifest.json \
+            --artifact-manifest reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json \
             --search-snapshot reports/v4_search_snapshot.json \
             --fidelity-report reports/v4_fidelity.json \
             --transition-report reports/html_transition_audit.json \
             --candidate-validation reports/v4_candidate_validation.json \
             --application-gates reports/v4_application_gates.json \
+            --rollback-application reports/v4_rollback_application.json \
             --highlight-oracle reports/highlight_oracle.json \
             --candidate-index "${SEARCH_INDEX}" \
             --candidate-knowledgebase "${SEARCH_KNOWLEDGEBASE}" \
             --rollback-index "${ROLLBACK_INDEX}" \
             --rollback-knowledgebase "${ROLLBACK_KNOWLEDGEBASE}" \
+            --expected-release-id "${V4_RELEASE_ID}" \
+            --expected-git-sha "${GITHUB_SHA}" \
+            --expected-deployment-id "${GITHUB_RUN_ID}" \
+            --expected-artifact-sha256 "${ARTIFACT_SHA256}" \
+            --expected-search-snapshot-sha256 "${snapshot_sha256}" \
+            --expected-search-service "${AZURE_SEARCH_SERVICE}" \
+            --expected-search-index "${SEARCH_INDEX}" \
+            --expected-knowledge-base "${SEARCH_KNOWLEDGEBASE}" \
+            --expected-image-digest "${V4_CANDIDATE_IMAGE_DIGEST}" \
+            --expected-revision-name "${V4_REVISION_NAME}" \
+            --expected-agentic-mode "${V4_AGENTIC_MODE}" \
             --approved --approval-environment Production \
             --output reports/v4_evidence.json
-          python scripts/promote_v4_candidate.py --evidence reports/v4_evidence.json
+          promotion_json=$(python scripts/promote_v4_candidate.py \
+            --evidence reports/v4_evidence.json \
+            --release-id "${V4_RELEASE_ID}")
+          PROMOTION_JSON="${promotion_json}" python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          payload = json.loads(os.environ["PROMOTION_JSON"])
+          for field in ("image_digest", "revision_name"):
+              value = str(payload.get(field) or "").strip()
+              if not value:
+                  raise SystemExit(f"promotion output is missing {field}")
+              print(f"{field}={value}")
+          PY
+      - name: Persist approved release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-approved-evidence-${{ inputs.release_id || github.run_number }}
+          path: |
+            reports/v4_evidence.json
+            reports/v4_search_snapshot.json
+            reports/v4_fidelity.json
+            reports/html_transition_audit.json
+            reports/v4_candidate_validation.json
+            reports/v4_application_gates.json
+            reports/v4_rollback_application.json
+            reports/candidate_provenance.json
+            reports/highlight_oracle.json
+            reports/highlight_gate.json
+            reports/acl_gate.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/manifest.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/documents_with_embeddings.jsonl
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/court_guides_extraction_manifest.json
+            reports/index_v4_artifacts_${{ inputs.release_id || github.run_number }}/*_processed.json
+          if-no-files-found: error
+          retention-days: 365
+        env:
+          AZURE_SEARCH_SERVICE: ${{ secrets.AZURE_SEARCH_SERVICE }}
       - name: Apply paired application configuration atomically
         run: |
           : "${AZURE_RESOURCE_GROUP:?Set the Production environment secret AZURE_RESOURCE_GROUP}"
           : "${AZURE_BACKEND_SERVICE:?Set the Production environment secret AZURE_BACKEND_SERVICE}"
+          : "${PROMOTION_IMAGE_DIGEST:?Evidence-bound image digest is required}"
+          [[ "${PROMOTION_IMAGE_DIGEST}" == *@sha256:* ]] || { echo "PROMOTION_IMAGE_DIGEST must be immutable" >&2; exit 1; }
+          : "${PROMOTION_REVISION_NAME:?Evidence-bound revision name is required}"
           case "${AZURE_DEPLOYMENT_TARGET}" in
             appservice)
+              az webapp config container set \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --docker-custom-image-name "${PROMOTION_IMAGE_DIGEST}" >/dev/null
               az webapp config appsettings set \
                 --resource-group "${AZURE_RESOURCE_GROUP}" \
                 --name "${AZURE_BACKEND_SERVICE}" \
                 --settings \
                   AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
-                  AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" >/dev/null
+                  AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" \
+                  AZURE_OPENAI_EMB_MODEL_NAME="text-embedding-3-large" \
+                  AZURE_OPENAI_EMB_DIMENSIONS="3072" \
+                  AZURE_SEARCH_FIELD_NAME_EMBEDDING="embedding3" \
+                  V4_IMAGE_DIGEST="${PROMOTION_IMAGE_DIGEST}" \
+                  V4_REVISION_NAME="${PROMOTION_REVISION_NAME}" \
+                  V4_RELEASE_ID="${V4_RELEASE_ID}" \
+                  V4_AGENTIC_MODE="${V4_AGENTIC_MODE}" \
+                  USE_AGENTIC_KNOWLEDGEBASE=true \
+                  USE_AGENTIC_RETRIEVAL=true >/dev/null
               ;;
             containerapps)
               az containerapp update \
                 --resource-group "${AZURE_RESOURCE_GROUP}" \
                 --name "${AZURE_BACKEND_SERVICE}" \
+                --image "${PROMOTION_IMAGE_DIGEST}" \
+                --revision-suffix "v4-${V4_RELEASE_ID}" \
                 --set-env-vars \
                   AZURE_SEARCH_INDEX="${SEARCH_INDEX}" \
-                  AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" >/dev/null
+                  AZURE_SEARCH_KNOWLEDGEBASE_NAME="${SEARCH_KNOWLEDGEBASE}" \
+                  AZURE_OPENAI_EMB_MODEL_NAME="text-embedding-3-large" \
+                  AZURE_OPENAI_EMB_DIMENSIONS="3072" \
+                  AZURE_SEARCH_FIELD_NAME_EMBEDDING="embedding3" \
+                  V4_IMAGE_DIGEST="${PROMOTION_IMAGE_DIGEST}" \
+                  V4_REVISION_NAME="${PROMOTION_REVISION_NAME}" \
+                  V4_RELEASE_ID="${V4_RELEASE_ID}" \
+                  V4_AGENTIC_MODE="${V4_AGENTIC_MODE}" \
+                  USE_AGENTIC_KNOWLEDGEBASE=true \
+                  USE_AGENTIC_RETRIEVAL=true >/dev/null
               ;;
             *)
               echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2
@@ -543,5 +1054,194 @@ jobs:
           esac
         env:
           AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
+          SEARCH_INDEX: ${{ env.SEARCH_INDEX }}
+          SEARCH_KNOWLEDGEBASE: ${{ env.SEARCH_KNOWLEDGEBASE }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+          V4_AGENTIC_MODE: agentic
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
           AZURE_BACKEND_SERVICE: ${{ secrets.AZURE_BACKEND_SERVICE }}
+          PROMOTION_IMAGE_DIGEST: ${{ steps.validate.outputs.image_digest }}
+          PROMOTION_REVISION_NAME: ${{ steps.validate.outputs.revision_name }}
+
+      - name: Validate promoted production identity
+        env:
+          AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_BACKEND_SERVICE: ${{ secrets.AZURE_BACKEND_SERVICE }}
+          PROMOTION_IMAGE_DIGEST: ${{ steps.validate.outputs.image_digest }}
+          PROMOTION_REVISION_NAME: ${{ steps.validate.outputs.revision_name }}
+        run: |
+          set -euo pipefail
+          case "${AZURE_DEPLOYMENT_TARGET}" in
+            containerapps)
+              az containerapp show \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --output json > reports/v4_active_release.json
+              platform_args=(--platform containerapps)
+              ;;
+            appservice)
+              az webapp config appsettings list \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --output json > reports/v4_active_release.json
+              live_image=$(az webapp config container show \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --query dockerCustomImageName --output tsv)
+              [[ "${live_image}" == "${PROMOTION_IMAGE_DIGEST}" ]] || {
+                echo "Active App Service container image mismatch: ${live_image}" >&2
+                exit 1
+              }
+              platform_args=(--platform appservice)
+              ;;
+            *)
+              echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2
+              exit 1
+              ;;
+          esac
+          python scripts/validate_v4_active_release.py \
+            --app-json reports/v4_active_release.json \
+            --expected-release-id "${V4_RELEASE_ID}" \
+            --expected-image-digest "${PROMOTION_IMAGE_DIGEST}" \
+            "${platform_args[@]}"
+
+  rollback:
+    if: inputs.rollback == true && inputs.promote != true
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate rollback configuration
+        env:
+          V4_ROLLBACK_EVIDENCE_ARTIFACT: ${{ vars.V4_ROLLBACK_EVIDENCE_ARTIFACT }}
+          V4_ROLLBACK_RUN_ID: ${{ vars.V4_ROLLBACK_RUN_ID }}
+          AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
+        run: |
+          set -euo pipefail
+          : "${V4_ROLLBACK_EVIDENCE_ARTIFACT:?Set the Production repository variable V4_ROLLBACK_EVIDENCE_ARTIFACT to an immutable historical evidence artifact name}"
+          : "${V4_ROLLBACK_RUN_ID:?Set the Production repository variable V4_ROLLBACK_RUN_ID to the originating historical workflow run ID}"
+          [[ "${V4_ROLLBACK_RUN_ID}" =~ ^[0-9]+$ ]] || {
+            echo "V4_ROLLBACK_RUN_ID must be a numeric historical workflow run ID" >&2
+            exit 1
+          }
+          case "${AZURE_DEPLOYMENT_TARGET}" in
+            appservice|containerapps) ;;
+            '')
+              echo "Set the Production repository variable AZURE_DEPLOYMENT_TARGET to appservice or containerapps before rollback" >&2
+              exit 1
+              ;;
+            *)
+              echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2
+              exit 1
+              ;;
+          esac
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ vars.V4_ROLLBACK_EVIDENCE_ARTIFACT }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ vars.V4_ROLLBACK_RUN_ID }}
+          path: reports
+      - name: Validate historical rollback evidence
+        env:
+          V4_ROLLBACK_EVIDENCE_ARTIFACT: ${{ vars.V4_ROLLBACK_EVIDENCE_ARTIFACT }}
+          V4_ROLLBACK_RUN_ID: ${{ vars.V4_ROLLBACK_RUN_ID }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+        run: |
+          set -euo pipefail
+          : "${V4_ROLLBACK_EVIDENCE_ARTIFACT:?Set the Production repository variable V4_ROLLBACK_EVIDENCE_ARTIFACT to an immutable historical evidence artifact name}"
+          : "${V4_ROLLBACK_RUN_ID:?Set the Production repository variable V4_ROLLBACK_RUN_ID to the originating historical workflow run ID}"
+          [[ "${V4_ROLLBACK_RUN_ID}" =~ ^[0-9]+$ ]] || {
+            echo "V4_ROLLBACK_RUN_ID must be a numeric historical workflow run ID" >&2
+            exit 1
+          }
+          evidence_path="reports/v4_evidence.json"
+          [[ -f "${evidence_path}" ]] || {
+            echo "Configured rollback artifact did not contain ${evidence_path}" >&2
+            exit 1
+          }
+          historical_release_id=$(python -c 'import json, sys; print(str(json.load(open(sys.argv[1])).get("release_id") or "") .strip())' "${evidence_path}")
+          [[ -n "${historical_release_id}" ]] || {
+            echo "Rollback evidence is missing its release_id" >&2
+            exit 1
+          }
+          [[ "${historical_release_id}" != "${V4_RELEASE_ID}" ]] || {
+            echo "Rollback evidence must identify a previous release, not the requested current run" >&2
+            exit 1
+          }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements-dev.txt
+      - name: Execute approved previous-release rollback
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_BACKEND_SERVICE: ${{ secrets.AZURE_BACKEND_SERVICE }}
+          V4_RELEASE_ID: ${{ inputs.release_id || github.run_number }}
+        run: |
+          set -euo pipefail
+          : "${AZURE_RESOURCE_GROUP:?Set the Production environment secret AZURE_RESOURCE_GROUP}"
+          : "${AZURE_BACKEND_SERVICE:?Set the Production environment secret AZURE_BACKEND_SERVICE}"
+          python scripts/rollback_v4.py \
+            --evidence reports/v4_evidence.json \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --application-name "${AZURE_BACKEND_SERVICE}" \
+            --current-release-id "${V4_RELEASE_ID}" \
+            --execute \
+            --confirm-rollback ROLLBACK-PREVIOUS \
+            > reports/v4_rollback_result.json
+      - name: Capture and validate restored production identity
+        env:
+          AZURE_DEPLOYMENT_TARGET: ${{ vars.AZURE_DEPLOYMENT_TARGET }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_BACKEND_SERVICE: ${{ secrets.AZURE_BACKEND_SERVICE }}
+        run: |
+          set -euo pipefail
+          case "${AZURE_DEPLOYMENT_TARGET}" in
+            containerapps)
+              az containerapp show \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --output json > reports/v4_active_rollback.json
+              platform_args=(--platform containerapps)
+              ;;
+            appservice)
+              az webapp config appsettings list \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --output json > reports/v4_active_rollback.json
+              rollback_image=$(python -c 'import json; print(json.load(open("reports/v4_rollback_result.json"))["image_digest"])')
+              live_image=$(az webapp config container show \
+                --resource-group "${AZURE_RESOURCE_GROUP}" \
+                --name "${AZURE_BACKEND_SERVICE}" \
+                --query dockerCustomImageName --output tsv)
+              [[ "${live_image}" == "${rollback_image}" ]] || {
+                echo "Restored App Service container image mismatch: ${live_image}" >&2
+                exit 1
+              }
+              platform_args=(--platform appservice)
+              ;;
+            *)
+              echo "AZURE_DEPLOYMENT_TARGET must be appservice or containerapps" >&2
+              exit 1
+              ;;
+          esac
+          python scripts/validate_rollback_active_release.py \
+            --app-json reports/v4_active_rollback.json \
+            --rollback-json reports/v4_rollback_result.json \
+            "${platform_args[@]}"
+      - name: Upload rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-rollback-${{ inputs.release_id || github.run_number }}
+          path: |
+            reports/v4_rollback_result.json
+            reports/v4_active_rollback.json
+          if-no-files-found: error
