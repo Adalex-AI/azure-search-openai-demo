@@ -833,6 +833,41 @@ def capture_canonical_sources(sources_dir: Path, manifest_path: Path) -> dict:
     return manifest
 
 
+def write_extraction_manifest(output_dir: Path, results: dict[str, int | str]) -> dict:
+    """Record checksums for the complete set of processed canonical guide artifacts."""
+    failures = [filename for filename, result in results.items() if result == "ERROR"]
+    missing = sorted(set(GUIDE_METADATA) - set(results))
+    if failures or missing:
+        problems = [f"failed: {filename}" for filename in failures]
+        problems.extend(f"missing: {filename}" for filename in missing)
+        raise RuntimeError("Court-guide extraction did not complete:\n" + "\n".join(problems))
+
+    guides = {}
+    for filename in GUIDE_METADATA:
+        processed_name = Path(filename).stem + "_processed.json"
+        processed_path = output_dir / processed_name
+        if not processed_path.exists():
+            raise RuntimeError(f"Court-guide extraction output is missing: {processed_path}")
+        guides[filename] = {
+            "processed_json": processed_name,
+            "processed_json_sha256": hashlib.sha256(processed_path.read_bytes()).hexdigest(),
+            "document_count": results[filename],
+        }
+
+    manifest = {
+        "schema_version": 1,
+        "extracted_at": datetime.now(timezone.utc).isoformat(),
+        "guides": guides,
+    }
+    manifest_path = output_dir / "court_guides_extraction_manifest.json"
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output_dir, delete=False) as temporary:
+        json.dump(manifest, temporary, indent=2)
+        temporary.write("\n")
+        temporary_path = Path(temporary.name)
+    temporary_path.replace(manifest_path)
+    return manifest
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract court guides using Azure Document Intelligence")
     parser.add_argument("--pdf", help="Path to a single PDF to process")
@@ -895,6 +930,10 @@ def main():
     for name, count in results.items():
         logger.info("  %s: %s documents", name, count)
     logger.info("  Total: %d documents", total_docs)
+    if args.capture_canonical and not args.dry_run:
+        manifest = write_extraction_manifest(Path(output_dir), results)
+        logger.info("  Extraction manifest: %s", output_dir + "/court_guides_extraction_manifest.json")
+        logger.info("  Manifest guides: %d", len(manifest["guides"]))
     if not args.dry_run:
         logger.info("  Output: %s", output_dir)
 
