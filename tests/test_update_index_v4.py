@@ -24,9 +24,10 @@ def test_v4_workflow_verifies_document_intelligence_before_extraction():
         "Capture and extract canonical court guides"
     )
     assert 'subscription_scope="${document_intelligence_id%%/resourceGroups/*}"' in workflow
+    assert 'principalId == \'${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}\'' in workflow
     assert 'roleDefinitionId == \'${role_definition_id}\'' in workflow
+    assert '--assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' not in workflow
     assert '--scope "${document_intelligence_id}"' in workflow
-    assert '--assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' in workflow
     assert 'az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv' in workflow
     assert '"${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' in workflow
     assert 'echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"' in workflow

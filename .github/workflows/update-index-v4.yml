@@ -197,10 +197,9 @@ jobs:
             exit 1
           }
           role_count=$(az role assignment list \
-            --assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" \
             --scope "${document_intelligence_id}" \
             --include-inherited \
-            --query "[?roleDefinitionId == '${role_definition_id}'] | length(@)" \
+            --query "[?principalId == '${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}' && roleDefinitionId == '${role_definition_id}'] | length(@)" \
             -o tsv)
           [[ "${role_count}" != "0" ]] || {
             echo "Release pipeline principal ${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID} lacks Cognitive Services User on ${document_intelligence_id}; provision the role before extraction" >&2
