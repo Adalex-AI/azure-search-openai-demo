@@ -111,11 +111,15 @@ def build_index(index_name: str):
 
 def is_existing_index_error(error: Any) -> bool:
     service_error = getattr(error, "error", None)
+    generated_error = getattr(error, "model", None)
     response = getattr(error, "response", None)
     status_code = getattr(error, "status_code", None) or getattr(response, "status_code", None)
     return (
         status_code == 409
-        and getattr(service_error, "code", None) == "ResourceNameAlreadyInUse"
+        and (
+            getattr(service_error, "code", None) == "ResourceNameAlreadyInUse"
+            or getattr(generated_error, "code", None) == "ResourceNameAlreadyInUse"
+        )
     )
 
 
