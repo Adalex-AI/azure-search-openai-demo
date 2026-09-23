@@ -63,6 +63,18 @@ def test_candidate_revision_updates_preserve_explicit_image():
         assert '--image "${candidate_image}"' in update
 
 
+def test_knowledgebase_model_defaults_to_verified_deployment():
+    workflow = WORKFLOW.read_text()
+
+    knowledgebase_step = workflow[
+        workflow.index("- name: Provision paired staging knowledge base") :
+        workflow.index("- name: Upload candidate documents")
+    ]
+
+    assert "secrets.AZURE_OPENAI_KNOWLEDGEBASE_DEPLOYMENT || 'gpt-4.1-mini'" in knowledgebase_step
+    assert "secrets.AZURE_OPENAI_KNOWLEDGEBASE_MODEL || 'gpt-4.1-mini'" in knowledgebase_step
+
+
 def test_html_oracle_retries_transient_timeout(monkeypatch, tmp_path):
     source = SimpleNamespace(
         identity="Example source",
