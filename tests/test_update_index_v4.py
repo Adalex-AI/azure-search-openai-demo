@@ -10,6 +10,7 @@ from scripts.court_guides_processing_pipeline.scripts import (
 )
 
 WORKFLOW = Path(".github/workflows/update-index-v4.yml")
+DIAGNOSTICS_WORKFLOW = Path(".github/workflows/v4-diagnostics.yml")
 PYTHON_WORKFLOW = Path(".github/workflows/python-test.yaml")
 AZD_WORKFLOW = Path(".github/workflows/azure-dev.yml")
 MAIN_BICEP = Path("infra/main.bicep")
@@ -23,14 +24,35 @@ def test_v4_workflow_verifies_document_intelligence_before_extraction():
     assert workflow.index("Verify Document Intelligence access before extraction") < workflow.index(
         "Capture and extract canonical court guides"
     )
-    assert 'subscription_scope="${document_intelligence_id%%/resourceGroups/*}"' in workflow
-    assert 'principalId == \'${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}\'' in workflow
-    assert 'roleDefinitionId == \'${role_definition_id}\'' in workflow
-    assert '--assignee "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' not in workflow
-    assert '--scope "${document_intelligence_id}"' in workflow
+    assert workflow.index("Verify Document Intelligence access before extraction") < workflow.index(
+        "Build immutable application image"
+    )
     assert 'az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv' in workflow
     assert '"${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"' in workflow
+    assert "az account get-access-token" in workflow
+    assert "https://cognitiveservices.azure.com" in workflow
+    assert "/documentintelligence/info?api-version=2024-11-30" in workflow
+    assert "access_status" in workflow
+    assert "Document Intelligence data-plane access" in workflow
     assert 'echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"' in workflow
+
+
+def test_v4_diagnostics_are_manual_and_fail_closed_without_search_upload():
+    workflow = DIAGNOSTICS_WORKFLOW.read_text()
+
+    assert "workflow_dispatch:" in workflow
+    assert "permissions:" in workflow
+    assert "id-token: write" in workflow
+    assert "contents: read" in workflow
+    assert "default: identity" in workflow
+    assert "--include-inherited" not in workflow
+    assert "az role assignment create" not in workflow
+    assert "--execute" not in workflow
+    assert "upload_v4_staging.py" not in workflow
+    assert "No Search upload was performed by this diagnostic stage" in workflow
+    assert "documentintelligence/info?api-version=2024-11-30" in workflow
+    assert "sha256" in workflow
+    assert "set -x" not in workflow
 
 
 def test_release_pipeline_rbac_uses_a_service_principal_object_id():
@@ -88,12 +110,14 @@ def test_candidate_workflow_binds_required_environment_and_uploads_transition_au
 
 def test_html_oracle_failure_preserves_diagnostics_for_always_upload():
     workflow = WORKFLOW.read_text()
+    diagnostic = DIAGNOSTICS_WORKFLOW.read_text()
 
     capture = workflow[workflow.index("- name: Recapture canonical HTML oracle") :]
     capture = capture[: capture.index("- name: Recapture canonical PDF oracle")]
     assert "rm -rf reports/html_oracle_snapshots" in capture
     assert "mkdir -p reports/html_oracle_snapshots" in capture
     assert "continue-on-error: true" in capture
+    assert "id: capture_html_oracle" in capture
     assert "--retries 8" in capture
     assert "--retry-delay 2" in capture
     assert "name: Summarize HTML oracle diagnostics" in capture
@@ -108,8 +132,11 @@ def test_html_oracle_failure_preserves_diagnostics_for_always_upload():
     assert "name: Upload HTML oracle diagnostics" in capture
     assert "if-no-files-found: warn" in capture
     assert "name: Require complete HTML oracle evidence" in capture
+    assert "if: steps.capture_html_oracle.outcome != 'skipped'" in capture
     assert "HTML oracle has unavailable canonical sources" in capture
-    assert "source_count={manifest.get('source_count')} ok_count={manifest.get('ok_count')}" in capture
+    assert 'handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)' in capture
+    assert "source_count={manifest.get('source_count')} handled={handled}" in capture
+    assert '          handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)' in diagnostic
 
 
 def test_python_ci_lints_declared_release_source_roots_only():
