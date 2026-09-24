@@ -134,9 +134,9 @@ def test_html_oracle_failure_preserves_diagnostics_for_always_upload():
     assert "name: Require complete HTML oracle evidence" in capture
     assert "if: steps.capture_html_oracle.outcome != 'skipped'" in capture
     assert "HTML oracle has unavailable canonical sources" in capture
-    assert "handled = manifest.get(\"ok_count\", 0) + manifest.get(\"not_applicable_count\", 0)" in capture
+    assert 'handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)' in capture
     assert "source_count={manifest.get('source_count')} handled={handled}" in capture
-    assert "          handled = manifest.get(\"ok_count\", 0) + manifest.get(\"not_applicable_count\", 0)" in diagnostic
+    assert '          handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)' in diagnostic
 
 
 def test_python_ci_lints_declared_release_source_roots_only():
