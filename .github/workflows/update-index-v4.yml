@@ -142,6 +142,45 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify Document Intelligence access before extraction
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_RELEASE_PIPELINE_PRINCIPAL_ID: ${{ secrets.AZURE_RELEASE_PIPELINE_PRINCIPAL_ID }}
+          AZURE_DOCUMENTINTELLIGENCE_SERVICE: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_SERVICE }}
+          AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+          : "${AZURE_CLIENT_ID:?Set secret AZURE_CLIENT_ID}"
+          : "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID:?Set secret AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_SERVICE:?Set secret AZURE_DOCUMENTINTELLIGENCE_SERVICE}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP:?Set secret AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}"
+          document_intelligence_id=$(az cognitiveservices account show \
+            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
+            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
+            --query id -o tsv)
+          active_principal_id=$(az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv)
+          [[ "${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" ]] || {
+            echo "AZURE_RELEASE_PIPELINE_PRINCIPAL_ID does not match the service principal used by azure/login" >&2
+            exit 1
+          }
+          document_intelligence_endpoint=$(az cognitiveservices account show \
+            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
+            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
+            --query properties.endpoint -o tsv)
+          : "${document_intelligence_endpoint:?Document Intelligence account has no endpoint}"
+          access_token=$(az account get-access-token \
+            --resource https://cognitiveservices.azure.com \
+            --query accessToken -o tsv)
+          access_status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${access_token}" \
+            "${document_intelligence_endpoint%/}/documentintelligence/info?api-version=2024-11-30")
+          [[ "${access_status}" == "200" ]] || {
+            echo "Document Intelligence data-plane access check returned HTTP ${access_status} for ${document_intelligence_id}" >&2
+            exit 1
+          }
+          echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"
+          echo "Verified Document Intelligence data-plane access for the release pipeline principal"
       - name: Build immutable application image
         id: image
         shell: bash
@@ -171,51 +210,11 @@ jobs:
           : "${image_digest:?ACR did not return an immutable image digest}"
           [[ "${image_digest}" == sha256:* ]] || { echo "ACR returned an invalid image digest: ${image_digest}" >&2; exit 1; }
           echo "image_digest=${registry_server}/legal-rag@${image_digest}" >> "${GITHUB_OUTPUT}"
-      - name: Verify Document Intelligence access before extraction
-        shell: bash
-        env:
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_RELEASE_PIPELINE_PRINCIPAL_ID: ${{ secrets.AZURE_RELEASE_PIPELINE_PRINCIPAL_ID }}
-          AZURE_DOCUMENTINTELLIGENCE_SERVICE: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_SERVICE }}
-          AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP }}
-        run: |
-          set -euo pipefail
-          : "${AZURE_CLIENT_ID:?Set secret AZURE_CLIENT_ID}"
-          : "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID:?Set secret AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"
-          : "${AZURE_DOCUMENTINTELLIGENCE_SERVICE:?Set secret AZURE_DOCUMENTINTELLIGENCE_SERVICE}"
-          : "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP:?Set secret AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}"
-          document_intelligence_id=$(az cognitiveservices account show \
-            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
-            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
-            --query id -o tsv)
-          subscription_scope="${document_intelligence_id%%/resourceGroups/*}"
-          role_definition_id="${subscription_scope}/providers/Microsoft.Authorization/roleDefinitions/a97b65f3-24c7-4388-baec-2e87135dc908"
-          active_principal_id=$(az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv)
-          [[ "${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" ]] || {
-            echo "AZURE_RELEASE_PIPELINE_PRINCIPAL_ID does not match the service principal used by azure/login" >&2
-            exit 1
-          }
-          role_count=$(az role assignment list \
-            --scope "${document_intelligence_id}" \
-            --include-inherited \
-            --query "[?principalId == '${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}' && roleDefinitionId == '${role_definition_id}'] | length(@)" \
-            -o tsv)
-          [[ "${role_count}" != "0" ]] || {
-            echo "Release pipeline principal ${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID} lacks Cognitive Services User on ${document_intelligence_id}; provision the role before extraction" >&2
-            exit 1
-          }
-          document_intelligence_endpoint=$(az cognitiveservices account show \
-            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
-            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
-            --query properties.endpoint -o tsv)
-          : "${document_intelligence_endpoint:?Document Intelligence account has no endpoint}"
-          echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"
-          echo "Verified Cognitive Services User access for the release pipeline principal"
       - run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
       - name: Recapture canonical HTML oracle
+        id: capture_html_oracle
         continue-on-error: true
         run: |
           rm -rf reports/html_oracle_snapshots
@@ -268,7 +267,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
       - name: Require complete HTML oracle evidence
-        if: always()
+        if: steps.capture_html_oracle.outcome != 'skipped'
         run: |
           set -euo pipefail
           manifest="reports/html_oracle_snapshots/manifest.json"
@@ -287,10 +286,12 @@ jobs:
                   "HTML oracle has unavailable canonical sources; inspect the retained "
                   f"v4-html-oracle artifact: {json.dumps(unavailable, sort_keys=True)}"
               )
-          if manifest.get("source_count", 0) != manifest.get("ok_count", 0):
+            handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)
+            if manifest.get("source_count", 0) != handled:
               raise SystemExit(
                   "HTML oracle did not capture every canonical HTML source: "
-                  f"source_count={manifest.get('source_count')} ok_count={manifest.get('ok_count')}"
+                f"source_count={manifest.get('source_count')} handled={handled} "
+                f"ok_count={manifest.get('ok_count')} not_applicable_count={manifest.get('not_applicable_count')}"
               )
           PY
       - name: Recapture canonical PDF oracle

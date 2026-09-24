@@ -1,0 +1,181 @@
+name: V4 Release Diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'Diagnostic stage to run'
+        required: true
+        type: choice
+        options:
+          - identity
+          - html
+          - extraction
+          - embeddings
+        default: identity
+      release_id:
+        description: 'Optional diagnostic release suffix for extraction/embeddings'
+        required: false
+        type: string
+        default: diagnostic
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: v4-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.10'
+  V4_DIAGNOSTIC_STAGE: ${{ inputs.stage }}
+  V4_RELEASE_ID: ${{ inputs.release_id || 'diagnostic' }}
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify identity and Document Intelligence access
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_RELEASE_PIPELINE_PRINCIPAL_ID: ${{ secrets.AZURE_RELEASE_PIPELINE_PRINCIPAL_ID }}
+          AZURE_DOCUMENTINTELLIGENCE_SERVICE: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_SERVICE }}
+          AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP: ${{ secrets.AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+          : "${AZURE_CLIENT_ID:?Missing AZURE_CLIENT_ID}"
+          : "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID:?Missing AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_SERVICE:?Missing AZURE_DOCUMENTINTELLIGENCE_SERVICE}"
+          : "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP:?Missing AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}"
+
+          sha256() { printf '%s' "$1" | sha256sum | cut -d' ' -f1; }
+          tenant_id=$(az account show --query tenantId -o tsv)
+          subscription_id=$(az account show --query id -o tsv)
+          active_principal_id=$(az ad sp show --id "${AZURE_CLIENT_ID}" --query id -o tsv)
+          [[ "${active_principal_id}" == "${AZURE_RELEASE_PIPELINE_PRINCIPAL_ID}" ]] || {
+            echo "The configured release principal does not match the OIDC service principal" >&2
+            exit 1
+          }
+
+          document_intelligence_json=$(az cognitiveservices account show \
+            --resource-group "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}" \
+            --name "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}" \
+            --query '{id:id, endpoint:properties.endpoint, kind:kind, location:location}' \
+            -o json)
+          document_intelligence_id=$(printf '%s' "${document_intelligence_json}" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+          document_intelligence_endpoint=$(printf '%s' "${document_intelligence_json}" | python -c 'import json,sys; print(json.load(sys.stdin)["endpoint"])')
+          document_intelligence_kind=$(printf '%s' "${document_intelligence_json}" | python -c 'import json,sys; print(json.load(sys.stdin)["kind"])')
+          document_intelligence_location=$(printf '%s' "${document_intelligence_json}" | python -c 'import json,sys; print(json.load(sys.stdin)["location"])')
+          access_token=$(az account get-access-token --resource https://cognitiveservices.azure.com --query accessToken -o tsv)
+          access_status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${access_token}" \
+            "${document_intelligence_endpoint%/}/documentintelligence/info?api-version=2024-11-30")
+          [[ "${access_status}" == "200" ]] || {
+            echo "Document Intelligence data-plane probe returned HTTP ${access_status}" >&2
+            exit 1
+          }
+
+          echo "Azure CLI version: $(az version --query '"azure-cli"' -o tsv)"
+          echo "Tenant SHA-256: $(sha256 "${tenant_id}")"
+          echo "Subscription SHA-256: $(sha256 "${subscription_id}")"
+          echo "Principal SHA-256: $(sha256 "${active_principal_id}")"
+          echo "Document Intelligence resource SHA-256: $(sha256 "${document_intelligence_id}")"
+          echo "Document Intelligence kind: ${document_intelligence_kind}"
+          echo "Document Intelligence location: ${document_intelligence_location}"
+          echo "Document Intelligence data-plane HTTP status: ${access_status}"
+          echo "AZURE_DOCUMENTINTELLIGENCE_ENDPOINT=${document_intelligence_endpoint}" >> "${GITHUB_ENV}"
+
+      - name: Install diagnostic Python dependencies
+        if: inputs.stage != 'identity'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install requirements
+        if: inputs.stage != 'identity'
+        run: pip install -r requirements-dev.txt
+
+      - name: Capture HTML oracle
+        if: inputs.stage == 'html'
+        run: |
+          set -euo pipefail
+          rm -rf reports/html_oracle_snapshots
+          mkdir -p reports/html_oracle_snapshots
+          python scripts/capture_html_oracle.py \
+            --output-dir reports/html_oracle_snapshots \
+            --refresh \
+            --retries 8 \
+            --retry-delay 2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("reports/html_oracle_snapshots/manifest.json").read_text(encoding="utf-8"))
+          if manifest.get("unavailable_results"):
+              raise SystemExit(f"Unavailable canonical sources: {manifest['unavailable_results']}")
+          handled = manifest.get("ok_count", 0) + manifest.get("not_applicable_count", 0)
+          if manifest.get("source_count", 0) != handled:
+              raise SystemExit(
+                  f"Incomplete HTML oracle: source_count={manifest.get('source_count')} "
+                  f"handled={handled} ok_count={manifest.get('ok_count')} "
+                  f"not_applicable_count={manifest.get('not_applicable_count')}"
+              )
+          print(f"HTML oracle passed: {manifest.get('ok_count', 0)} sources")
+          PY
+
+      - name: Extract canonical court guides
+        if: inputs.stage == 'extraction'
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          set -euo pipefail
+          output_dir="reports/court_guides_${V4_RELEASE_ID}"
+          rm -rf "${output_dir}"
+          python scripts/court_guides_processing_pipeline/scripts/extract_court_guides_azure_di.py \
+            --capture-canonical \
+            --sources-dir "${output_dir}/sources" \
+            --output-dir "${output_dir}/outputs"
+          test -s "${output_dir}/outputs/court_guides_extraction_manifest.json"
+          sha256sum "${output_dir}/outputs/court_guides_extraction_manifest.json"
+
+      - name: Generate embeddings without Search upload
+        if: inputs.stage == 'embeddings'
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_EMB_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_EMB_DEPLOYMENT }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          set -euo pipefail
+          rm -rf reports/html_oracle_snapshots
+          mkdir -p reports/html_oracle_snapshots
+          python scripts/capture_html_oracle.py \
+            --output-dir reports/html_oracle_snapshots \
+            --refresh \
+            --retries 8 \
+            --retry-delay 2
+          python scripts/court_guides_processing_pipeline/scripts/extract_court_guides_azure_di.py \
+            --capture-canonical \
+            --sources-dir "reports/court_guides_${V4_RELEASE_ID}/sources" \
+            --output-dir "reports/court_guides_${V4_RELEASE_ID}/outputs"
+          python scripts/generate_v4_artifacts.py \
+            --snapshot-dir reports/html_oracle_snapshots \
+            --court-guides-dir "reports/court_guides_${V4_RELEASE_ID}/outputs" \
+            --release-id "${V4_RELEASE_ID}" \
+            --output-dir "reports/index_v4_artifacts_${V4_RELEASE_ID}"
+          python scripts/generate_v4_embeddings.py \
+            --input "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents.jsonl" \
+            --output "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl"
+          sha256sum "reports/index_v4_artifacts_${V4_RELEASE_ID}/documents_with_embeddings.jsonl"
+          echo "No Search upload was performed by this diagnostic stage"
