@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from audit_source_documents import CanonicalSource, load_web_sources, normalize_url  # noqa: E402
+from audit_source_documents import CanonicalSource, load_pdf_sources, load_web_sources, normalize_url  # noqa: E402
 import audit_html_transition as transition  # noqa: E402
 import update_cpr_index_v3 as updater  # noqa: E402
 from upload_court_guides_v3 import GUIDE_FILES, map_doc  # noqa: E402
@@ -173,8 +173,9 @@ def generate(
     release_id = release_id or os.environ.get("V4_RELEASE_ID", "")
     if not release_id:
         raise ValueError("release_id is required for a release-bound artifact")
-    all_sources = {source.identity: source for source in load_web_sources()}
+    all_sources = {source.identity: source for source in load_pdf_sources() + load_web_sources()}
     sources = deduplicate_sources_by_url(list(all_sources.values()))
+    oracle_sources = {identity: source for identity, source in sources.items() if source.source_type == "html"}
     actions = {entry["sourcefile"]: entry for entry in updater.ACTION_LIST}
     actions_by_url = {entry["url"].rstrip("/"): entry for entry in updater.ACTION_LIST}
     documents: list[dict[str, Any]] = []
@@ -236,7 +237,7 @@ def generate(
         source_snapshot_hashes[source.identity] = snapshot_hash(snapshot)
         documents.extend(built)
 
-    missing_snapshot_identities = sorted(set(sources) - set(source_snapshot_hashes))
+    missing_snapshot_identities = sorted(set(oracle_sources) - set(source_snapshot_hashes))
     if missing_snapshot_identities:
         raise ValueError(
             "Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities)

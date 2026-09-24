@@ -13,6 +13,7 @@ from scripts.generate_v4_artifacts import (
     snapshot_hash,
     validate_source_snapshot,
     expand_oversized_embedding_windows,
+    generate,
 )
 
 
@@ -223,3 +224,60 @@ def test_generate_uses_snapshot_html_with_current_scraper_api(monkeypatch, tmp_p
 
     assert documents[0]["content"] == "Snapshot-only legal content."
     assert manifest["snapshot_count"] == 1
+
+
+def test_generate_does_not_require_pdf_oracle_snapshots(monkeypatch, tmp_path):
+    html_source = CanonicalSource(
+        source_type="html",
+        sourcefile="Part 1",
+        category="CPR",
+        url="https://example.test/part-1",
+    )
+    pdf_source = CanonicalSource(
+        source_type="pdf",
+        sourcefile="Pre-Action Protocol for Debt Claims",
+        category="CPR",
+        url="https://example.test/debt-pap.pdf",
+    )
+    monkeypatch.setattr("scripts.generate_v4_artifacts.load_web_sources", lambda: [html_source])
+    monkeypatch.setattr("scripts.generate_v4_artifacts.load_pdf_sources", lambda: [pdf_source])
+
+    snapshot = {
+        "identity": html_source.identity,
+        "status": "ok",
+        "source_type": "html",
+        "sourcefile": html_source.sourcefile,
+        "requested_url": html_source.url,
+        "final_url": html_source.url,
+        "html": "<html><body>Part 1 content</body></html>",
+    }
+    (tmp_path / "part-1.json").write_text(json.dumps(snapshot), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "scripts.generate_v4_artifacts.updater.scrape_page", lambda *args, **kwargs: {"content": "content"}
+    )
+    monkeypatch.setattr(
+        "scripts.generate_v4_artifacts.updater.build_index_docs",
+        lambda *args, **kwargs: [
+            {
+                "id": "part-1",
+                "content": "content",
+                "sourcefile": html_source.sourcefile,
+                "sourcepage": "Part 1",
+                "parent_id": "part-1",
+                "subsection_id": "",
+                "subsections": [],
+            }
+        ],
+    )
+    monkeypatch.setattr("scripts.generate_v4_artifacts.GUIDE_FILES", {})
+
+    court_guides_dir = tmp_path / "court-guides"
+    court_guides_dir.mkdir()
+    (court_guides_dir / "court_guides_extraction_manifest.json").write_text(
+        json.dumps({"schema_version": 1, "guides": {}}), encoding="utf-8"
+    )
+
+    _, manifest = generate(tmp_path, court_guides_dir, "release")
+
+    assert manifest["source_count"] == 2
