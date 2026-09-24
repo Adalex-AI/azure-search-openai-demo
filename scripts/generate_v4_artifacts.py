@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -20,9 +21,13 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from audit_source_documents import CanonicalSource, load_pdf_sources, load_web_sources, normalize_url  # noqa: E402
-import audit_html_transition as transition  # noqa: E402
 import update_cpr_index_v3 as updater  # noqa: E402
+from audit_source_documents import (  # noqa: E402
+    CanonicalSource,
+    load_pdf_sources,
+    load_web_sources,
+    normalize_url,
+)
 from upload_court_guides_v3 import GUIDE_FILES, map_doc  # noqa: E402
 
 
@@ -30,16 +35,28 @@ def content_hash(document: dict[str, Any]) -> str:
     content = document.get("content", "")
     if isinstance(content, list):
         content = "\n".join(content)
-    value = "|".join(
-        str(document.get(field, "") or "")
-        for field in ("id", "sourcefile", "sourcepage", "category", "storageUrl", "updated")
-    ) + f"|{content}|{document.get('embedding_text', '')}"
+    value = (
+        "|".join(
+            str(document.get(field, "") or "")
+            for field in (
+                "id",
+                "sourcefile",
+                "sourcepage",
+                "category",
+                "storageUrl",
+                "updated",
+            )
+        )
+        + f"|{content}|{document.get('embedding_text', '')}"
+    )
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def snapshot_hash(snapshot: dict[str, Any]) -> str:
     """Hash the immutable source snapshot without depending on JSON key order."""
-    payload = json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload = json.dumps(
+        snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -55,7 +72,11 @@ def _build_embedding_text(document: dict[str, Any], content: str) -> str:
             f"SOURCE FAMILY: {category}",
             f"SOURCE: {sourcefile}",
             f"HIERARCHY: {hierarchy_path}",
-            f"LEGAL REFERENCES: {', '.join(legal_references)}" if legal_references else "",
+            (
+                f"LEGAL REFERENCES: {', '.join(legal_references)}"
+                if legal_references
+                else ""
+            ),
             f"SECTION: {section_title}",
         )
         if line
@@ -63,12 +84,13 @@ def _build_embedding_text(document: dict[str, Any], content: str) -> str:
     return f"{embedding_header}\n\n{content}".strip()
 
 
-def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | None = None) -> dict[str, Any]:
+def enrich_retrieval_metadata(
+    document: dict[str, Any], content_override: str | None = None
+) -> dict[str, Any]:
     """Add stable hierarchy and reference text without changing display content."""
     content = str(document.get("content") or "")
     sourcepage = str(document.get("sourcepage") or "")
     sourcefile = str(document.get("sourcefile") or "")
-    category = str(document.get("category") or "")
     subsection_id = str(document.get("subsection_id") or "")
     section_title = subsection_id or sourcepage or sourcefile
     hierarchy_parts = [part for part in (sourcefile, sourcepage, subsection_id) if part]
@@ -85,7 +107,9 @@ def enrich_retrieval_metadata(document: dict[str, Any], content_override: str | 
     document["section_title"] = section_title
     document["hierarchy_path"] = hierarchy_path
     document["legal_references"] = legal_references
-    document["embedding_text"] = _build_embedding_text(document, content_override if content_override is not None else content)
+    document["embedding_text"] = _build_embedding_text(
+        document, content_override if content_override is not None else content
+    )
     return document
 
 
@@ -97,7 +121,10 @@ def expand_oversized_embedding_windows(
     chunker = updater.LegalDocumentChunker(max_tokens=6500, overlap_tokens=200)
 
     for document in documents:
-        if chunker.count_tokens(document.get("embedding_text", "")) <= max_embedding_tokens:
+        if (
+            chunker.count_tokens(document.get("embedding_text", ""))
+            <= max_embedding_tokens
+        ):
             expanded.append(document)
             continue
 
@@ -105,13 +132,21 @@ def expand_oversized_embedding_windows(
         chunks = chunker.chunk_legal_document(
             str(document.get("content") or ""),
             original_id,
-            str(document.get("section_title") or document.get("sourcefile") or original_id),
+            str(
+                document.get("section_title")
+                or document.get("sourcefile")
+                or original_id
+            ),
         )
         if len(chunks) < 2:
             chunks = chunker._fallback_sentence_chunking(
                 str(document.get("content") or ""),
                 original_id,
-                str(document.get("section_title") or document.get("sourcefile") or original_id),
+                str(
+                    document.get("section_title")
+                    or document.get("sourcefile")
+                    or original_id
+                ),
             )
         children: list[dict[str, Any]] = []
         for index, chunk in enumerate(chunks, start=1):
@@ -122,16 +157,22 @@ def expand_oversized_embedding_windows(
             child["child_window_count"] = len(chunks)
             child["embedding_text"] = _build_embedding_text(child, str(chunk["text"]))
             if chunker.count_tokens(child["embedding_text"]) > max_embedding_tokens:
-                raise ValueError(f"Child embedding window exceeds {max_embedding_tokens} tokens: {child['id']}")
+                raise ValueError(
+                    f"Child embedding window exceeds {max_embedding_tokens} tokens: {child['id']}"
+                )
             children.append(child)
         if len(children) < 2:
-            raise ValueError(f"Unable to split oversized embedding input: {original_id}")
+            raise ValueError(
+                f"Unable to split oversized embedding input: {original_id}"
+            )
         expanded.extend(children)
 
     return expanded
 
 
-def deduplicate_sources_by_url(sources: list[CanonicalSource]) -> dict[str, CanonicalSource]:
+def deduplicate_sources_by_url(
+    sources: list[CanonicalSource],
+) -> dict[str, CanonicalSource]:
     """Choose one descriptive source identity for each canonical HTML URL."""
     selected: dict[str, CanonicalSource] = {}
     for source in sources:
@@ -141,7 +182,8 @@ def deduplicate_sources_by_url(sources: list[CanonicalSource]) -> dict[str, Cano
             continue
         current = selected.get(normalized_url)
         if current is None or (len(source.sourcefile), source.sourcefile) > (
-            len(current.sourcefile), current.sourcefile
+            len(current.sourcefile),
+            current.sourcefile,
         ):
             selected[normalized_url] = source
     return {source.identity: source for source in selected.values()}
@@ -173,9 +215,15 @@ def generate(
     release_id = release_id or os.environ.get("V4_RELEASE_ID", "")
     if not release_id:
         raise ValueError("release_id is required for a release-bound artifact")
-    all_sources = {source.identity: source for source in load_pdf_sources() + load_web_sources()}
+    all_sources = {
+        source.identity: source for source in load_pdf_sources() + load_web_sources()
+    }
     sources = deduplicate_sources_by_url(list(all_sources.values()))
-    oracle_sources = {identity: source for identity, source in sources.items() if source.source_type == "html"}
+    oracle_sources = {
+        identity: source
+        for identity, source in sources.items()
+        if source.source_type == "html"
+    }
     actions = {entry["sourcefile"]: entry for entry in updater.ACTION_LIST}
     actions_by_url = {entry["url"].rstrip("/"): entry for entry in updater.ACTION_LIST}
     documents: list[dict[str, Any]] = []
@@ -206,13 +254,17 @@ def generate(
             action = {
                 "sourcefile": source.sourcefile,
                 "azure_id": None,
-                "url": str(snapshot.get("final_url") or requested_url or source.url).rstrip("/"),
+                "url": str(
+                    snapshot.get("final_url") or requested_url or source.url
+                ).rstrip("/"),
                 "section": "ORACLE",
             }
         action = {
             **action,
             "sourcefile": source.sourcefile,
-            "url": str(snapshot.get("final_url") or action.get("url") or source.url).rstrip("/"),
+            "url": str(
+                snapshot.get("final_url") or action.get("url") or source.url
+            ).rstrip("/"),
         }
         soup = BeautifulSoup(str(snapshot.get("html") or ""), "html.parser")
         original_fetch_soup = updater.fetch_soup
@@ -222,7 +274,9 @@ def generate(
         finally:
             updater.fetch_soup = original_fetch_soup
         if scraped is None:
-            raise ValueError(f"Production scraper returned no content: {source.identity}")
+            raise ValueError(
+                f"Production scraper returned no content: {source.identity}"
+            )
         built = updater.build_index_docs(action, scraped)
         if not built:
             raise ValueError(f"No index documents generated: {source.identity}")
@@ -233,21 +287,35 @@ def generate(
                 document["id"] = f"{document['id']}_{source_suffix}"
                 document["parent_id"] = f"{document['parent_id']}_{source_suffix}"
             used_ids.add(document["id"])
-        source_counts[source.sourcefile] = source_counts.get(source.sourcefile, 0) + len(built)
+        source_counts[source.sourcefile] = source_counts.get(
+            source.sourcefile, 0
+        ) + len(built)
         source_snapshot_hashes[source.identity] = snapshot_hash(snapshot)
         documents.extend(built)
 
-    missing_snapshot_identities = sorted(set(oracle_sources) - set(source_snapshot_hashes))
+    missing_snapshot_identities = sorted(
+        set(oracle_sources) - set(source_snapshot_hashes)
+    )
     if missing_snapshot_identities:
         raise ValueError(
-            "Missing canonical source snapshots: " + ", ".join(missing_snapshot_identities)
+            "Missing canonical source snapshots: "
+            + ", ".join(missing_snapshot_identities)
         )
 
-    court_guides_dir = court_guides_dir or ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
-    extraction_manifest_path = court_guides_dir / "court_guides_extraction_manifest.json"
+    court_guides_dir = (
+        court_guides_dir
+        or ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
+    )
+    extraction_manifest_path = (
+        court_guides_dir / "court_guides_extraction_manifest.json"
+    )
     if not extraction_manifest_path.exists():
-        raise ValueError(f"Court-guide extraction manifest is missing: {extraction_manifest_path}")
-    extraction_manifest = json.loads(extraction_manifest_path.read_text(encoding="utf-8"))
+        raise ValueError(
+            f"Court-guide extraction manifest is missing: {extraction_manifest_path}"
+        )
+    extraction_manifest = json.loads(
+        extraction_manifest_path.read_text(encoding="utf-8")
+    )
     if extraction_manifest.get("schema_version") != 1:
         raise ValueError("Court-guide extraction manifest has an unsupported schema")
     for guide_name, guide in GUIDE_FILES.items():
@@ -263,8 +331,14 @@ def generate(
             ),
             None,
         )
-        if not extraction_entry or extraction_entry.get("processed_json_sha256") != hashlib.sha256(guide_path.read_bytes()).hexdigest():
-            raise ValueError(f"Court-guide artifact provenance does not match extraction manifest: {guide_path}")
+        if (
+            not extraction_entry
+            or extraction_entry.get("processed_json_sha256")
+            != hashlib.sha256(guide_path.read_bytes()).hexdigest()
+        ):
+            raise ValueError(
+                f"Court-guide artifact provenance does not match extraction manifest: {guide_path}"
+            )
         if not isinstance(raw_documents, list) or not raw_documents:
             raise ValueError(f"Fresh court-guide artifact is empty: {guide_path}")
         for raw_document in raw_documents:
@@ -283,25 +357,48 @@ def generate(
 
     documents = expand_oversized_embedding_windows(documents)
     ids = [str(document.get("id") or "") for document in documents]
-    duplicate_ids = sorted({document_id for document_id in ids if ids.count(document_id) > 1})
+    duplicate_ids = sorted(
+        {document_id for document_id in ids if ids.count(document_id) > 1}
+    )
     missing_fields = []
     oversized = []
     for document in documents:
-        for field in ("id", "content", "sourcefile", "sourcepage", "parent_id", "subsection_id", "subsections"):
+        for field in (
+            "id",
+            "content",
+            "sourcefile",
+            "sourcepage",
+            "parent_id",
+            "subsection_id",
+            "subsections",
+        ):
             if field not in document:
                 missing_fields.append(f"{document.get('id', '<unknown>')}: {field}")
-        token_count = updater.LegalDocumentChunker(max_tokens=8000).count_tokens(document.get("embedding_text", ""))
+        token_count = updater.LegalDocumentChunker(max_tokens=8000).count_tokens(
+            document.get("embedding_text", "")
+        )
         if token_count > 8100:
             oversized.append({"id": document.get("id", ""), "token_count": token_count})
         document["artifact_content_sha256"] = content_hash(document)
 
     if duplicate_ids or missing_fields or oversized:
-        raise ValueError(json.dumps({"duplicate_ids": duplicate_ids, "missing_fields": missing_fields, "oversized": oversized}, indent=2))
+        raise ValueError(
+            json.dumps(
+                {
+                    "duplicate_ids": duplicate_ids,
+                    "missing_fields": missing_fields,
+                    "oversized": oversized,
+                },
+                indent=2,
+            )
+        )
 
     manifest = {
         "release_id": release_id,
         "artifact_version": f"v4-{release_id}",
-        "court_guides_extraction_manifest_sha256": hashlib.sha256(extraction_manifest_path.read_bytes()).hexdigest(),
+        "court_guides_extraction_manifest_sha256": hashlib.sha256(
+            extraction_manifest_path.read_bytes()
+        ).hexdigest(),
         "snapshot_count": snapshot_count,
         "document_count": len(documents),
         "source_count": len(source_counts),
@@ -318,25 +415,45 @@ def generate(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate offline v4 CPR/PD index artifacts")
-    parser.add_argument("--snapshot-dir", type=Path, default=ROOT / "reports" / "html_oracle_snapshots")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "reports" / "index_v4_artifacts")
-    parser.add_argument("--release-id", default=None, help="Immutable release identifier, or V4_RELEASE_ID")
+    parser = argparse.ArgumentParser(
+        description="Generate offline v4 CPR/PD index artifacts"
+    )
+    parser.add_argument(
+        "--snapshot-dir", type=Path, default=ROOT / "reports" / "html_oracle_snapshots"
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, default=ROOT / "reports" / "index_v4_artifacts"
+    )
+    parser.add_argument(
+        "--release-id",
+        default=None,
+        help="Immutable release identifier, or V4_RELEASE_ID",
+    )
     parser.add_argument(
         "--court-guides-dir",
         type=Path,
-        default=ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di",
+        default=ROOT
+        / "scripts"
+        / "court_guides_processing_pipeline"
+        / "outputs_azure_di",
         help="Directory containing the eight processed court-guide JSON artifacts",
     )
     args = parser.parse_args()
 
-    documents, manifest = generate(args.snapshot_dir, args.court_guides_dir, args.release_id)
+    documents, manifest = generate(
+        args.snapshot_dir, args.court_guides_dir, args.release_id
+    )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "documents.jsonl").write_text(
-        "".join(json.dumps(document, ensure_ascii=False, sort_keys=True) + "\n" for document in documents),
+        "".join(
+            json.dumps(document, ensure_ascii=False, sort_keys=True) + "\n"
+            for document in documents
+        ),
         encoding="utf-8",
     )
-    (args.output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (args.output_dir / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(manifest, indent=2, sort_keys=True))
     return 0
 

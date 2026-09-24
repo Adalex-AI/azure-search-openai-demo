@@ -1,19 +1,17 @@
 import json
-from pathlib import Path
 
 import pytest
 
-from scripts.audit_source_documents import CanonicalSource
 import scripts.generate_v4_artifacts as artifacts
+from scripts.audit_source_documents import CanonicalSource
 from scripts.generate_v4_artifacts import (
-    GUIDE_FILES,
     ROOT,
     deduplicate_sources_by_url,
     enrich_retrieval_metadata,
-    snapshot_hash,
-    validate_source_snapshot,
     expand_oversized_embedding_windows,
     generate,
+    snapshot_hash,
+    validate_source_snapshot,
 )
 
 
@@ -32,7 +30,9 @@ def test_retrieval_metadata_preserves_content_and_builds_hierarchy():
     assert document["section_title"] == "31.16"
     assert document["hierarchy_path"] == "Part 31 > Part 31 Disclosure > 31.16"
     assert "31.16" in document["legal_references"]
-    assert "HIERARCHY: Part 31 > Part 31 Disclosure > 31.16" in document["embedding_text"]
+    assert (
+        "HIERARCHY: Part 31 > Part 31 Disclosure > 31.16" in document["embedding_text"]
+    )
 
 
 def test_oversized_embedding_windows_preserve_canonical_content():
@@ -51,10 +51,14 @@ def test_oversized_embedding_windows_preserve_canonical_content():
     assert len(children) > 1
     assert all(child["content"] == document["content"] for child in children)
     assert all(child["parent_id"] == "part-31" for child in children)
-    assert [child["child_window"] for child in children] == list(range(1, len(children) + 1))
+    assert [child["child_window"] for child in children] == list(
+        range(1, len(children) + 1)
+    )
 
 
-def test_oversized_embedding_windows_fall_back_when_legal_chunking_returns_one_window(monkeypatch):
+def test_oversized_embedding_windows_fall_back_when_legal_chunking_returns_one_window(
+    monkeypatch,
+):
     class Chunker:
         def __init__(self, max_tokens, overlap_tokens):
             pass
@@ -86,7 +90,9 @@ def test_oversized_embedding_windows_fall_back_when_legal_chunking_returns_one_w
     assert [child["child_window"] for child in children] == [1, 2]
 
 
-COURT_GUIDES_DIR = ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
+COURT_GUIDES_DIR = (
+    ROOT / "scripts" / "court_guides_processing_pipeline" / "outputs_azure_di"
+)
 
 
 def test_checked_in_court_guide_fixtures_are_well_formed():
@@ -220,7 +226,9 @@ def test_generate_uses_snapshot_html_with_current_scraper_api(monkeypatch, tmp_p
         ],
     )
 
-    documents, manifest = artifacts.generate(snapshot_dir, court_guides_dir, "test-release")
+    documents, manifest = artifacts.generate(
+        snapshot_dir, court_guides_dir, "test-release"
+    )
 
     assert documents[0]["content"] == "Snapshot-only legal content."
     assert manifest["snapshot_count"] == 1
@@ -239,8 +247,12 @@ def test_generate_does_not_require_pdf_oracle_snapshots(monkeypatch, tmp_path):
         category="CPR",
         url="https://example.test/debt-pap.pdf",
     )
-    monkeypatch.setattr("scripts.generate_v4_artifacts.load_web_sources", lambda: [html_source])
-    monkeypatch.setattr("scripts.generate_v4_artifacts.load_pdf_sources", lambda: [pdf_source])
+    monkeypatch.setattr(
+        "scripts.generate_v4_artifacts.load_web_sources", lambda: [html_source]
+    )
+    monkeypatch.setattr(
+        "scripts.generate_v4_artifacts.load_pdf_sources", lambda: [pdf_source]
+    )
 
     snapshot = {
         "identity": html_source.identity,
@@ -254,7 +266,8 @@ def test_generate_does_not_require_pdf_oracle_snapshots(monkeypatch, tmp_path):
     (tmp_path / "part-1.json").write_text(json.dumps(snapshot), encoding="utf-8")
 
     monkeypatch.setattr(
-        "scripts.generate_v4_artifacts.updater.scrape_page", lambda *args, **kwargs: {"content": "content"}
+        "scripts.generate_v4_artifacts.updater.scrape_page",
+        lambda *args, **kwargs: {"content": "content"},
     )
     monkeypatch.setattr(
         "scripts.generate_v4_artifacts.updater.build_index_docs",
